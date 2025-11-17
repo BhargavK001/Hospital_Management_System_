@@ -1,0 +1,55 @@
+.patient-sidebar {
+  width: 250px;
+  height: 100vh;
+  background: white;
+  border-right: 1px solid #e5e7eb;
+  padding: 15px;
+  transition: 0.25s ease;
+}
+
+.patient-sidebar.closed {
+  width: 70px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1560ff;
+}
+
+.nav-link {
+  padding: 12px;
+  border-radius: 8px;
+  color: #1d4ed8;
+  font-weight: 500;
+}
+
+.nav-link:hover {
+  background: #eef4ff;
+}
+
+.nav-link.active {
+  background: #1560ff;
+  color: white !important;
+}
+
+.icon {
+  font-size: 18px;
+}
+
+.patient-sidebar.closed span {
+  display: none;
+}
+
+.patient-sidebar.closed .nav-link {
+  justify-content: center;
+}

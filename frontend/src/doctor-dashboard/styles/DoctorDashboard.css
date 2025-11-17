@@ -1,0 +1,86 @@
+.doctor-sidebar {
+  width: 240px;
+  height: 100vh;
+  background: #fff;
+  border-right: 1px solid #e5e5e5;
+  position: fixed;
+  left: 0;
+  top: 0;
+  transition: 0.3s;
+  padding-top: 20px;
+}
+
+.doctor-sidebar.open {
+  width: 240px;
+}
+
+.doctor-sidebar:not(.open) {
+  width: 70px;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 15px;
+  margin-bottom: 20px;
+}
+
+.sidebar-logo {
+  font-size: 22px;
+  font-weight: bold;
+  color: #1b2e4b;
+}
+
+.toggle-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.sidebar-menu {
+  list-style: none;
+  padding: 0;
+}
+
+.sidebar-menu li {
+  padding: 12px 20px;
+  font-size: 15px;
+  color: #333;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.sidebar-menu li:hover {
+  background: #f3f6fd;
+}
+
+.sidebar-menu li a {
+  color: #141414;
+  text-decoration: none;
+}
+
+.submenu-title {
+  font-weight: bold;
+  color: #6a6a6a;
+  margin-top: 10px;
+  padding-left: 20px !important;
+}
+.stats-row {
+  display: flex;
+  gap: 18px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 10px;
+  padding: 18px;
+  box-shadow: 0 2px 8px rgba(13,38,77,0.06);
+  flex: 1 1 220px;
+}
+
+.stat-card h4 { margin: 0 0 8px 0; font-size: 14px; }
+.stat-value { font-size: 26px; font-weight: 700; }

@@ -1,0 +1,102 @@
+/* services.css - small helpers to match the screenshot UI */
+.main-content-transition {
+  transition: margin-left 180ms ease;
+}
+
+.services-topbar {
+  background: linear-gradient(90deg,#2d6cdf,#4b79e6);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 6px 6px 0 0;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.services-card {
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(12,24,50,0.06);
+  overflow: hidden;
+}
+
+.services-actions {
+  display:flex;
+  gap:8px;
+}
+
+.search-input {
+  position: relative;
+}
+
+.search-input .bi-search {
+  position:absolute;
+  left:10px;
+  top:50%;
+  transform:translateY(-50%);
+  color:#6c757d;
+}
+
+.search-input input {
+  padding-left:32px;
+}
+
+/* small inputs in filter row */
+.table-filter-row input,
+.table-filter-row select {
+  height:32px;
+  font-size:13px;
+  padding:4px 8px;
+}
+
+/* avatar circle in table (initial letter) */
+.avatar-circle {
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:600;
+  color:#fff;
+  background:#d9e6ff;
+}
+
+/* small action icon buttons look */
+.icon-btn {
+  width:34px;
+  height:34px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:6px;
+  border:1px solid #e6e9ef;
+}
+
+/* status pill next to toggle */
+.status-pill {
+  display:inline-block;
+  margin-left:8px;
+  padding:4px 8px;
+  font-size:12px;
+  border-radius:12px;
+  background:#e6fff0;
+  color:#0b6b3a;
+  border:1px solid #d6f3df;
+}
+
+/* small footer area */
+.table-footer {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:12px;
+  background:#f8fafc;
+  border-top:1px solid #eef2f6;
+  font-size:14px;
+}
+
+/* responsive tweaks */
+@media (max-width: 900px) {
+  .search-input input { width: 100%; }
+  .services-actions { flex-wrap:wrap; }
+}

@@ -1,0 +1,79 @@
+/* filter panel slide */
+.filter-panel {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 300ms ease;
+  background: #ffffff;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  margin-bottom: 0.5rem;
+}
+.filter-panel.open {
+  max-height: 240px; /* adjust to fit filter content height */
+}
+
+/* add form panel */
+.form-panel {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 350ms ease;
+  background: #ffffff;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  margin-bottom: 0.5rem;
+}
+.form-panel.open {
+  max-height: 680px; /* enough for the form layout */
+}
+
+/* make appointment form spacing look like your screenshot */
+.appointments-form .available-slot-box {
+  min-height: 200px;
+  background: #ffffff;
+}
+
+/* small inline add links */
+.small-link {
+  color: #2b6ce4;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+.small-link:hover {
+  text-decoration: underline;
+}
+
+/* small tabs styling (ALL UPCOMING PAST) */
+.small-tab {
+  font-weight: 600;
+}
+.btn-group .btn.active {
+  background-color: #2b6ce4;
+  color: white;
+  border-color: #2b6ce4;
+}
+
+/* make Save button prominent at bottom-right within form */
+.form-panel .btn-primary {
+  min-width: 90px;
+}
+
+/* responsive tweaks */
+@media (max-width: 991px) {
+  .available-slot-box {
+    min-height: 140px;
+  }
+}
+
+/* ensure form controls always fill column width */
+.form-panel .form-control,
+.form-panel .form-select {
+  width: 100%;
+  display: block;
+  box-sizing: border-box;
+}
+
+/* small spacing under labels like screenshot */
+.form-panel .form-label {
+  margin-bottom: 0.4rem;
+  font-weight: 500;
+}

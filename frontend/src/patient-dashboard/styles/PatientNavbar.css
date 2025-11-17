@@ -1,0 +1,39 @@
+.patient-navbar {
+  height: 60px;
+  background: #1560ff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  color: white;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.hamburger {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile-img {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+}
+
+.username {
+  font-weight: 500;
+}
