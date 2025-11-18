@@ -1,6 +1,4 @@
-// backend/index.js
 
-// 1. Import required libraries
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
@@ -13,13 +11,12 @@ const Service = require("./Models/Service");
 const ADMIN_EMAIL = "admin@onecare.com";
 const ADMIN_PASSWORD = "admin123";
 
-// 2. Create an Express app
+
 const app = express();
 
-// 3. Middlewares: to understand JSON body + allow CORS
-app.use(cors());            // allow requests from frontend
-app.use(express.json());    // parse JSON request body
 
+app.use(cors());            
+app.use(express.json());    
 // connect to MongoDB
 mongoose
   .connect("mongodb://127.0.0.1:27017/hospital_auth")
@@ -31,17 +28,12 @@ mongoose
   });
 
 
-// ===============================
-//             LOGIN
-// ===============================
-
-// 5. Login route (POST /login)
 app.post("/login", async(req, res) => {
   try {
-    // req.body will look like: { email: "...", password: "..." }
+    
     const { email, password } = req.body;
 
-     // 0) Check if this is admin login (hardcoded)
+
     if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
       return res.json({
         id: "admin-id",
@@ -51,16 +43,16 @@ app.post("/login", async(req, res) => {
       });
     }
     
-    // find user with this email
+   
     const user = await User.findOne({ email });
 
 
-    // if user not found OR password doesn't match -> error
+
     if (!user || user.password !== password) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    // success: send back user info (without password)
+   
     res.json({
       id: user.id,
       email: user.email,
@@ -73,35 +65,32 @@ app.post("/login", async(req, res) => {
   }
 });
 
-// ===============================
-//             SIGNUP
-// ===============================
+
 
 app.post("/signup", async(req, res) => {
   try {
-    // 1. Get data sent from frontend
+    
     const { name, email, password } = req.body;
-    // 2. Simple validation
+   
     if (!name || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
-    // // 3. Check if email already exists in users array
-    // const existingUser = users.find((u) => u.email === email);
+    
 
     const existing = await User.findOne({ email });
     if (existing) {
       return res.status(400).json({ message: "Email already registered" });
     }
 
-    // 3) create new user as PATIENT
+    
     const newUser = await User.create({
       email,
-      password,          // plain for now
-      role: "patient",   // signup is only for patients
+      password,         
+      role: "patient",   
       name
     });
 
-    // 5. Send back success (without password)
+   
     res.status(201).json({
       id: newUser.id,
       email: newUser.email,
@@ -114,9 +103,9 @@ app.post("/signup", async(req, res) => {
   }
 });
 
-// ===============================
+
 //         PATIENT APIs
-// ===============================
+
 
 const PatientModel = require("./models/Patient");
 
