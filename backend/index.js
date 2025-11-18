@@ -154,20 +154,40 @@ app.delete("/patients/:id", async (req, res) => {
   }
 });
 
-
 // ===============================
 //     DASHBOARD STATISTICS
 // ===============================
-
 app.get("/dashboard-stats", async (req, res) => {
   try {
-    const [totalPatients , totalDoctors] = await Promise.all([
-      PatientModel.countDocuments(),
-      DoctorModel.countDocuments()
+    // 1) Make a string for today's date in format "YYYY-MM-DD"
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0"); // 01-12
+    const dd = String(today.getDate()).padStart(2, "0");      // 01-31
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+
+    // 2) Count in MongoDB
+    const [
+      totalPatients,
+      totalDoctors,
+      totalAppointments,
+      todayAppointments,
+    ] = await Promise.all([
+      PatientModel.countDocuments(),                 // all patients
+      DoctorModel.countDocuments(),                 // all doctors
+      AppointmentModel.countDocuments(),            // all appointments
+      AppointmentModel.countDocuments({ date: todayStr }), // only today's
     ]);
 
-    res.json({totalDoctors , totalPatients});
+    // 3) Send all numbers to frontend
+    res.json({
+      totalPatients,
+      totalDoctors,
+      totalAppointments,
+      todayAppointments,
+    });
   } catch (err) {
+    console.error("dashboard-stats error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
