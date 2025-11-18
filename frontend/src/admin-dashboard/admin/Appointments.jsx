@@ -45,6 +45,16 @@ const Appointments = () => {
     tax: "",
   });
 
+  // ------------ helpers to safely get display names -------------
+  const getDoctorLabel = (d) =>
+    d?.name || d?.doctorName || d?.fullName || "Unnamed doctor";
+
+  const getPatientLabel = (p) =>
+    p?.name || p?.patientName || p?.fullName || "Unnamed patient";
+
+  const getServiceLabel = (s) =>
+    s?.name || s?.serviceName || s?.title || "Unnamed service";
+
   // ------------------ FETCH APPOINTMENTS ------------------
   useEffect(() => {
     fetchAppointments();
@@ -65,19 +75,23 @@ const Appointments = () => {
     }
   };
 
-  
+  // ------------------ FETCH DROPDOWNS ------------------
   useEffect(() => {
     const fetchDropdownData = async () => {
       try {
         const [docRes, servRes, patRes] = await Promise.all([
-          axios.get("http://localhost:3001/doctors"),   
-          axios.get("http://localhost:3001/services"),  
-          axios.get("http://localhost:3001/patients"),  
+          axios.get("http://localhost:3001/doctors"),
+          axios.get("http://localhost:3001/api/services"), // NOTE: /api/services
+          axios.get("http://localhost:3001/patients"),
         ]);
 
-        setDoctors(docRes.data || []);
-        setServicesList(servRes.data || []);
-        setPatients(patRes.data || []);
+        console.log("Doctors API:", docRes.data);
+        console.log("Services API:", servRes.data);
+        console.log("Patients API:", patRes.data);
+
+        setDoctors(Array.isArray(docRes.data) ? docRes.data : []);
+        setServicesList(Array.isArray(servRes.data) ? servRes.data : []);
+        setPatients(Array.isArray(patRes.data) ? patRes.data : []);
       } catch (err) {
         console.error("Error fetching dropdown data:", err);
       }
@@ -86,7 +100,7 @@ const Appointments = () => {
     fetchDropdownData();
   }, []);
 
-  
+  // ------------------ DELETE HANDLER ------------------
   const handleDeleteAppointment = async (id) => {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this appointment?"
@@ -102,7 +116,7 @@ const Appointments = () => {
     }
   };
 
-
+  // ------------------ TAB CHANGE (ALL / UPCOMING / PAST) ------------------
   useEffect(() => {
     const q = {};
     if (tab === "upcoming") q.status = "upcoming";
@@ -369,11 +383,14 @@ const Appointments = () => {
                         required
                       >
                         <option value="">Search</option>
-                        {doctors.map((d) => (
-                          <option key={d._id} value={d.name}>
-                            {d.name}
-                          </option>
-                        ))}
+                        {doctors.map((d) => {
+                          const label = getDoctorLabel(d);
+                          return (
+                            <option key={d._id} value={label}>
+                              {label}
+                            </option>
+                          );
+                        })}
                       </select>
                     </div>
 
@@ -388,11 +405,14 @@ const Appointments = () => {
                           required
                         >
                           <option value="">Service</option>
-                          {servicesList.map((s) => (
-                            <option key={s._id} value={s.name}>
-                              {s.name}
-                            </option>
-                          ))}
+                          {servicesList.map((s) => {
+                            const label = getServiceLabel(s);
+                            return (
+                              <option key={s._id} value={label}>
+                                {label}
+                              </option>
+                            );
+                          })}
                         </select>
                         <a
                           className="ms-2 small-link"
@@ -427,11 +447,14 @@ const Appointments = () => {
                           required
                         >
                           <option value="">Search</option>
-                          {patients.map((p) => (
-                            <option key={p._id} value={p.name}>
-                              {p.name}
-                            </option>
-                          ))}
+                          {patients.map((p) => {
+                            const label = getPatientLabel(p);
+                            return (
+                              <option key={p._id} value={label}>
+                                {label}
+                              </option>
+                            );
+                          })}
                         </select>
                         <a
                           className="ms-2 small-link"
@@ -582,7 +605,8 @@ const Appointments = () => {
             )}
           </div>
 
-          {/* pagination placeholder */}
+          /* pagination placeholder */
+          {/*---*/}
           <div className="d-flex justify-content-end mt-3">
             <nav>
               <ul className="pagination pagination-sm m-0">
