@@ -1,4 +1,4 @@
-// backend/index.js
+
 
 // 1. Import required libraries
 const express = require("express");
@@ -14,6 +14,13 @@ const Service = require("./models/Service");
 
 const ADMIN_EMAIL = "admin@onecare.com";
 const ADMIN_PASSWORD = "admin123";
+
+// PDF Libraries
+const { PDFDocument, StandardFonts, rgb } = require("pdf-lib");
+const QRCode = require("qrcode");
+const fs = require("fs");
+const path = require("path");
+
 
 // 2. Create an Express app
 const app = express();
