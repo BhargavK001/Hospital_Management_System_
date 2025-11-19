@@ -45,7 +45,6 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Example of more widgets (future use) */}
           <div className="col-md-3">
             <div className="card shadow-sm border-0 p-3 text-center clickable "
              style={{ cursor: "pointer" }}
@@ -74,7 +73,7 @@ const AdminDashboard = () => {
                 </div>
                 <div className="text-start">
                   <h6 className="text-muted mb-1">Total Appointments</h6>
-                  <h3 className="fw-bold mb-0">0</h3>
+                  <h3 className="fw-bold mb-0">{stats.totalAppointment}</h3>
                 </div>
               </div>
             </div>

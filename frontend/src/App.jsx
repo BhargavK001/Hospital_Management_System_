@@ -18,6 +18,7 @@ import AddBill from "./admin-dashboard/admin/AddBill";
 import EditBill from "./admin-dashboard/admin/EditBill";
 import Services from "./admin-dashboard/admin/Services";
 import Taxes from "./admin-dashboard/admin/Taxes";
+import DoctorSession from "./admin-dashboard/admin/DoctorSession";
 
 /* Patient */
 import PatientDashboard from "./patient-dashboard/Patient/PatientDashboard";
@@ -73,6 +74,8 @@ function App() {
       {/*Tax section */}
       <Route path="/taxes" element={<Taxes sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />} />
 
+      {/*Doctor Session section */}
+      <Route path="/DoctorSession" element={<DoctorSession sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />} />
     </Routes>
 
   );

@@ -1,12 +1,34 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { FaBars } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
-import admin from "../images/admin.png"
+import { useNavigate } from "react-router-dom";
+import admin from "../images/admin.png";
 
 const Navbar = ({ toggleSidebar }) => {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef();
+  const navigate = useNavigate();
+
+  // close dropdown on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    navigate("/");
+  };
+
   return (
     <nav className="navbar navbar-dark bg-primary px-3 d-flex justify-content-between align-items-center">
-      {/* {hambourger menu} */}
+      {/* left */}
       <div className="d-flex align-items-center gap-2">
         <button
           className="btn btn-outline-light border-0"
@@ -17,17 +39,56 @@ const Navbar = ({ toggleSidebar }) => {
         <h4 className="text-white fw-bold mb-0">One Care Admin</h4>
       </div>
 
-      {/*Profile */}
-      <div className="d-flex align-items-center">
-        <img
-          src={admin}
-          alt="User Avatar"
-          width="35"
-          height="35"
-          className="rounded-circle"
-          
-        />
-        <span className="text-white ms-2 fw-semibold">Admin</span>
+      {/* right (profile + dropdown) */}
+      <div className="position-relative" ref={menuRef}>
+        <div
+          className="d-flex align-items-center"
+          style={{ cursor: "pointer" }}
+          onClick={() => setOpen(!open)}
+        >
+          <img
+            src={admin}
+            alt="User Avatar"
+            width="35"
+            height="35"
+            className="rounded-circle"
+          />
+          <span className="text-white ms-2 fw-semibold">Admin</span>
+        </div>
+
+        {open && (
+          <div className="admin-dropdown">
+            <button
+              className="dropdown-item d-flex align-items-center gap-2"
+              onClick={() => {
+                navigate("/admin/profile");
+                setOpen(false);
+              }}
+            >
+              <i className="fa fa-user"></i>
+              My Profile
+            </button>
+
+            <button
+              className="dropdown-item d-flex align-items-center gap-2"
+              onClick={() => {
+                navigate("/admin/change-password");
+                setOpen(false);
+              }}
+            >
+              <i className="fa fa-lock"></i>
+              Change Password
+            </button>
+
+            <button
+              className="dropdown-item text-danger d-flex align-items-center gap-2"
+              onClick={handleLogout}
+            >
+              <i className="fa fa-sign-out-alt"></i>
+              Logout
+            </button>
+          </div>
+        )}
       </div>
     </nav>
   );

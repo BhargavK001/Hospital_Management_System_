@@ -120,7 +120,7 @@ export default function Sidebar({ collapsed = false }) {
           </li>
 
           <li className="nav-item mb-2">
-            <NavLink to="/doctor-sessions" className={linkClass}>
+            <NavLink to="/DoctorSession" className={linkClass}>
               <FaCalendarCheck style={{ minWidth: 20 }} />
               {!collapsed && <span>Doctor Sessions</span>}
             </NavLink>

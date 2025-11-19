@@ -1,234 +1,564 @@
 // src/admin/Taxes.jsx
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import "../styles/services.css"; // reuse same styles as Services page
 import { FaEdit, FaTrash } from "react-icons/fa";
+import axios from "axios";
 
 function Taxes({ sidebarCollapsed = false, toggleSidebar }) {
-    // TEMP dummy data so we can see the row + action buttons
-    const [taxes] = useState([
-        {
-            _id: "1",
-            name: "Kiran patil",
-            taxRate: "5.00",
-            clinicName: "Valley Clinic",
-            doctor: "doctortechnical056",
-            serviceName: "All service",
-            active: true,
-        },
-    ]);
+  const [taxes, setTaxes] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-    const [searchTerm, setSearchTerm] = useState("");
+  // search (top big search input)
+  const [searchTerm, setSearchTerm] = useState("");
 
-    const filtered = taxes.filter((t) =>
-        (t.name || "").toLowerCase().includes(searchTerm.toLowerCase())
-    );
+  // filter row (per column – optional logic)
+  const [filterName, setFilterName] = useState("");
+  const [filterRate, setFilterRate] = useState("");
+  const [filterClinic, setFilterClinic] = useState("");
+  const [filterDoctor, setFilterDoctor] = useState("");
+  const [filterService, setFilterService] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
 
-    return (
-        <div className="d-flex" style={{ minHeight: "100vh" }}>
-            {/* Sidebar */}
-            <Sidebar collapsed={sidebarCollapsed} />
+  // modal for Add / Edit
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingTax, setEditingTax] = useState(null);
+  const [form, setForm] = useState({
+    name: "",
+    taxRate: "",
+    clinicName: "",
+    doctor: "",
+    serviceName: "",
+    active: true,
+  });
 
-            {/* Right side content */}
-            <div
-                className="flex-grow-1 main-content-transition"
-                style={{
-                    marginLeft: sidebarCollapsed ? 64 : 250,
-                    minHeight: "100vh",
-                }}
-            >
-                {/* Navbar */}
-                <Navbar toggleSidebar={toggleSidebar} />
+  // ---------- FETCH TAXES ----------
+  const fetchTaxes = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get("http://localhost:3001/taxes");
+      setTaxes(res.data || []);
+    } catch (err) {
+      console.error("Error fetching taxes:", err);
+      setTaxes([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-                <div className="container-fluid mt-3">
-                    {/* Blue header bar */}
-                    <div className="services-topbar mb-2 services-card">
-                        <div style={{ fontWeight: 600 }}>Tax List</div>
-                        <div className="services-actions">
-                            <button className="btn btn-outline-light btn-sm">
-                                <i className="bi bi-upload me-1"></i> Import data
-                            </button>
-                            <button
-                                className="btn btn-light btn-sm"
-                                onClick={() => {
-                                    // Next step: open Add Tax form here
-                                    alert("Next step: show Add Tax form here");
-                                }}
-                            >
-                                <i className="bi bi-plus-lg me-1"></i> New Tax
-                            </button>
-                        </div>
-                    </div>
+  useEffect(() => {
+    fetchTaxes();
+  }, []);
 
-                    {/* White card with table */}
-                    <div className="card services-card">
-                        <div className="card-body">
-                            {/* Search row */}
-                            <div className="d-flex align-items-center mb-2">
-                                <div className="search-input me-2" style={{ flex: 1 }}>
-                                    <i className="bi bi-search"></i>
-                                    <input
-                                        className="form-control"
-                                        placeholder="Search by Name, Service Name, Tax Rate, Clinic Name, Doctor, Status (:active or :inactive)"
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                    />
-                                </div>
-                            </div>
+  // ---------- FILTERING ----------
+  const filtered = useMemo(() => {
+    return taxes.filter((t) => {
+      const text = `${t.name || ""} ${t.serviceName || ""} ${
+        t.taxRate ?? ""
+      } ${t.clinicName || ""} ${t.doctor || ""} ${
+        t.active ? "active" : "inactive"
+      }`.toLowerCase();
 
-                            {/* Table */}
-                            <div className="table-responsive">
-                                <table className="table table-borderless align-middle">
-                                    <thead>
-                                        <tr style={{ borderBottom: "1px solid #e9eef6" }}>
-                                            <th style={{ width: 36 }}>
-                                                <input type="checkbox" />
-                                            </th>
-                                            <th style={{ width: 70 }}>ID</th>
-                                            <th>Name</th>
-                                            <th>Tax Rate</th>
-                                            <th>Clinic Name</th>
-                                            <th>Doctor</th>
-                                            <th>Service Name</th>
-                                            <th>Status</th>
-                                            <th style={{ width: 120 }}>Action</th>
-                                        </tr>
+      if (searchTerm && !text.includes(searchTerm.toLowerCase())) return false;
+      if (filterName && !(t.name || "").toLowerCase().includes(filterName.toLowerCase())) return false;
+      if (filterRate && String(t.taxRate ?? "").indexOf(filterRate) === -1) return false;
+      if (
+        filterClinic &&
+        !(t.clinicName || "").toLowerCase().includes(filterClinic.toLowerCase())
+      )
+        return false;
+      if (
+        filterDoctor &&
+        !(t.doctor || "").toLowerCase().includes(filterDoctor.toLowerCase())
+      )
+        return false;
+      if (
+        filterService &&
+        !(t.serviceName || "").toLowerCase().includes(filterService.toLowerCase())
+      )
+        return false;
+      if (filterStatus) {
+        const isActive = t.active ? "active" : "inactive";
+        if (isActive !== filterStatus.toLowerCase()) return false;
+      }
 
-                                        {/* Filter row – just UI for now */}
-                                        <tr className="table-filter-row">
-                                            <th></th>
-                                            <th>
-                                                <input className="form-control" placeholder="ID" />
-                                            </th>
-                                            <th>
-                                                <input className="form-control" placeholder="Name" />
-                                            </th>
-                                            <th>
-                                                <input className="form-control" placeholder="Tax Rate" />
-                                            </th>
-                                            <th>
-                                                <input className="form-control" placeholder="Filter clinic" />
-                                            </th>
-                                            <th>
-                                                <input className="form-control" placeholder="Filter doctor" />
-                                            </th>
-                                            <th>
-                                                <input className="form-control" placeholder="Filter service" />
-                                            </th>
-                                            <th>
-                                                <select className="form-select">
-                                                    <option>Filter by status</option>
-                                                    <option>Active</option>
-                                                    <option>Inactive</option>
-                                                </select>
-                                            </th>
-                                            <th></th>
-                                        </tr>
-                                    </thead>
+      return true;
+    });
+  }, [
+    taxes,
+    searchTerm,
+    filterName,
+    filterRate,
+    filterClinic,
+    filterDoctor,
+    filterService,
+    filterStatus,
+  ]);
 
-                                    <tbody>
-                                        {filtered.length === 0 ? (
-                                            <tr>
-                                                <td colSpan="9" className="text-center text-muted py-4">
-                                                    No Data Found
-                                                </td>
-                                            </tr>
-                                        ) : (
-                                            filtered.map((t, index) => (
-                                                <tr key={t._id}>
-                                                    <td>
-                                                        <input type="checkbox" />
-                                                    </td>
-                                                    <td>{index + 1}</td>
-                                                    <td>{t.name}</td>
-                                                    <td>${t.taxRate}/-</td>
-                                                    <td>{t.clinicName}</td>
-                                                    <td>{t.doctor}</td>
-                                                    <td>{t.serviceName}</td>
-                                                    <td>
-                                                        <div
-                                                            style={{
-                                                                display: "flex",
-                                                                alignItems: "center",
-                                                                gap: 8,
-                                                            }}
-                                                        >
-                                                            <div className="form-check form-switch">
-                                                                <input
-                                                                    className="form-check-input"
-                                                                    type="checkbox"
-                                                                    checked={!!t.active}
-                                                                    readOnly
-                                                                />
-                                                            </div>
-                                                            <span className="status-pill">
-                                                                {t.active ? "ACTIVE" : "INACTIVE"}
-                                                            </span>
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <div style={{ display: "flex", gap: 8 }}>
-                                                            <button
-                                                                className="icon-btn bg-white"
-                                                                title="Edit"
-                                                                onClick={() => alert("Edit tax (later)")}
-                                                            >
-                                                                <FaEdit />
-                                                            </button>
-                                                            <button
-                                                                className="icon-btn bg-white"
-                                                                title="Delete"
-                                                                onClick={() => alert("Delete tax (later)")}
-                                                            >
-                                                                <FaTrash style={{ color: "red" }} />
-                                                            </button>
-                                                        </div>
-                                                    </td>
+  
+  const openNewTax = () => {
+    setEditingTax(null);
+    setForm({
+      name: "",
+      taxRate: "",
+      clinicName: "",
+      doctor: "",
+      serviceName: "",
+      active: true,
+    });
+    setModalOpen(true);
+  };
 
-                                                </tr>
-                                            ))
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
+  const openEditTax = (tax) => {
+    setEditingTax(tax);
+    setForm({
+      name: tax.name || "",
+      taxRate: tax.taxRate !== undefined ? String(tax.taxRate) : "",
+      clinicName: tax.clinicName || "",
+      doctor: tax.doctor || "",
+      serviceName: tax.serviceName || "",
+      active: !!tax.active,
+    });
+    setModalOpen(true);
+  };
 
-                            {/* footer */}
-                            <div className="table-footer">
-                                <div>
-                                    Rows per page:{" "}
-                                    <select
-                                        className="form-select d-inline-block"
-                                        style={{ width: 80, marginLeft: 8 }}
-                                    >
-                                        <option>10</option>
-                                        <option>25</option>
-                                        <option>50</option>
-                                    </select>
-                                </div>
+  const closeModal = () => {
+    setModalOpen(false);
+  };
 
-                                <div>
-                                    Page{" "}
-                                    <input
-                                        value={1}
-                                        readOnly
-                                        style={{ width: 34, textAlign: "center" }}
-                                    />{" "}
-                                    of 1 &nbsp;
-                                    <button className="btn btn-sm btn-outline-secondary ms-2" disabled>
-                                        Prev
-                                    </button>
-                                    <button className="btn btn-sm btn-outline-secondary ms-1" disabled>
-                                        Next
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+  const handleFormChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const payload = {
+      ...form,
+      taxRate: parseFloat(form.taxRate) || 0,
+    };
+
+    try {
+      if (editingTax) {
+        const res = await axios.put(
+          `http://localhost:3001/taxes/${editingTax._id}`,
+          payload
+        );
+        if (res.data?.message) {
+          alert("Tax updated");
+        }
+      } else {
+        const res = await axios.post("http://localhost:3001/taxes", payload);
+        if (res.data?.message) {
+          alert("Tax created");
+        }
+      }
+      closeModal();
+      fetchTaxes();
+    } catch (err) {
+      console.error("Save tax error:", err);
+      alert("Error saving tax. Check console.");    
+    }
+  };
+
+  // ---------- DELETE ----------
+  const handleDelete = async (tax) => {
+    if (!window.confirm(`Delete tax "${tax.name}"?`)) return;
+    try {
+      const res = await axios.delete(
+        `http://localhost:3001/taxes/${tax._id}`
+      );
+      if (res.data?.message) {
+        alert("Tax deleted");
+      }
+      setTaxes((prev) => prev.filter((t) => t._id !== tax._id));
+    } catch (err) {
+      console.error("Delete tax error:", err);
+      alert("Error deleting tax. Check console.");
+    }
+  };
+
+  // ---------- TOGGLE STATUS ----------
+  const handleToggleActive = async (tax) => {
+    try {
+      const res = await axios.put(
+        `http://localhost:3001/taxes/${tax._id}`,
+        { active: !tax.active }
+      );
+      const updated = res.data?.data;
+      setTaxes((prev) =>
+        prev.map((t) => (t._id === tax._id ? updated || { ...t, active: !t.active } : t))
+      );
+    } catch (err) {
+      console.error("Toggle active error:", err);
+      alert("Error updating status. Check console.");
+    }
+  };
+
+  return (
+    <div className="d-flex" style={{ minHeight: "100vh" }}>
+      {/* Sidebar */}
+      <Sidebar collapsed={sidebarCollapsed} />
+
+      {/* Right side content */}
+      <div
+        className="flex-grow-1 main-content-transition"
+        style={{
+          marginLeft: sidebarCollapsed ? 64 : 250,
+          minHeight: "100vh",
+        }}
+      >
+        {/* Navbar */}
+        <Navbar toggleSidebar={toggleSidebar} />
+
+        <div className="container-fluid mt-3">
+          {/* Blue header bar */}
+          <div className="services-topbar mb-2 services-card">
+            <div style={{ fontWeight: 600 }}>Tax List</div>
+            <div className="services-actions">
+              <button
+                className="btn btn-outline-light btn-sm"
+                onClick={() => alert("Next step: Tax CSV import")}
+              >
+                <i className="bi bi-upload me-1"></i> Import data
+              </button>
+              <button className="btn btn-light btn-sm" onClick={openNewTax}>
+                <i className="bi bi-plus-lg me-1"></i> New Tax
+              </button>
             </div>
+          </div>
+
+          {/* White card with table */}
+          <div className="card services-card">
+            <div className="card-body">
+              {/* Search row */}
+              <div className="d-flex align-items-center mb-2">
+                <div className="search-input me-2" style={{ flex: 1 }}>
+                  <i className="bi bi-search"></i>
+                  <input
+                    className="form-control"
+                    placeholder="Search by Name, Service Name, Tax Rate, Clinic Name, Doctor, Status (:active or :inactive)"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="table-responsive">
+                <table className="table table-borderless align-middle">
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid #e9eef6" }}>
+                      <th style={{ width: 36 }}>
+                        <input type="checkbox" />
+                      </th>
+                      <th style={{ width: 70 }}>ID</th>
+                      <th>Name</th>
+                      <th>Tax Rate</th>
+                      <th>Clinic Name</th>
+                      <th>Doctor</th>
+                      <th>Service Name</th>
+                      <th>Status</th>
+                      <th style={{ width: 120 }}>Action</th>
+                    </tr>
+
+                    {/* Filter row */}
+                    <tr className="table-filter-row">
+                      <th></th>
+                      <th>
+                        <input
+                          className="form-control"
+                          placeholder="ID"
+                          disabled
+                        />
+                      </th>
+                      <th>
+                        <input
+                          className="form-control"
+                          placeholder="Name"
+                          value={filterName}
+                          onChange={(e) => setFilterName(e.target.value)}
+                        />
+                      </th>
+                      <th>
+                        <input
+                          className="form-control"
+                          placeholder="Tax Rate"
+                          value={filterRate}
+                          onChange={(e) => setFilterRate(e.target.value)}
+                        />
+                      </th>
+                      <th>
+                        <input
+                          className="form-control"
+                          placeholder="Filter clinic"
+                          value={filterClinic}
+                          onChange={(e) => setFilterClinic(e.target.value)}
+                        />
+                      </th>
+                      <th>
+                        <input
+                          className="form-control"
+                          placeholder="Filter doctor"
+                          value={filterDoctor}
+                          onChange={(e) => setFilterDoctor(e.target.value)}
+                        />
+                      </th>
+                      <th>
+                        <input
+                          className="form-control"
+                          placeholder="Filter service"
+                          value={filterService}
+                          onChange={(e) => setFilterService(e.target.value)}
+                        />
+                      </th>
+                      <th>
+                        <select
+                          className="form-select"
+                          value={filterStatus}
+                          onChange={(e) => setFilterStatus(e.target.value)}
+                        >
+                          <option value="">Filter by status</option>
+                          <option value="Active">Active</option>
+                          <option value="Inactive">Inactive</option>
+                        </select>
+                      </th>
+                      <th></th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {loading ? (
+                      <tr>
+                        <td colSpan="9" className="text-center py-4">
+                          Loading...
+                        </td>
+                      </tr>
+                    ) : filtered.length === 0 ? (
+                      <tr>
+                        <td colSpan="9" className="text-center text-muted py-4">
+                          No Data Found
+                        </td>
+                      </tr>
+                    ) : (
+                      filtered.map((t, index) => (
+                        <tr key={t._id}>
+                          <td>
+                            <input type="checkbox" />
+                          </td>
+                          <td>{index + 1}</td>
+                          <td>{t.name}</td>
+                          <td>${(t.taxRate ?? 0).toFixed(2)}/-</td>
+                          <td>{t.clinicName}</td>
+                          <td>{t.doctor}</td>
+                          <td>{t.serviceName}</td>
+                          <td>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                              }}
+                            >
+                              <div className="form-check form-switch">
+                                <input
+                                  className="form-check-input"
+                                  type="checkbox"
+                                  checked={!!t.active}
+                                  onChange={() => handleToggleActive(t)}
+                                />
+                              </div>
+                              <span className="status-pill">
+                                {t.active ? "ACTIVE" : "INACTIVE"}
+                              </span>
+                            </div>
+                          </td>
+                          <td>
+                            <div style={{ display: "flex", gap: 8 }}>
+                              <button
+                                className="icon-btn bg-white"
+                                title="Edit"
+                                onClick={() => openEditTax(t)}
+                              >
+                                <FaEdit />
+                              </button>
+                              <button
+                                className="icon-btn bg-white"
+                                title="Delete"
+                                onClick={() => handleDelete(t)}
+                              >
+                                <FaTrash style={{ color: "red" }} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* footer */}
+              <div className="table-footer">
+                <div>
+                  Rows per page:{" "}
+                  <select
+                    className="form-select d-inline-block"
+                    style={{ width: 80, marginLeft: 8 }}
+                    defaultValue={10}
+                    disabled
+                  >
+                    <option>10</option>
+                    <option>25</option>
+                    <option>50</option>
+                  </select>
+                </div>
+
+                <div>
+                  Page{" "}
+                  <input
+                    value={1}
+                    readOnly
+                    style={{ width: 34, textAlign: "center" }}
+                  />{" "}
+                  of 1 &nbsp;
+                  <button
+                    className="btn btn-sm btn-outline-secondary ms-2"
+                    disabled
+                  >
+                    Prev
+                  </button>
+                  <button
+                    className="btn btn-sm btn-outline-secondary ms-1"
+                    disabled
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-    );
+      </div>
+
+      {/* MODAL: Add / Edit Tax */}
+      {modalOpen && (
+        <>
+          <div className="modal-backdrop fade show" />
+          <div className="modal fade show d-block" tabIndex="-1">
+            <div className="modal-dialog modal-lg modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    {editingTax ? "Edit Tax" : "New Tax"}
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={closeModal}
+                  />
+                </div>
+                <form onSubmit={handleSubmit}>
+                  <div className="modal-body">
+                    <div className="row g-3">
+                      <div className="col-md-6">
+                        <label className="form-label">Name *</label>
+                        <input
+                          className="form-control"
+                          name="name"
+                          value={form.name}
+                          onChange={handleFormChange}
+                          required
+                        />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label">Tax Rate (%)*</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          className="form-control"
+                          name="taxRate"
+                          value={form.taxRate}
+                          onChange={handleFormChange}
+                          required
+                        />
+                      </div>
+
+                      <div className="col-md-6">
+                        <label className="form-label">Clinic Name</label>
+                        <input
+                          className="form-control"
+                          name="clinicName"
+                          value={form.clinicName}
+                          onChange={handleFormChange}
+                        />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label">Doctor</label>
+                        <input
+                          className="form-control"
+                          name="doctor"
+                          value={form.doctor}
+                          onChange={handleFormChange}
+                        />
+                      </div>
+
+                      <div className="col-md-12">
+                        <label className="form-label">Service Name</label>
+                        <input
+                          className="form-control"
+                          name="serviceName"
+                          value={form.serviceName}
+                          onChange={handleFormChange}
+                        />
+                      </div>
+
+                      <div className="col-md-12">
+                        <div className="form-check form-switch">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id="tax-active"
+                            name="active"
+                            checked={form.active}
+                            onChange={handleFormChange}
+                          />
+                          <label
+                            className="form-check-label"
+                            htmlFor="tax-active"
+                          >
+                            Active
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-outline-secondary"
+                      onClick={closeModal}
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn btn-primary">
+                      Save
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 export default Taxes;
