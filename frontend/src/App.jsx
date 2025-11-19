@@ -24,6 +24,7 @@ import DoctorSession from "./admin-dashboard/admin/DoctorSession";
 import PatientDashboard from "./patient-dashboard/Patient/PatientDashboard";
 import PatientAppointments from "./patient-dashboard/Patient/PatientAppointments";
 import PatientBookAppointment from "./patient-dashboard/Patient/PatientBookAppointment";
+import PatientProfileSetup from "./patient-dashboard/Patient/PatientProfileSetup";
 
 import ReptionistDashboard from "./reptionist-dashboard/ReptionistDashboard";
 
@@ -31,6 +32,8 @@ import DoctorDashboard from "./doctor-dashboard/doctor/DoctorDashboard";
 import DoctorPatients from "./doctor-dashboard/doctor/DoctorPatients";
 import DoctorAppointments from "./doctor-dashboard/doctor/DoctorAppointments";
 import DoctorServices from "./doctor-dashboard/doctor/DoctorServices";
+import DoctorAppointmentDetails from "./doctor-dashboard/doctor/DoctorAppointmentDetails";
+
 
 function App() {
 
@@ -47,11 +50,14 @@ function App() {
       <Route path="/doctor/patients" element={<DoctorPatients sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />} />
       <Route path="/doctor/appointments" element={<DoctorAppointments sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />} />
       <Route path="/doctor/services" element={<DoctorServices sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />} />
-      
+      <Route path="/doctor/appointments/:id" element={<DoctorAppointmentDetails />} />
+
+
       {/* Patient section */}
       <Route path="/patient-dashboard" element={<PatientDashboard sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />} />
       <Route path="/patient/appointments" element={<PatientAppointments sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />} />
       <Route path="/patient/book" element={<PatientBookAppointment sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />} />
+      <Route path="/patient/profile-setup" element={<PatientProfileSetup />} />
 
       <Route path="/reception-dashboard" element={<ReptionistDashboard />} />
 

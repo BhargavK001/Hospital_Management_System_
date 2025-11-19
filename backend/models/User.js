@@ -20,7 +20,11 @@ const userSchema = new mongoose.Schema({
    name: {
     type: String,
     required: true,     // must be provided
-  }
+  },
+  profileCompleted: {
+    type: Boolean,
+    default: false, // when new user is created -> false
+  },
 });
 
 // 2) Create model from schema

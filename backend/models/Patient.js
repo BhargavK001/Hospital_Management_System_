@@ -1,6 +1,14 @@
 const mongoose = require("mongoose");
 
 const PatientSchema = new mongoose.Schema({
+
+  // Link to User collection (the account used to login)
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: false, // will be filled for signup patients
+  },
+
   firstName: String,
   lastName: String,
   clinic: String,

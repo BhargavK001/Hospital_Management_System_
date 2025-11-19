@@ -38,7 +38,7 @@ export default function DoctorDashboard() {
   const [events, setEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [error, setError] = useState(null);
-
+  
   // -----------------------------
   // 1) MAP ONE APPOINTMENT → EVENT
   // -----------------------------
@@ -46,7 +46,8 @@ export default function DoctorDashboard() {
   // Example appointment from your logs:
   // { _id: '...', patientName: 'Patient', doctorName: 'viraj ...', clinic: 'Valley Clinic', date: '2025-11-20', ... }
   const mapAppointmentToEvent = (a) => {
-    const id = a._id || a.id || Math.random().toString(36).slice(2);
+    const id = a._id || a.id;
+    // || Math.random().toString(36).slice(2);
 
     // 1) Get a safe title
     const patientName =
@@ -84,6 +85,11 @@ export default function DoctorDashboard() {
     };
   };
 
+    const handleEventClick = (clickInfo) => {
+    const ev = clickInfo.event;
+    navigate(`/doctor/appointments/${ev.id}`);
+  };
+  
   // -----------------------------
   // 2) FETCH STATS FROM BACKEND
   // -----------------------------
@@ -181,11 +187,6 @@ export default function DoctorDashboard() {
     const d = selectInfo.startStr;
     navigate(`/doctor/appointments?date=${encodeURIComponent(d)}`);
     selectInfo.view.calendar.unselect();
-  };
-
-  const handleEventClick = (clickInfo) => {
-    const ev = clickInfo.event;
-    navigate(`/doctor/appointments/${ev.id}`);
   };
 
   // -----------------------------
