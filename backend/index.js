@@ -43,9 +43,9 @@ mongoose
   });
 
 
-// ===============================
+
 //             LOGIN
-// ===============================
+
 
 // 5. Login route (POST /login)
 app.post("/login", async(req, res) => {
@@ -172,7 +172,7 @@ app.get("/dashboard-stats", async (req, res) => {
       AppointmentModel.countDocuments()
     ]);
 
-    res.json({totalDoctors , totalPatients});
+    res.json({totalDoctors , totalPatients, totalAppointment});
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
