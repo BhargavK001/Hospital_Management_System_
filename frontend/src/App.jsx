@@ -69,7 +69,7 @@ function App() {
     } else if (path.startsWith("/doctor-dashboard")) {
       title = "OneCare Doctor Portal";
       icon = "/doctor.ico";
-    } else if (path.startsWith("/Patient-Dashboard")) {
+    } else if (path.startsWith("/patient-dashboard")) {
       title = "OneCare Patient Portal";
       icon = "/patient.ico";
     }
