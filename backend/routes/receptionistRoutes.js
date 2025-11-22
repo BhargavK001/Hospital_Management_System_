@@ -13,6 +13,7 @@ const {
   toggleReceptionistStatus,
   resendCredentials,
   importReceptionists,
+  changePassword,
 } = require("../controllers/receptionistController");
 
 // Multer setup for CSV import
@@ -42,6 +43,9 @@ router.patch("/:id/status", toggleReceptionistStatus);
 
 // Resend login credentials
 router.post("/:id/resend-credentials", resendCredentials);
+
+// Change password
+router.put("/change-password/:id", changePassword);
 
 // Import CSV
 router.post("/import", upload.single("file"), importReceptionists);

@@ -2,6 +2,7 @@
 import { Link } from "react-router-dom";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -20,7 +21,9 @@ function Login() {
     event.preventDefault();
 
     if (!email || !password) {
-      setError("Please enter both email and password.");
+      const msg = "Please enter both email and password.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -35,7 +38,9 @@ function Login() {
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        setError(errData.message || "Login failed");
+        const msg = errData.message || "Login failed";
+        setError(msg);
+        toast.error(msg);
         return;
       }
 
@@ -47,7 +52,9 @@ function Login() {
 
       // role check vs button selection
       if (user.role !== role) {
-        setError("Invalid Credentials");
+        const msg = "Invalid Credentials";
+        setError(msg);
+        toast.error(msg);
         return;
       }
 
@@ -59,6 +66,10 @@ function Login() {
         role: user.role || "",
         name: user.name || "",
         profileCompleted: !!user.profileCompleted,
+        mustChangePassword:
+          typeof user.mustChangePassword === "boolean"
+            ? user.mustChangePassword
+            : false,
       };
 
       console.log("Saving authUser to localStorage:", authUser);
@@ -79,7 +90,9 @@ function Login() {
               lastName: patientDoc.lastName || "",
               name:
                 (patientDoc.firstName || patientDoc.lastName)
-                  ? `${patientDoc.firstName || ""} ${patientDoc.lastName || ""}`.trim()
+                  ? `${patientDoc.firstName || ""} ${
+                      patientDoc.lastName || ""
+                    }`.trim()
                   : patientDoc.name || authUser.name || "",
               email: patientDoc.email || authUser.email || "",
               phone: patientDoc.phone || "",
@@ -92,11 +105,16 @@ function Login() {
           } else {
             // no patient yet — ensure there's no stale patient key
             localStorage.removeItem("patient");
-            console.log("No patient doc found for user — patient not saved in localStorage.");
+            console.log(
+              "No patient doc found for user — patient not saved in localStorage."
+            );
           }
         }
       } catch (errFetchPatient) {
-        console.warn("Could not fetch patient doc after login:", errFetchPatient);
+        console.warn(
+          "Could not fetch patient doc after login:",
+          errFetchPatient
+        );
         // don't block login on patient fetch failure
       }
 
@@ -106,7 +124,13 @@ function Login() {
       } else if (authUser.role === "doctor") {
         navigate("/doctor-dashboard");
       } else if (authUser.role === "receptionist") {
-        navigate("/reception-dashboard");
+        // 🔥 New logic: first-time login → force password change
+        if (authUser.mustChangePassword) {
+          toast("Please change your default password.", { icon: "🔐" });
+          navigate("/receptionist/change-password");
+        } else {
+          navigate("/reception-dashboard");
+        }
       } else if (authUser.role === "patient") {
         // If profile not completed, route to setup; otherwise dashboard
         if (!authUser.profileCompleted) navigate("/patient/profile-setup");
@@ -115,9 +139,13 @@ function Login() {
         // unknown role — fallback to home
         navigate("/");
       }
+
+      toast.success("Login successful");
     } catch (err) {
       console.error("Network/login error:", err);
-      setError("Network error: backend not responding");
+      const msg = "Network error: backend not responding";
+      setError(msg);
+      toast.error(msg);
     }
   };
 

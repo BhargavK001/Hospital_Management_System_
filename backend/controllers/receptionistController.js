@@ -202,3 +202,35 @@ exports.importReceptionists = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+// Change password for receptionist (first-time login)
+exports.changePassword = async (req, res) => {
+  try {
+    const { newPassword } = req.body;
+    const id = req.params.id;
+
+    if (!newPassword) {
+      return res.status(400).json({ message: "New password is required" });
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+
+    const updated = await Receptionist.findByIdAndUpdate(
+      id,
+      {
+        password: hashed,
+        mustChangePassword: false, // so next login goes directly to dashboard
+        passwordPlain: "", // optional: clear plain password for security
+      },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Receptionist not found" });
+    }
+
+    return res.json({ message: "Password updated successfully" });
+  } catch (err) {
+    console.error("Change password error:", err);
+    return res.status(500).json({ message: "Server error during password change" });
+  }
+};

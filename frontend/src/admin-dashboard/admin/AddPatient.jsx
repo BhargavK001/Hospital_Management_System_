@@ -53,7 +53,7 @@ const AddPatient = () => {
           <h4 className="fw-bold text-primary mb-0">Add Patient</h4>
           <button
             className="btn btn-outline-primary d-flex align-items-center gap-2"
-            onClick={() => navigate("/admin/patients")}
+            onClick={() => navigate("/patients")}
           >
             <FaArrowLeft /> Back
           </button>

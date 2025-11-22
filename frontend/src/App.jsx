@@ -30,7 +30,7 @@ import PatientAppointments from "./patient-dashboard/Patient/PatientAppointments
 import PatientBookAppointment from "./patient-dashboard/Patient/PatientBookAppointment";
 import PatientProfileSetup from "./patient-dashboard/Patient/PatientProfileSetup";
 
-import ReptionistDashboard from "./reptionist-dashboard/ReptionistDashboard";
+import ReptionistDashboard from "./reptionist/ReptionistDashboard";
 
 /* Doctor */
 import DoctorDashboard from "./doctor-dashboard/doctor/DoctorDashboard";
@@ -43,6 +43,9 @@ import DoctorAppointmentDetails from "./doctor-dashboard/doctor/DoctorAppointmen
 // Receptionist
 import AddReceptionist from "./admin-dashboard/admin/AddReceptionist.jsx";
 import ReceptionistList from "./admin-dashboard/admin/ReceptionistList.jsx";
+import ReceptionistChangePassword from "./reptionist/ReceptionistChangePassword.jsx";
+import ReceptionLayout from "./reptionist/layouts/ReceptionLayout.jsx";
+
 
 /* PDF Editor */
 import PdfEditor from "./pdf-editor/PdfEditor";
@@ -66,7 +69,7 @@ function App() {
     } else if (path.startsWith("/doctor-dashboard")) {
       title = "OneCare Doctor Portal";
       icon = "/doctor.ico";
-    } else if (path.startsWith("/Patient-Dashboard")) {
+    } else if (path.startsWith("/patient-dashboard")) {
       title = "OneCare Patient Portal";
       icon = "/patient.ico";
     }
@@ -194,6 +197,8 @@ function App() {
         <Route path="/add-receptionist" element={
           <AddReceptionist sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
         } />
+        <Route path="/receptionist/change-password" element={<ReceptionistChangePassword />} />
+        <Route path="/reception-dashboard" element={<ReptionistDashboard />} />
 
         {/* Auth */}
         <Route path="/" element={<Login />} />

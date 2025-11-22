@@ -47,6 +47,10 @@ const receptionistSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    mustChangePassword: {
+      type: Boolean,
+      default: true,
+}
   },
   { timestamps: true }
 );
