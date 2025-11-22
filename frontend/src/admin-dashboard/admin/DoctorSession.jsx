@@ -1,9 +1,11 @@
-// src/pages/DoctorSessions.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import AdminLayout from "../layouts/AdminLayout";
+import Sidebar from "../components/Sidebar";
+import Navbar from "../components/Navbar";
 import { FaPlus, FaSearch, FaEdit, FaTrash } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "../styles/services.css";
+import "../styles/appointments.css";
 
 const DAYS_OPTIONS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -22,23 +24,23 @@ const formatRange = (start, end) => {
   return `${formatTime(start)} - ${formatTime(end)}`;
 };
 
-const DoctorSessions = () => {
+const DoctorSessions = ({ sidebarCollapsed, toggleSidebar }) => {
+
   const [sessions, setSessions] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // search + filters (match screenshot)
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDoctor, setFilterDoctor] = useState("");
   const [filterClinic, setFilterClinic] = useState("");
   const [filterDay, setFilterDay] = useState("");
 
-  // rows per page - static UI like your other pages
   const rowsPerPage = 10;
 
-  // form modal
+  // Form states
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
+
   const [form, setForm] = useState({
     doctorId: "",
     doctorName: "",
@@ -51,7 +53,7 @@ const DoctorSessions = () => {
     eveningEnd: "",
   });
 
-  // ====== FETCH DATA ======
+  // FETCH
   const fetchSessions = async () => {
     try {
       setLoading(true);
@@ -59,7 +61,6 @@ const DoctorSessions = () => {
       setSessions(res.data || []);
     } catch (err) {
       console.error("Error fetching doctor sessions:", err);
-      setSessions([]);
     } finally {
       setLoading(false);
     }
@@ -79,7 +80,7 @@ const DoctorSessions = () => {
     fetchDoctors();
   }, []);
 
-  // ====== FORM HANDLERS ======
+  // FORM HANDLERS
   const openCreateForm = () => {
     setEditingId(null);
     setForm({
@@ -131,104 +132,104 @@ const DoctorSessions = () => {
   };
 
   const toggleDay = (day) => {
-    setForm((prev) => {
-      const exists = prev.days.includes(day);
-      return {
-        ...prev,
-        days: exists
-          ? prev.days.filter((d) => d !== day)
-          : [...prev.days, day],
-      };
-    });
+    setForm((prev) => ({
+      ...prev,
+      days: prev.days.includes(day)
+        ? prev.days.filter((d) => d !== day)
+        : [...prev.days, day],
+    }));
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
+
     try {
       const payload = { ...form };
 
       if (payload.doctorId && !payload.doctorName) {
         const doc = doctors.find((d) => d._id === payload.doctorId);
-        if (doc) {
-          payload.doctorName = `${doc.firstName} ${doc.lastName}`;
-        }
+        if (doc) payload.doctorName = `${doc.firstName} ${doc.lastName}`;
       }
 
-      let res;
       if (editingId) {
-        res = await axios.put(
+        await axios.put(
           `http://localhost:3001/doctor-sessions/${editingId}`,
           payload
         );
+        alert("Doctor session updated");
       } else {
-        res = await axios.post(
-          "http://localhost:3001/doctor-sessions",
-          payload
-        );
+        await axios.post("http://localhost:3001/doctor-sessions", payload);
+        alert("Doctor session created");
       }
 
-      if (res.data?.message) {
-        alert(editingId ? "Doctor session updated" : "Doctor session created");
-        closeForm();
-        fetchSessions();
-      } else {
-        alert("Unexpected response from server");
-      }
+      closeForm();
+      fetchSessions();
+
     } catch (err) {
-      console.error("Save error:", err);
-      alert("Error saving doctor session. Check console.");
+      console.error(err);
+      alert("Error saving session");
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this doctor session?")) return;
+    if (!window.confirm("Delete this session?")) return;
+
     try {
       await axios.delete(`http://localhost:3001/doctor-sessions/${id}`);
       setSessions((prev) => prev.filter((s) => s._id !== id));
     } catch (err) {
-      console.error("Delete error:", err);
-      alert("Error deleting doctor session. Check console.");
+      console.error(err);
+      alert("Delete failed");
     }
   };
 
-  // ====== FILTERED LIST (matches UI filters) ======
+  // FILTERING
   const filteredSessions = useMemo(() => {
-    const q = searchTerm.trim().toLowerCase();
+    const q = searchTerm.toLowerCase();
 
     return sessions.filter((s) => {
       if (q) {
-        const merged =
-          `${s.doctorName || ""} ${s.clinic || ""} ${(s.days || []).join(
-            ", "
-          )}`.toLowerCase();
+        const merged = `${s.doctorName} ${s.clinic} ${(s.days || []).join(", ")}`.toLowerCase();
         if (!merged.includes(q)) return false;
       }
 
-      if (
-        filterDoctor &&
-        !(s.doctorName || "").toLowerCase().includes(filterDoctor.toLowerCase())
-      )
+      if (filterDoctor && !s.doctorName?.toLowerCase().includes(filterDoctor.toLowerCase()))
         return false;
 
-      if (
-        filterClinic &&
-        !(s.clinic || "").toLowerCase().includes(filterClinic.toLowerCase())
-      )
+      if (filterClinic && !s.clinic?.toLowerCase().includes(filterClinic.toLowerCase()))
         return false;
 
-      if (filterDay && !(s.days || []).includes(filterDay)) return false;
+      if (filterDay && !(s.days || []).includes(filterDay))
+        return false;
 
       return true;
     });
   }, [sessions, searchTerm, filterDoctor, filterClinic, filterDay]);
 
   return (
-    <AdminLayout>
-      <div className="container-fluid">
-        {/* BLUE HEADER BAR (like Tax List) */}
-        <div className="card shadow-sm mb-3">
-          <div className="card-header d-flex justify-content-between align-items-center bg-primary text-white">
-            <h5 className="mb-0">Doctor Sessions</h5>
+    <div>
+      {/* SIDEBAR */}
+      <Sidebar collapsed={sidebarCollapsed} />
+
+      {/* MAIN CONTENT CONTAINER */}
+      <div
+        className="main-content-transition"
+        style={{
+          marginLeft: sidebarCollapsed ? 64 : 250,
+          background: "#f5f6fa",
+          minHeight: "100vh",
+        }}
+      >
+        {/* NAVBAR */}
+        <Navbar toggleSidebar={toggleSidebar} />
+
+        {/* PAGE CONTAINER */}
+        <div className="container-fluid mt-3">
+
+          {/* BLUE HEADER LIKE SERVICES */}
+          <div className="services-topbar services-card d-flex justify-content-between">
+            <h5 className="fw-bold text-white mb-0">Doctor Sessions</h5>
+
             <button
               className="btn btn-light btn-sm d-flex align-items-center gap-2"
               onClick={openCreateForm}
@@ -237,117 +238,112 @@ const DoctorSessions = () => {
             </button>
           </div>
 
-          {/* SEARCH ROW (top, full width) */}
-          <div className="card-body pb-1 pt-3">
-            <div className="input-group mb-3">
+          {/* SEARCH BAR */}
+          <div className="card services-card p-3 mt-3">
+            <div className="input-group" style={{ maxWidth: 400 }}>
               <span className="input-group-text bg-white border-end-0">
                 <FaSearch />
               </span>
               <input
                 type="text"
-                className="form-control"
-                placeholder="Search table"
+                className="form-control border-start-0"
+                placeholder="Search table…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+          </div>
 
-            {/* TABLE */}
+          {/* TABLE CARD */}
+          <div className="card services-card p-3 mt-3">
             <div className="table-responsive">
-              <table className="table table-hover align-middle mb-0">
+              <table className="table table-hover align-middle">
                 <thead className="table-light">
                   <tr>
-                    <th style={{ width: "60px" }}>Sr.</th>
+                    <th>Sr</th>
                     <th>Doctor</th>
-                    <th>Clinic Name</th>
+                    <th>Clinic</th>
                     <th>Days</th>
-                    <th style={{ width: "100px" }}>Time Slot</th>
-                    <th>Morning Session</th>
-                    <th>Evening Session</th>
-                    <th style={{ width: "110px" }}>Action</th>
+                    <th>Slot</th>
+                    <th>Morning</th>
+                    <th>Evening</th>
+                    <th>Action</th>
                   </tr>
-                  {/* FILTER ROW (like screenshot) */}
-                  <tr>
+
+                  {/* FILTER ROW */}
+                  <tr className="small">
+                    <th></th>
+
                     <th>
                       <input
                         className="form-control form-control-sm"
-                        placeholder="ID"
-                        disabled
-                        style={{ backgroundColor: "#f9fafb" }}
-                      />
-                    </th>
-                    <th>
-                      <input
-                        className="form-control form-control-sm"
-                        placeholder="Filter doctor session by name"
+                        placeholder="Filter doctor"
                         value={filterDoctor}
                         onChange={(e) => setFilterDoctor(e.target.value)}
                       />
                     </th>
+
                     <th>
                       <input
                         className="form-control form-control-sm"
-                        placeholder="Filter doctor session by clinic"
+                        placeholder="Filter clinic"
                         value={filterClinic}
                         onChange={(e) => setFilterClinic(e.target.value)}
                       />
                     </th>
+
                     <th>
                       <select
                         className="form-select form-select-sm"
                         value={filterDay}
                         onChange={(e) => setFilterDay(e.target.value)}
                       >
-                        <option value="">Filter Days</option>
+                        <option value="">Days</option>
                         {DAYS_OPTIONS.map((d) => (
-                          <option key={d} value={d}>
-                            {d}
-                          </option>
+                          <option key={d}>{d}</option>
                         ))}
                       </select>
                     </th>
-                    <th />
-                    <th />
-                    <th />
-                    <th />
+
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan="8" className="text-center py-4">
-                        Loading...
-                      </td>
+                      <td colSpan={8} className="text-center">Loading…</td>
                     </tr>
                   ) : filteredSessions.length === 0 ? (
                     <tr>
-                      <td colSpan="8" className="text-center text-muted py-4">
-                        No data for table
-                      </td>
+                      <td colSpan={8} className="text-center text-muted">No data</td>
                     </tr>
                   ) : (
-                    filteredSessions.map((s, index) => (
+                    filteredSessions.map((s, i) => (
                       <tr key={s._id}>
-                        <td>{index + 1}</td>
+                        <td>{i + 1}</td>
                         <td>{s.doctorName}</td>
                         <td>{s.clinic}</td>
-                        <td>{(s.days || []).join(", ")}</td>
-                        <td>{s.timeSlotMinutes || 30}</td>
+                        <td>{s.days.join(", ")}</td>
+                        <td>{s.timeSlotMinutes}</td>
                         <td>{formatRange(s.morningStart, s.morningEnd)}</td>
                         <td>{formatRange(s.eveningStart, s.eveningEnd)}</td>
+
                         <td>
                           <div className="d-flex justify-content-center gap-2">
                             <button
                               className="btn btn-sm btn-outline-primary"
                               onClick={() => openEditForm(s)}
-                              title="Edit"
                             >
                               <FaEdit />
                             </button>
+
                             <button
                               className="btn btn-sm btn-outline-danger"
                               onClick={() => handleDelete(s._id)}
-                              title="Delete"
                             >
                               <FaTrash />
                             </button>
@@ -357,63 +353,38 @@ const DoctorSessions = () => {
                     ))
                   )}
                 </tbody>
+
               </table>
             </div>
 
-            {/* FOOTER – rows per page, page 1 of 1 (static like your other tables) */}
-            <div className="d-flex justify-content-between align-items-center mt-3">
-              <div className="d-flex align-items-center gap-2">
-                <span>Rows per page:</span>
-                <select
-                  className="form-select form-select-sm"
-                  style={{ width: "80px" }}
-                  value={rowsPerPage}
-                  disabled
-                >
-                  <option value={10}>10</option>
-                </select>
-              </div>
-              <div className="d-flex align-items-center gap-2">
-                <span>Page</span>
-                <input
-                  type="text"
-                  className="form-control form-control-sm text-center"
-                  style={{ width: "50px" }}
-                  value="1"
-                  readOnly
-                />
-                <span>of 1</span>
-                <button className="btn btn-sm btn-outline-secondary" disabled>
-                  Prev
-                </button>
-                <button className="btn btn-sm btn-outline-secondary" disabled>
-                  Next
-                </button>
-              </div>
+            {/* FOOTER */}
+            <div className="d-flex justify-content-between mt-3">
+              <span>Rows per page: 10</span>
+              <span className="d-flex align-items-center gap-2">
+                Page <b>1</b> of <b>1</b>
+              </span>
             </div>
           </div>
         </div>
 
-        {/* MODAL: ADD / EDIT SESSION */}
+        {/* ADD/EDIT MODAL */}
         {formOpen && (
           <>
             <div className="modal-backdrop fade show" />
-            <div className="modal fade show d-block" tabIndex="-1">
+            <div className="modal fade show d-block">
               <div className="modal-dialog modal-lg modal-dialog-centered">
                 <div className="modal-content">
                   <div className="modal-header">
                     <h5 className="modal-title text-primary">
                       {editingId ? "Edit Doctor Session" : "Add Doctor Session"}
                     </h5>
-                    <button
-                      type="button"
-                      className="btn-close"
-                      onClick={closeForm}
-                    />
+                    <button className="btn-close" onClick={closeForm} />
                   </div>
+
                   <form onSubmit={handleSave}>
                     <div className="modal-body">
                       <div className="row g-3">
+
                         <div className="col-md-6">
                           <label className="form-label">Doctor *</label>
                           <select
@@ -433,7 +404,7 @@ const DoctorSessions = () => {
                         </div>
 
                         <div className="col-md-6">
-                          <label className="form-label">Clinic Name *</label>
+                          <label className="form-label">Clinic *</label>
                           <input
                             className="form-control"
                             name="clinic"
@@ -447,36 +418,23 @@ const DoctorSessions = () => {
                           <label className="form-label">Days *</label>
                           <div className="d-flex flex-wrap gap-2">
                             {DAYS_OPTIONS.map((d) => (
-                              <div
-                                key={d}
-                                className="form-check form-check-inline"
-                              >
+                              <label key={d} className="form-check-label me-2">
                                 <input
-                                  className="form-check-input"
                                   type="checkbox"
-                                  id={`day-${d}`}
+                                  className="form-check-input me-1"
                                   checked={form.days.includes(d)}
                                   onChange={() => toggleDay(d)}
                                 />
-                                <label
-                                  className="form-check-label"
-                                  htmlFor={`day-${d}`}
-                                >
-                                  {d}
-                                </label>
-                              </div>
+                                {d}
+                              </label>
                             ))}
                           </div>
                         </div>
 
                         <div className="col-md-6">
-                          <label className="form-label">
-                            Time Slot (minutes)
-                          </label>
+                          <label className="form-label">Time Slot (min)</label>
                           <input
                             type="number"
-                            min="5"
-                            max="180"
                             className="form-control"
                             name="timeSlotMinutes"
                             value={form.timeSlotMinutes}
@@ -494,7 +452,6 @@ const DoctorSessions = () => {
                               value={form.morningStart}
                               onChange={handleFormChange}
                             />
-                            <span className="align-self-center">to</span>
                             <input
                               type="time"
                               className="form-control"
@@ -515,7 +472,6 @@ const DoctorSessions = () => {
                               value={form.eveningStart}
                               onChange={handleFormChange}
                             />
-                            <span className="align-self-center">to</span>
                             <input
                               type="time"
                               className="form-control"
@@ -524,10 +480,8 @@ const DoctorSessions = () => {
                               onChange={handleFormChange}
                             />
                           </div>
-                          <small className="text-muted">
-                            Leave blank if there is no evening session.
-                          </small>
                         </div>
+
                       </div>
                     </div>
 
@@ -543,14 +497,16 @@ const DoctorSessions = () => {
                         Save
                       </button>
                     </div>
+
                   </form>
                 </div>
               </div>
             </div>
           </>
         )}
+
       </div>
-    </AdminLayout>
+    </div>
   );
 };
 

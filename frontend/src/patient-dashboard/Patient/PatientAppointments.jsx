@@ -13,7 +13,7 @@ import {
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
-export default function PatientAppointments() {
+export default function PatientAppointments({ sidebarCollapsed, toggleSidebar }) {
   const navigate = useNavigate();
   const API_BASE = "http://localhost:3001";
   const token =
@@ -205,7 +205,10 @@ const fmtDateTime = (a) => {
   );
 
   return (
-    <PatientLayout>
+    <PatientLayout
+      sidebarCollapsed={sidebarCollapsed}   // added
+      toggleSidebar={toggleSidebar}         // added
+    >
       <div className="container-fluid py-4">
         {/* Filters card */}
         <div className="card shadow-sm p-3 mb-4">

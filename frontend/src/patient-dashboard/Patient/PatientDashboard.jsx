@@ -11,7 +11,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import PatientLayout from "../layouts/PatientLayout";
 
-export default function PatientDashboard() {
+export default function PatientDashboard({ sidebarCollapsed, toggleSidebar }) {
   const navigate = useNavigate();
   const calendarRef = useRef(null);
 
@@ -196,7 +196,10 @@ export default function PatientDashboard() {
   };
 
   return (
-    <PatientLayout>
+    <PatientLayout
+      sidebarCollapsed={sidebarCollapsed}
+      toggleSidebar={toggleSidebar}
+    >
       <div className="container-fluid py-4">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h3 className="fw-bold text-primary m-0">Appointment</h3>
@@ -254,9 +257,7 @@ export default function PatientDashboard() {
                   <button
                     className="btn btn-sm btn-outline-secondary"
                     onClick={() =>
-                      calendarRef.current
-                        ?.getApi()
-                        .changeView("timeGridWeek")
+                      calendarRef.current?.getApi().changeView("timeGridWeek")
                     }
                   >
                     Week
@@ -293,7 +294,10 @@ export default function PatientDashboard() {
               <div className="card-header bg-white border-0">
                 <h6 className="mb-0 fw-bold">Upcoming appointments</h6>
               </div>
-              <div className="card-body p-2" style={{ maxHeight: 400, overflowY: "auto" }}>
+              <div
+                className="card-body p-2"
+                style={{ maxHeight: 400, overflowY: "auto" }}
+              >
                 {loadingUpcoming ? (
                   <p className="text-muted small mb-0">Loading...</p>
                 ) : upcoming.length === 0 ? (
@@ -333,7 +337,6 @@ export default function PatientDashboard() {
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </PatientLayout>

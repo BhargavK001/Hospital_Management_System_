@@ -1,7 +1,12 @@
 .patient-navbar {
   height: 60px;
+  width: 100%;
+  padding: 10px 20px;
   background: #1560ff;
   display: flex;
+  position: sticky;
+  top: 0;
+  z-index: 999;
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
@@ -87,4 +92,40 @@
 .patient-dropdown .dropdown-item.text-danger i,
 .doctor-dropdown .dropdown-item.text-danger i {
   color: red !important;
+}
+
+.navbar-title {
+  color: white;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+
+.patient-menu-btn {
+  background: white;
+  border: none;
+  padding: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.patient-menu-btn svg {
+  color: #0d47ff;   
+  font-size: 18px;
+}
+
+.patient-menu-btn:hover {
+  background: #f3f6ff;
+}
+
+.navbar-title {
+  color: white;
+  font-size: 20px;
+  font-weight: 700;
 }

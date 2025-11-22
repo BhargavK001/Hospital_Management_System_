@@ -172,6 +172,10 @@ function App() {
         <Route path="/doctor/appointments/:id" element={<DoctorAppointmentDetails />} />
 
         {/* Patient Section */}
+
+        <Route path="/patient" element={
+          <PatientDashboard sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar}/>
+        }/>
         <Route path="/patient-dashboard" element={
           <PatientDashboard sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
         } />
