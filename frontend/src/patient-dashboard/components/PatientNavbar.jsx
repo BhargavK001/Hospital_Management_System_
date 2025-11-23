@@ -1,19 +1,18 @@
 import React, { useState, useRef, useEffect } from "react";
-import "../styles/PatientNavbar.css";
+import { FaBars } from "react-icons/fa";
+import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
+import patient from "../images/Patient.png";
 
-export default function PatientNavbar() {
+export default function PatientNavbar({ toggleSidebar }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef();
   const navigate = useNavigate();
 
-  const avatar =
-    localStorage.getItem("patientAvatar") ||
-    "frontend\src\patient-dashboard\images\Patient.png";
-
   const name = localStorage.getItem("patientName") || "Patient";
+  const avatar = localStorage.getItem("patientAvatar") || patient;
 
-  // Close dropdown when clicking outside
+  // closes dropdown when clicking outside
   useEffect(() => {
     const handler = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -24,40 +23,50 @@ export default function PatientNavbar() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Logout
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    localStorage.removeItem("patientName");
-    localStorage.removeItem("patientAvatar");
+    localStorage.clear();
     navigate("/");
   };
 
   return (
-    <nav className="patient-navbar" ref={menuRef}>
-      <div className="left">
-        <div style={{ width: 36 }} /> 
+    <nav className="navbar navbar-dark bg-primary px-3 d-flex justify-content-between align-items-center">
+      
+      {/* left side */}
+      <div className="d-flex align-items-center gap-2">
+        <button
+          className="btn btn-outline-light border-0"
+          onClick={toggleSidebar}
+        >
+          <FaBars size={22} />
+        </button>
+
+        <h4 className="text-white fw-bold mb-0">One Care Patient</h4>
       </div>
 
-      <div className="right">
-        {/* Profile trigger */}
+      {/* right side: profile dropdown */}
+      <div className="position-relative" ref={menuRef}>
         <div
-          className="patient-profile"
+          className="d-flex align-items-center"
+          style={{ cursor: "pointer" }}
           onClick={() => setOpen(!open)}
-          style={{ cursor: "pointer", display: "flex", alignItems: "center" }}
         >
-          <img src={avatar} className="profile-img" alt="user" />
-          <span className="username">{name}</span>
+          <img
+            src={avatar}
+            alt="User Avatar"
+            width="35"
+            height="35"
+            className="rounded-circle"
+          />
+          <span className="text-white ms-2 fw-semibold">{name}</span>
         </div>
 
-        {/* Dropdown */}
         {open && (
           <div
-            className="patient-dropdown shadow"
+            className="shadow"
             style={{
               position: "absolute",
-              top: "60px",
-              right: "20px",
+              top: "55px",
+              right: "0",
               background: "white",
               borderRadius: "8px",
               width: "180px",

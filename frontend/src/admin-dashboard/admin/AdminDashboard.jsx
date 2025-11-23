@@ -1,197 +1,123 @@
-// src/pages/admin/AdminDashboard.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import AdminLayout from "../layouts/AdminLayout";
-import "bootstrap/dist/css/bootstrap.min.css";
+import Sidebar from "../components/Sidebar";
+import Navbar from "../components/Navbar";
+import "../styles/AdminLayout.css";
+
 import { FaUserDoctor } from "react-icons/fa6";
 import { FaUserInjured } from "react-icons/fa";
 import { FaCalendarCheck } from "react-icons/fa";
 import { FaMoneyBill1Wave } from "react-icons/fa6";
-import { setFavicon } from "../../utils/setFavicon.js";
 
-const API_BASE = "http://localhost:3001";
-
-const AdminDashboard = () => {
-  const navigate = useNavigate();
-
-  // top cards
+const AdminDashboard = ({ sidebarCollapsed = false, toggleSidebar }) => {
   const [stats, setStats] = useState({
     totalPatients: 0,
     totalDoctors: 0,
     totalAppointments: 0,
-    totalRevenue: 0,
   });
 
-  // list on the left
-  const [appointments, setAppointments] = useState([]);
-  const [loadingAppointments, setLoadingAppointments] = useState(false);
-
-  // right side small summary block
-  const [weeklyStats, setWeeklyStats] = useState([]);
-  const [activeTab, setActiveTab] = useState("weekly");
-
-  // small helper to load the cards
-  const fetchDashboardStats = async () => {
-    try {
-      const res = await axios.get(`${API_BASE}/dashboard-stats`);
-      setStats(res.data || {});
-    } catch (err) {
-      console.error("Error fetching dashboard stats:", err);
-    }
-  };
-
-  // pulls today's or all upcoming appointments
-  const fetchAppointments = async (type = "today") => {
-    setLoadingAppointments(true);
-
-    let url =
-      type === "all"
-        ? `${API_BASE}/appointments/all`
-        : `${API_BASE}/appointments/today`;
-
-    try {
-      const res = await axios.get(url);
-      // expecting array of { patientName, doctorName, time }
-      setAppointments(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      console.error("Error loading appointments:", err);
-      setAppointments([]);
-    } finally {
-      setLoadingAppointments(false);
-    }
-  };
-
-  // loads weekly or monthly totals for the right block
-  const fetchWeeklyStats = async (mode = "weekly") => {
-    setActiveTab(mode);
-
-    try {
-      const res = await axios.get(`${API_BASE}/appointments/${mode}`);
-      // expecting array of { label: "Mon" / "Week 1", count: 3 }
-      setWeeklyStats(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      console.error("Error loading weekly stats:", err);
-      setWeeklyStats([]);
-    }
-  };
+  const navigate = useNavigate();
 
   useEffect(() => {
-    setFavicon("/favicon.ico"); // just keeps favicon consistent on admin side
-    fetchDashboardStats();
-    fetchAppointments("today");
-    fetchWeeklyStats("weekly");
+    axios
+      .get("http://localhost:3001/dashboard-stats")
+      .then((res) => setStats(res.data))
+      .catch((err) =>
+        console.error("Error fetching dashboard stats:", err)
+      );
   }, []);
 
   return (
-    <AdminLayout>
-      <div className="container-fluid py-4">
-        <h3 className="fw-bold text-primary mb-4">Dashboard Overview</h3>
+    <div className="d-flex">
+      {/* ---- SAME LAYOUT AS SERVICES ---- */}
+      <Sidebar collapsed={sidebarCollapsed} />
 
-        {/* top four cards */}
-        <div className="row g-4">
-          {/* Total Patients */}
-          <div className="col-md-3">
-            <div
-              className="card shadow-sm border-0 p-3 text-center clickable"
-              style={{ cursor: "pointer" }}
-              onClick={() => navigate("/patients")}
-            >
-              <div className="d-flex justify-content-center align-items-center gap-3">
-                <div className="bg-danger bg-opacity-10 text-danger rounded-circle p-3">
-                  <FaUserInjured size={30} />
-                </div>
-                <div className="text-start">
-                  <h6 className="text-muted mb-1">Total Patients</h6>
-                  <h3 className="fw-bold mb-0">{stats.totalPatients || 0}</h3>
+      <div
+        className="flex-grow-1 main-content-transition"
+        style={{
+          marginLeft: sidebarCollapsed ? 64 : 250,
+          minHeight: "100vh",
+        }}
+      >
+        <Navbar toggleSidebar={toggleSidebar} />
+
+        {/* ---- Dashboard Content ---- */}
+        <div className="container-fluid py-4">
+          <h3 className="fw-bold text-primary mb-4">Dashboard Overview</h3>
+
+          <div className="row g-4">
+            {/* Total Patients */}
+            <div className="col-md-3">
+              <div
+                className="card shadow-sm border-0 p-3 text-center clickable"
+                style={{ cursor: "pointer" }}
+                onClick={() => navigate("/patients")}
+              >
+                <div className="d-flex justify-content-center align-items-center gap-3">
+                  <div className="bg-danger bg-opacity-10 text-danger rounded-circle p-3">
+                    <FaUserInjured size={30} />
+                  </div>
+                  <div className="text-start">
+                    <h6 className="text-muted mb-1">Total Patients</h6>
+                    <h3 className="fw-bold mb-0">{stats.totalPatients}</h3>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Total Doctors */}
-          <div className="col-md-3">
-            <div
-              className="card shadow-sm border-0 p-3 text-center clickable"
-              style={{ cursor: "pointer" }}
-              onClick={() => navigate("/Doctors")}
-            >
-              <div className="d-flex justify-content-center align-items-center gap-3">
-                <div className="bg-warning bg-opacity-10 text-warning rounded-circle p-3">
-                  <FaUserDoctor size={30} />
-                </div>
-                <div className="text-start">
-                  <h6 className="text-muted mb-1">Total Doctors</h6>
-                  <h3 className="fw-bold mb-0">{stats.totalDoctors || 0}</h3>
+            {/* Total Doctors */}
+            <div className="col-md-3">
+              <div
+                className="card shadow-sm border-0 p-3 text-center clickable"
+                style={{ cursor: "pointer" }}
+                onClick={() => navigate("/Doctors")}
+              >
+                <div className="d-flex justify-content-center align-items-center gap-3">
+                  <div className="bg-warning bg-opacity-10 text-warning rounded-circle p-3">
+                    <FaUserDoctor size={30} />
+                  </div>
+                  <div className="text-start">
+                    <h6 className="text-muted mb-1">Total Doctors</h6>
+                    <h3 className="fw-bold mb-0">{stats.totalDoctors}</h3>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Total Appointments */}
-          <div className="col-md-3">
-            <div
-              className="card shadow-sm border-0 p-3 text-center clickable"
-              style={{ cursor: "pointer" }}
-              onClick={() => navigate("/patients")}
-            >
-              <div className="d-flex justify-content-center align-items-center gap-3">
-                <div className="bg-success bg-opacity-10 text-success rounded-circle p-3">
-                  <FaCalendarCheck size={30} />
-                </div>
-                <div className="text-start">
-                  <h6 className="text-muted mb-1">Total Appointments</h6>
-                  <h3 className="fw-bold mb-0">
-                    {stats.totalAppointments || 0}
-                  </h3>
+            {/* Total Appointments */}
+            <div className="col-md-3">
+              <div
+                className="card shadow-sm border-0 p-3 text-center clickable"
+                style={{ cursor: "pointer" }}
+                onClick={() => navigate("/patients")}
+              >
+                <div className="d-flex justify-content-center align-items-center gap-3">
+                  <div className="bg-success bg-opacity-10 text-success rounded-circle p-3">
+                    <FaCalendarCheck size={30} />
+                  </div>
+                  <div className="text-start">
+                    <h6 className="text-muted mb-1">Total Appointments</h6>
+                    <h3 className="fw-bold mb-0">{stats.totalAppointments}</h3>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Total Revenue */}
-          <div className="col-md-3">
-            <div
-              className="card shadow-sm border-0 p-3 text-center clickable"
-              style={{ cursor: "pointer" }}
-              onClick={() => navigate("/patients")}
-            >
-              <div className="d-flex justify-content-center align-items-center gap-3">
-                <div className="bg-info bg-opacity-10 text-info rounded-circle p-3">
-                  <FaMoneyBill1Wave size={30} />
-                </div>
-                <div className="text-start">
-                  <h6 className="text-muted mb-1">Total Revenue</h6>
-                  <h3 className="fw-bold mb-0">
-                    ₹{stats.totalRevenue || 0}
-                  </h3>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* bottom section: appointments + weekly summary */}
-        <div className="row mt-5">
-          {/* left side: today's / upcoming appointments */}
-          <div className="col-md-8 mb-4">
-            <div className="card shadow-sm p-3 h-100">
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h5 className="fw-bold mb-0">Todays Appointment List</h5>
-
-                <div className="d-flex gap-2">
-                  <button
-                    className="btn btn-primary btn-sm"
-                    onClick={() => fetchAppointments("all")}
-                  >
-                    All Upcoming Appointments
-                  </button>
-                  <button
-                    className="btn btn-outline-primary btn-sm"
-                    onClick={() => fetchAppointments("today")}
-                  >
-                    Reload
-                  </button>
+            {/* Total Revenue */}
+            <div className="col-md-3">
+              <div
+                className="card shadow-sm border-0 p-3 text-center clickable"
+                style={{ cursor: "pointer" }}
+              >
+                <div className="d-flex justify-content-center align-items-center gap-3">
+                  <div className="bg-info bg-opacity-10 text-info rounded-circle p-3">
+                    <FaMoneyBill1Wave size={30} />
+                  </div>
+                  <div className="text-start">
+                    <h6 className="text-muted mb-1">Total Revenue</h6>
+                    <h3 className="fw-bold mb-0">₹0</h3>
+                  </div>
                 </div>
               </div>
 
@@ -279,8 +205,8 @@ const AdminDashboard = () => {
             </div>
           </div>
         </div>
-      </div>
-    </AdminLayout>
+      </div> 
+    </div>
   );
 };
 

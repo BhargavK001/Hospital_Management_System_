@@ -1,6 +1,6 @@
 // src/components/DurationPicker.jsx
 import React, { useState, useRef, useEffect } from "react";
-import "../styles/durationpicker.css";
+import "../styles/services.css";
 
 export default function DurationPicker({ value = "00:00", onChange }) {
   const [open, setOpen] = useState(false);

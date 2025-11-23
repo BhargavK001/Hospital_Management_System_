@@ -1,8 +1,12 @@
 // src/admin-dashboard/admin/ClinicList.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import AdminLayout from "../layouts/AdminLayout";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import Sidebar from "../components/Sidebar";
+import Navbar from "../components/Navbar";
+import "../styles/services.css"; // reuse Services layout styling
+import "../styles/ClinicList.css";
+
 import {
   FaSearch,
   FaPlus,
@@ -12,7 +16,6 @@ import {
   FaTrash,
 } from "react-icons/fa";
 import toast, { Toaster } from "react-hot-toast";
-import "../styles/ClinicList.css";
 
 const API_BASE_URL = "http://localhost:3001";
 
@@ -25,7 +28,7 @@ const SPECIALIZATION_OPTIONS = [
   "Gynecology"
 ];
 
-export default function ClinicList() {
+export default function ClinicList({ sidebarCollapsed, toggleSidebar }) {
   const navigate = useNavigate();
 
   const [clinics, setClinics] = useState([]);
@@ -44,11 +47,6 @@ export default function ClinicList() {
     address: "",
     status: "",
   });
-
-  // -------- Import modal state --------
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [importFile, setImportFile] = useState(null);
-  const [importType, setImportType] = useState("csv"); // only CSV for now
 
   const handleFilterChange = (field, value) => {
     setFilters((prev) => ({ ...prev, [field]: value }));
@@ -80,16 +78,6 @@ export default function ClinicList() {
       mounted = false;
     };
   }, []);
-
-  const specializationOptions = useMemo(() => {
-    const set = new Set();
-    clinics.forEach((c) => {
-      if (Array.isArray(c.specialties)) {
-        c.specialties.forEach((s) => set.add(s));
-      }
-    });
-    return [...set];
-  }, [clinics]);
 
   const filteredClinics = useMemo(() => {
     const toRow = (c, index) => {
@@ -198,103 +186,71 @@ export default function ClinicList() {
     });
   };
 
-  // -------- Import modal logic --------
-  const handleImportSubmit = async (e) => {
-    e.preventDefault();
-    if (!importFile) {
-      toast.error("Please choose a CSV file");
-      return;
-    }
-
-    const form = new FormData();
-    form.append("file", importFile);
-
-    const promise = axios.post(
-      `${API_BASE_URL}/api/clinics/import`,
-      form,
-      { headers: { "Content-Type": "multipart/form-data" } }
-    );
-
-    try {
-      const res = await toast.promise(promise, {
-        loading: "Importing clinics...",
-        success: (r) => {
-          const d = r.data;
-          return `Imported ${d.created} of ${d.total} clinics`;
-        },
-        error: "Failed to import clinics",
-      });
-
-      // refresh list
-      const reload = await axios.get(`${API_BASE_URL}/api/clinics`);
-      const raw = Array.isArray(reload.data)
-        ? reload.data
-        : reload.data.clinics ?? [];
-      setClinics(raw);
-
-      setShowImportModal(false);
-      setImportFile(null);
-    } catch (err) {
-      console.error("Import error:", err);
-    }
-  };
-
   return (
-    <AdminLayout>
-      <Toaster position="top-right" />
-      <div className="container-fluid py-4">
-        <div className="d-flex align-items-center justify-content-between mb-3">
-          <h3 className="fw-bold text-primary mb-0">Clinic List</h3>
+    <div>
+      <Sidebar collapsed={sidebarCollapsed} />
 
-          <div>
-            <button
-              className="btn btn-outline-primary me-2"
-              onClick={() => setShowImportModal(true)}
-            >
-              <FaFileImport className="me-1" /> Import data
-            </button>
+      <div
+        className="flex-grow-1 main-content-transition"
+        style={{
+          marginLeft: sidebarCollapsed ? 64 : 250,
+          minHeight: "100vh",
+        }}
+      >
+        <Navbar toggleSidebar={toggleSidebar} />
 
-            <button
-              className="btn btn-primary"
-              onClick={() => navigate("/add-clinic")}
-            >
-              <FaPlus className="me-1" /> Add clinic
-            </button>
+        <Toaster position="top-right" />
+
+        <div className="container-fluid mt-3">
+          <div className="services-topbar mb-3 services-card">
+            <h5 className="fw-bold text-white mb-0">Clinic List</h5>
+
+            <div>
+              <button
+                className="btn btn-outline-light btn-sm me-2"
+                onClick={() => {}}
+              >
+                <FaFileImport className="me-1" /> Import
+              </button>
+
+              <button
+                className="btn btn-light btn-sm"
+                onClick={() => navigate("/add-clinic")}
+              >
+                <FaPlus className="me-1" /> Add Clinic
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* Search bar */}
-        <div className="clinic-search-bar mb-3">
-          <div className="input-group">
-            <span className="input-group-text">
-              <FaSearch />
-            </span>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Search clinic data by id, name, email, admin-email, speciality, address and status"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+          <div className="mb-3 d-flex" style={{ maxWidth: 400 }}>
+            <div className="input-group">
+              <span className="input-group-text">
+                <FaSearch />
+              </span>
+              <input
+                className="form-control"
+                placeholder="Search clinic..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
           </div>
-        </div>
 
-        {err && <div className="alert alert-warning">{err}</div>}
+          <div className="card p-3 services-card">
+            {err && <div className="alert alert-warning">{err}</div>}
 
-        {loading ? (
-          <div>Loading clinics…</div>
-        ) : (
-          <div className="card p-3 clinic-card">
-            {filteredClinics.length === 0 ? (
+            {loading ? (
+              <div>Loading clinics…</div>
+            ) : filteredClinics.length === 0 ? (
               <div className="p-4 text-center text-muted">
                 No clinics found.
               </div>
             ) : (
               <div className="table-responsive">
-                <table className="table table-hover align-middle clinic-table">
+                <table className="table table-borderless align-middle">
                   <thead>
                     <tr>
-                      <th style={{ width: "60px" }}>ID</th>
+                      <th>ID</th>
                       <th>Name</th>
                       <th>Email</th>
                       <th>Clinic Admin Email</th>
@@ -302,17 +258,13 @@ export default function ClinicList() {
                       <th>Specialization</th>
                       <th>Address</th>
                       <th>Status</th>
-                      <th style={{ width: "170px", textAlign: "center" }}>
-                        Action
-                      </th>
+                      <th>Action</th>
                     </tr>
 
-                    {/* Filter row */}
-                    <tr className="clinic-filter-row">
+                    <tr>
                       <th>
                         <input
                           className="form-control form-control-sm"
-                          placeholder="ID"
                           value={filters.id}
                           onChange={(e) =>
                             handleFilterChange("id", e.target.value)
@@ -322,7 +274,6 @@ export default function ClinicList() {
                       <th>
                         <input
                           className="form-control form-control-sm"
-                          placeholder="Name"
                           value={filters.name}
                           onChange={(e) =>
                             handleFilterChange("name", e.target.value)
@@ -332,7 +283,6 @@ export default function ClinicList() {
                       <th>
                         <input
                           className="form-control form-control-sm"
-                          placeholder="Email"
                           value={filters.email}
                           onChange={(e) =>
                             handleFilterChange("email", e.target.value)
@@ -342,7 +292,6 @@ export default function ClinicList() {
                       <th>
                         <input
                           className="form-control form-control-sm"
-                          placeholder="Admin Email"
                           value={filters.adminEmail}
                           onChange={(e) =>
                             handleFilterChange("adminEmail", e.target.value)
@@ -352,7 +301,6 @@ export default function ClinicList() {
                       <th>
                         <input
                           className="form-control form-control-sm"
-                          placeholder="Contact"
                           value={filters.contact}
                           onChange={(e) =>
                             handleFilterChange("contact", e.target.value)
@@ -361,23 +309,21 @@ export default function ClinicList() {
                       </th>
                       <th>
                         <select
-                           className="form-select form-select-sm"
-                           value={filters.specialization}
-                           onChange={(e) => handleFilterChange("specialization", e.target.value)}
-                           >
-                            <option value="">All</option>
-                           {SPECIALIZATION_OPTIONS.map((s) => (
-                           <option key={s} value={s}>
-                           {s}
-                               </option>
-                             ))}
-                           </select>
-
+                          className="form-select form-select-sm"
+                          value={filters.specialization}
+                          onChange={(e) =>
+                            handleFilterChange("specialization", e.target.value)
+                          }
+                        >
+                          <option value="">All</option>
+                          {SPECIALIZATION_OPTIONS.map((s) => (
+                            <option key={s}>{s}</option>
+                          ))}
+                        </select>
                       </th>
                       <th>
                         <input
                           className="form-control form-control-sm"
-                          placeholder="Address"
                           value={filters.address}
                           onChange={(e) =>
                             handleFilterChange("address", e.target.value)
@@ -419,40 +365,39 @@ export default function ClinicList() {
                               {row.logo ? (
                                 <img
                                   src={row.logo}
-                                  alt={row.name}
                                   className="clinic-avatar"
+                                  alt=""
                                 />
                               ) : (
                                 <div className="clinic-avatar placeholder">
                                   {initials}
                                 </div>
                               )}
-                              <div className="fw-semibold">{row.name}</div>
+                              <span>{row.name}</span>
                             </div>
                           </td>
 
                           <td>{row.email}</td>
                           <td>{row.adminEmail}</td>
                           <td>{row.contact}</td>
-                          <td>{row.specialization || "-"}</td>
-                          <td>{row.address || "-"}</td>
+                          <td>{row.specialization}</td>
+                          <td>{row.address}</td>
 
                           <td>
-                            <div
-                              className={`status-badge ${
-                                row.status === "active" ? "active" : "inactive"
+                            <span
+                              className={`status-pill ${
+                                row.status === "active"
+                                  ? "active"
+                                  : "inactive"
                               }`}
                             >
-                              {row.status === "active"
-                                ? "ACTIVE"
-                                : "INACTIVE"}
-                            </div>
+                              {row.status.toUpperCase()}
+                            </span>
                           </td>
 
-                          <td className="text-center">
-                            <div className="clinic-actions d-flex justify-content-center gap-2">
+                          <td>
+                            <div className="d-flex gap-2">
                               <button
-                                title="Edit"
                                 className="btn btn-sm btn-outline-primary"
                                 onClick={() =>
                                   navigate(`/add-clinic?clinicId=${row._id}`)
@@ -462,7 +407,6 @@ export default function ClinicList() {
                               </button>
 
                               <button
-                                title="Resend credentials"
                                 className="btn btn-sm btn-outline-warning"
                                 onClick={() => handleResend(row)}
                               >
@@ -470,7 +414,6 @@ export default function ClinicList() {
                               </button>
 
                               <button
-                                title="Delete"
                                 className="btn btn-sm btn-outline-danger"
                                 onClick={() => handleDelete(row._id)}
                               >
@@ -486,91 +429,8 @@ export default function ClinicList() {
               </div>
             )}
           </div>
-        )}
-      </div>
-
-      {/* ---------- IMPORT MODAL ---------- */}
-      {showImportModal && (
-        <div className="clinic-import-backdrop">
-          <div className="clinic-import-modal">
-            <div className="clinic-import-header">
-              <h5 className="mb-0">Clinic Import</h5>
-              <button
-                className="btn-close"
-                onClick={() => setShowImportModal(false)}
-              />
-            </div>
-
-            <div className="clinic-import-body">
-              <form onSubmit={handleImportSubmit}>
-                <div className="row mb-3">
-                  <div className="col-md-4">
-                    <label className="form-label">Select type</label>
-                    <select
-                      className="form-select"
-                      value={importType}
-                      onChange={(e) => setImportType(e.target.value)}
-                    >
-                      <option value="csv">CSV</option>
-                    </select>
-                  </div>
-
-                  <div className="col-md-8">
-                    <label className="form-label">Upload file</label>
-                    <div className="input-group">
-                      <input
-                        type="file"
-                        accept=".csv,text/csv"
-                        className="form-control"
-                        onChange={(e) =>
-                          setImportFile(e.target.files[0] || null)
-                        }
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mb-3">
-                  <div className="fw-semibold mb-1">
-                    Following fields are required in CSV file:
-                  </div>
-                  <ul className="small text-muted mb-0">
-                    <li>Clinic name</li>
-                    <li>Email</li>
-                    <li>Country Calling Code</li>
-                    <li>Country Code</li>
-                    <li>Contact</li>
-                    <li>Specialization</li>
-                    <li>Address</li>
-                    <li>City</li>
-                    <li>Country</li>
-                    <li>Postal code</li>
-                    <li>Clinic admin First Name</li>
-                    <li>Clinic admin Last Name</li>
-                    <li>Clinic Admin Email</li>
-                    <li>Clinic admin contact</li>
-                    <li>Clinic admin DOB</li>
-                    <li>Clinic admin gender</li>
-                  </ul>
-                </div>
-
-                <div className="clinic-import-footer text-end mt-3">
-                  <button
-                    type="button"
-                    className="btn btn-outline-secondary me-2"
-                    onClick={() => setShowImportModal(false)}
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary">
-                    Save
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
         </div>
-      )}
-    </AdminLayout>
+      </div>
+    </div>
   );
 }

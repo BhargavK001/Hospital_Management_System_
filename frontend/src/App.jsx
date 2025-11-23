@@ -191,6 +191,9 @@ function App() {
 
         {/* Patient Section */}
 
+        <Route path="/patient" element={
+          <PatientDashboard sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar}/>
+        }/>
         <Route path="/patient-dashboard" element={
           <PatientDashboard sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
         } />

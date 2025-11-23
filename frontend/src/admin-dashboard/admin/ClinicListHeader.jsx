@@ -1,9 +1,8 @@
 import React from "react";
+
 export default function ClinicListHeader({ columns, filters, onFilter }) {
-  const API_BASE_URL = "http://localhost:3001";
   return (
     <div className="clinic-header-container">
-      {/* Row 1: Column titles */}
       <div className="clinic-header-row">
         {columns.map((col) => (
           <div
@@ -16,7 +15,6 @@ export default function ClinicListHeader({ columns, filters, onFilter }) {
         ))}
       </div>
 
-      {/* Row 2: Filter inputs */}
       <div className="clinic-filter-row">
         {columns.map((col) => (
           <div
@@ -41,15 +39,13 @@ export default function ClinicListHeader({ columns, filters, onFilter }) {
                 onChange={(e) => onFilter(col.field, e.target.value)}
               >
                 <option value="">All</option>
-                {col.options?.map((op, i) => (
-                  <option key={i} value={op}>
+                {col.options?.map((op) => (
+                  <option key={op} value={op}>
                     {op}
                   </option>
                 ))}
               </select>
             )}
-
-            {col.filterType === "none" && null}
           </div>
         ))}
       </div>

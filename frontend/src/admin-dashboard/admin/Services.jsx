@@ -5,7 +5,6 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import DurationPicker from "../components/DurationPicker";
 import "../styles/services.css";
-import "../styles/durationpicker.css";
 import { FaEdit, FaTrash } from "react-icons/fa";
 
 export default function Services({ sidebarCollapsed = false, toggleSidebar }) {
@@ -195,7 +194,7 @@ export default function Services({ sidebarCollapsed = false, toggleSidebar }) {
 
         <div className="container-fluid mt-3">
           <div className="services-topbar mb-2 services-card">
-            <div style={{ fontWeight: 600 }}>Service List</div>
+            <h5 className="fw-bold text-white mb-0">Service List</h5>
             <div className="services-actions">
               <button className="btn btn-outline-light btn-sm">
                 <i className="bi bi-upload me-1"></i> Import data

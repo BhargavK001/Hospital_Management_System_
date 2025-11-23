@@ -219,7 +219,7 @@ function Taxes({ sidebarCollapsed = false, toggleSidebar }) {
         <div className="container-fluid mt-3">
           {/* Blue header bar */}
           <div className="services-topbar mb-2 services-card">
-            <div style={{ fontWeight: 600 }}>Tax List</div>
+            <h5 className="fw-bold text-white mb-0">Tax List</h5>
             <div className="services-actions">
               <button
                 className="btn btn-outline-light btn-sm"
