@@ -7,30 +7,19 @@ import { FaDownload } from "react-icons/fa";
 import "../styles/appointments.css";
 import toast from "react-hot-toast";
 
-const SLOT_OPTIONS = [
-  "09:00 - 09:30 AM",
-  "09:30 - 10:00 AM",
-  "10:00 - 10:30 AM",
-  "11:00 - 11:30 AM",
-  "02:00 - 02:30 PM",
-  "03:00 - 03:30 PM",
-];
+const API_BASE = "http://localhost:3001";
 
 const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // panels
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [panelOpen, setPanelOpen] = useState(false); // add/edit panel
+  const [panelOpen, setPanelOpen] = useState(false);
 
-  // tabs
-  const [tab, setTab] = useState("all"); // all | upcoming | past
+  const [tab, setTab] = useState("all");
 
-  // search
   const [searchTerm, setSearchTerm] = useState("");
 
-  // filters
   const [filters, setFilters] = useState({
     date: "",
     clinic: "",
@@ -39,12 +28,12 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
     doctor: "",
   });
 
-  // dropdown data
   const [doctors, setDoctors] = useState([]);
   const [servicesList, setServicesList] = useState([]);
   const [patients, setPatients] = useState([]);
+  const [doctorSessions, setDoctorSessions] = useState([]);
+  const [clinics, setClinics] = useState([]);
 
-  // add/edit form
   const [form, setForm] = useState({
     clinic: "",
     doctor: "",
@@ -56,9 +45,8 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
     slot: "",
   });
 
-  const [editId, setEditId] = useState(null); // null = add, otherwise edit
+  const [editId, setEditId] = useState(null);
 
-  // import modal
   const [importOpen, setImportOpen] = useState(false);
   const [importType, setImportType] = useState("csv");
   const [importFile, setImportFile] = useState(null);
@@ -72,10 +60,10 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
   const fetchAppointments = async (query = {}) => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:3001/appointments", {
+      const res = await axios.get(`${API_BASE}/appointments`, {
         params: query,
       });
-      setAppointments(res.data || []);
+      setAppointments(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Error fetching appointments:", err);
       setAppointments([]);
@@ -88,15 +76,27 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
   useEffect(() => {
     const fetchDropdownData = async () => {
       try {
-        const [docRes, servRes, patRes] = await Promise.all([
-          axios.get("http://localhost:3001/doctors"),
-          axios.get("http://localhost:3001/api/services"),
-          axios.get("http://localhost:3001/patients"),
-        ]);
+        const [docRes, servRes, patRes, sessionRes, clinicRes] =
+          await Promise.all([
+            axios.get(`${API_BASE}/doctors`),
+            axios.get(`${API_BASE}/api/services`),
+            axios.get(`${API_BASE}/patients`),
+            axios.get(`${API_BASE}/doctor-sessions`),
+            axios.get(`${API_BASE}/api/clinics`),
+          ]);
 
         setDoctors(Array.isArray(docRes.data) ? docRes.data : []);
         setServicesList(Array.isArray(servRes.data) ? servRes.data : []);
         setPatients(Array.isArray(patRes.data) ? patRes.data : []);
+        setDoctorSessions(
+          Array.isArray(sessionRes.data) ? sessionRes.data : []
+        );
+
+        if (clinicRes.data?.success && Array.isArray(clinicRes.data.clinics)) {
+          setClinics(clinicRes.data.clinics);
+        } else {
+          setClinics([]);
+        }
       } catch (err) {
         console.error("Error fetching dropdown data:", err);
       }
@@ -105,7 +105,6 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
     fetchDropdownData();
   }, []);
 
-  // close panels when tab changes
   useEffect(() => {
     setFiltersOpen(false);
     setPanelOpen(false);
@@ -161,6 +160,34 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
   // ------------------ FORM HANDLERS ------------------
   const handleFormChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === "service") {
+      const selected = servicesList.find((s) => s.name === value);
+      let priceText = "";
+      if (selected) {
+        const price =
+          selected.price ??
+          selected.rate ??
+          selected.amount ??
+          selected.fees ??
+          selected.cost;
+        if (price !== undefined && price !== null) {
+          priceText = price.toString();
+        }
+      }
+      setForm((p) => ({
+        ...p,
+        service: value,
+        servicesDetail: priceText,
+      }));
+      return;
+    }
+
+    if (name === "date") {
+      setForm((p) => ({ ...p, date: value, slot: "" }));
+      return;
+    }
+
     setForm((p) => ({ ...p, [name]: value }));
   };
 
@@ -217,7 +244,7 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
 
       if (editId) {
         await toast.promise(
-          axios.put(`http://localhost:3001/appointments/${editId}`, payload),
+          axios.put(`${API_BASE}/appointments/${editId}`, payload),
           {
             loading: "Updating appointment...",
             success: "Appointment updated",
@@ -226,7 +253,7 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
         );
       } else {
         await toast.promise(
-          axios.post("http://localhost:3001/appointments", payload),
+          axios.post(`${API_BASE}/appointments`, payload),
           {
             loading: "Saving appointment...",
             success: "Appointment added",
@@ -243,12 +270,12 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
     }
   };
 
-  // ------------------ DELETE / CANCEL / PDF ------------------
+  // ------------------ DELETE / PDF ------------------
   const handleDelete = async (id) => {
     const ok = window.confirm("Are you sure you want to delete this?");
     if (!ok) return;
     try {
-      await axios.delete(`http://localhost:3001/appointments/${id}`);
+      await axios.delete(`${API_BASE}/appointments/${id}`);
       setAppointments((prev) => prev.filter((a) => a._id !== id));
     } catch (err) {
       console.error("Delete error:", err);
@@ -257,8 +284,9 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
   };
 
   const handlePdf = (id) => {
-    window.open(`http://localhost:3001/appointments/${id}/pdf`, "_blank");
+    window.open(`${API_BASE}/appointments/${id}/pdf`, "_blank");
   };
+
   // ------------------ IMPORT MODAL HANDLERS ------------------
   const openImportModal = () => {
     setImportOpen(true);
@@ -290,7 +318,7 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
       formData.append("type", importType);
 
       const res = await axios.post(
-        "http://localhost:3001/appointments/import",
+        `${API_BASE}/appointments/import`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -308,7 +336,7 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
     }
   };
 
-  // ------------------ AVAILABLE SLOTS LOGIC ------------------
+  // ------------------ SLOT GENERATION (from DoctorSession) ------------------
   const isSunday =
     form.date && !Number.isNaN(new Date(form.date).getTime())
       ? new Date(form.date).getDay() === 0

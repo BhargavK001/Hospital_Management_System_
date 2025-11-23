@@ -1,0 +1,6 @@
+name,email,mobile,address,clinics,status
+Riya Sharma,riya.sharma@example.com,9876543210,123 MG Road,Mumbai Clinic,active
+Amit Verma,amit.verma@example.com,9123456789,45 Andheri West,Mumbai Clinic,active
+Sneha Patil,sneha.patil@example.com,9988776655,78 FC Road,Pune Clinic,inactive
+John Doe,john.doe@example.com,9090909090,12 Park Street,Kolkata Clinic,active
+Neha Desai,neha.desai@example.com,8899776655,34 SG Highway,Ahmedabad Clinic,active

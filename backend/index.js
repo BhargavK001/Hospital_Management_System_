@@ -10,15 +10,19 @@ const AppointmentModel = require("./models/Appointment");
 const Service = require("./models/Service");
 const DoctorSessionModel = require("./models/DoctorSession");
 const TaxModel = require("./models/Tax");
-const ADMIN_EMAIL = "admin@onecare.com";
-const ADMIN_PASSWORD = "admin123";
+
 require("dotenv").config();
 
 const { sendEmail } = require("./utils/emailService");
 const { appointmentBookedTemplate } = require("./utils/emailTemplates");
 
+//Authentication Routes
+const authRoutes = require("./routes/auth");
+
+
 //Receptionist Routes
 const receptionistRoutes = require("./routes/receptionistRoutes");
+
 
 // PDF Libraries
 const { PDFDocument, StandardFonts, rgb } = require("pdf-lib");
@@ -36,6 +40,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Authentication routes
+app.use("/", authRoutes);
+
 // PDF Editor section
 const pdfRoutes = require("./routes/pdfRoutes");
 app.use("/pdf", pdfRoutes);
@@ -50,87 +57,82 @@ mongoose
     console.error("❌ MongoDB connection error:", err);
   });
 
-//             LOGIN
+// Profile Section
 
-//  Login route (POST /login)
-app.post("/login", async (req, res) => {
+// 1) by email – this MUST come first
+app.get("/api/user/email/:email", async (req, res) => {
   try {
-    const { email, password } = req.body;
-
-    // admin login
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      return res.json({
-        id: "admin-id",
-        name: "System Admin",
-        email: ADMIN_EMAIL,
-        role: "admin",
-        profileCompleted: true, // admin doesn't need profile setup
-      });
-    }
-
-    const user = await User.findOne({ email });
-
-    if (!user || user.password !== password) {
-      return res.status(401).json({ message: "Invalid email or password" });
-    }
-
-    res.json({
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      name: user.name,
-      profileCompleted: user.profileCompleted,
-    });
+    const email = decodeURIComponent(req.params.email);
+    const user = await User.findOne({ email }).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user);
   } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ message: "Server error during login" });
+    console.error("Profile GET by email error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-/* ===============================
- *             SIGNUP
- * =============================== */
-
-app.post("/signup", async (req, res) => {
+// 2) by id
+app.get("/api/user/:id", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const user = await User.findById(req.params.id).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user);
+  } catch (err) {
+    console.error("Profile GET error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
-
-    const existing = await User.findOne({ email });
-    if (existing) {
-      return res.status(400).json({ message: "Email already registered" });
-    }
-
-    const newUser = await User.create({
-      email,
-      password,
-      role: "patient",
+// 3) update by id (unchanged)
+app.put("/api/user/:id", async (req, res) => {
+  try {
+    const {
       name,
-      profileCompleted: false,
-    });
+      avatar,
+      phone,
+      gender,
+      dob,
+      addressLine1,
+      addressLine2,
+      city,
+      postalCode,
+      qualification,
+      specialization,
+      experienceYears,
+      bloodGroup,
+    } = req.body;
 
-    // also create empty patient record
-    await PatientModel.create({
-      userId: newUser._id,
-      firstName: name,
-      email,
-    });
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      {
+        name,
+        avatar,
+        phone,
+        gender,
+        dob,
+        addressLine1,
+        addressLine2,
+        city,
+        postalCode,
+        qualification,
+        specialization,
+        experienceYears,
+        bloodGroup,
+      },
+      { new: true }
+    ).select("-password");
 
-    res.status(201).json({
-      id: newUser.id,
-      email: newUser.email,
-      role: newUser.role,
-      name: newUser.name,
-      profileCompleted: newUser.profileCompleted,
-    });
+    if (!updatedUser) return res.status(404).json({ message: "User not found" });
+
+    res.json(updatedUser);
   } catch (err) {
-    console.error("Signup error:", err);
-    res.status(500).json({ message: "Server error during signup" });
+    console.error("Profile UPDATE error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
+
+
 
 /* ===============================
  *         PATIENT APIs
@@ -1398,6 +1400,7 @@ app.get("/patients/by-user/:userId", async (req, res) => {
 // Receptionist 
 
 app.use("/api/receptionists", receptionistRoutes);
+
 
 // Start the server 
 const PORT = 3001;
