@@ -79,6 +79,13 @@ function PatientProfile() {
       return;
     }
 
+    // Check file size (2MB max)
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("Image size must be less than 2MB");
+      return;
+    }
+
     const reader = new FileReader();
     reader.onloadend = () => {
       setForm((prev) => ({ ...prev, avatar: reader.result }));

@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   FaCalendarAlt,
   FaUserFriends,
@@ -14,12 +14,36 @@ import "../styles/reception.css";
 
 const ReceptionLayout = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [openProfile, setOpenProfile] = useState(false);
+  const [profileData, setProfileData] = useState({ name: "Receptionist", avatar: "" });
 
   const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
-  const name = authUser?.name || "Receptionist";
-  const avatar = authUser?.avatar || "";
-  const initial = name ? name.charAt(0).toUpperCase() : "R";
+  const userId = authUser?.id;
+  const initial = profileData.name ? profileData.name.charAt(0).toUpperCase() : "R";
+
+  // Fetch receptionist profile on mount and when location changes
+  useEffect(() => {
+    if (userId) {
+      fetchProfile();
+    }
+  }, [userId, location]);
+
+  const fetchProfile = async () => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/receptionists/${userId}`);
+      if (res.ok) {
+        const json = await res.json();
+        const data = json.data || json;
+        setProfileData({
+          name: data.name || "Receptionist",
+          avatar: data.avatar || "",
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching receptionist profile:", err);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("authUser");
@@ -99,7 +123,7 @@ const ReceptionLayout = () => {
 
           <NavLink
             to="/reception/services"
-            className={({ isActive }) =>
+            className={({ isActive}) =>
               `rc-menu-item ${isActive ? "active" : ""}`
             }
           >
@@ -158,10 +182,10 @@ const ReceptionLayout = () => {
                 className="rc-profile-avatar"
                 style={{ overflow: "hidden" }}
               >
-                {avatar ? (
+                {profileData.avatar ? (
                   <img
-                    src={avatar}
-                    alt={name}
+                    src={profileData.avatar}
+                    alt={profileData.name}
                     style={{
                       width: "100%",
                       height: "100%",
@@ -173,7 +197,7 @@ const ReceptionLayout = () => {
                 )}
               </div>
               <div className="rc-profile-text">
-                <div className="rc-profile-name">{name}</div>
+                <div className="rc-profile-name">{profileData.name}</div>
                 <div className="rc-profile-role">Receptionist</div>
               </div>
             </div>

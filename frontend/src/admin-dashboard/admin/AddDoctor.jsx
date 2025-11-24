@@ -43,6 +43,7 @@ const AddDoctor = () => {
   const [clinics, setClinics] = useState([]);
   const [clinicsLoading, setClinicsLoading] = useState(false);
   const [clinicsError, setClinicsError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // load clinics from backend: GET /api/clinics -> { success, clinics }
   useEffect(() => {
@@ -119,7 +120,9 @@ const AddDoctor = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
+    setIsSubmitting(true);
     try {
       const doctorData = { ...formData, qualifications };
 
@@ -132,15 +135,17 @@ const AddDoctor = () => {
       const data = await res.json();
       console.log("✅ Doctor added:", data);
 
-      if (data.message === "Doctor added") {
+      if (res.ok) {
         toast.success("Doctor added successfully!");
         navigate("/doctors");
       } else {
-        toast.error(data.error || "Something went wrong!");
+        toast.error(data.message || "Something went wrong!");
       }
     } catch (err) {
       console.error("❌ Error saving doctor:", err);
       toast.error("Error saving doctor. Check console for details.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -503,8 +508,12 @@ const AddDoctor = () => {
             >
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary d-flex align-items-center gap-2">
-              <FaSave /> Save
+            <button 
+              type="submit" 
+              className="btn btn-primary d-flex align-items-center gap-2"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Saving..." : <><FaSave /> Save</>}
             </button>
           </div>
         </form>

@@ -118,11 +118,62 @@ function Login() {
         // don't block login on patient fetch failure
       }
 
+      // Try to fetch doctor doc by email (if user is a doctor)
+      if (authUser.role === "doctor") {
+        try {
+          const doctorRes = await fetch(
+            `${API_BASE}/doctors?email=${encodeURIComponent(authUser.email)}`
+          );
+          if (doctorRes.ok) {
+            const doctorsData = await doctorRes.json();
+            // Assuming the API returns an array, find the doctor by email
+            const doctorDoc = Array.isArray(doctorsData)
+              ? doctorsData.find((d) => d.email === authUser.email)
+              : null;
+
+            if (doctorDoc) {
+              const doctorObj = {
+                id: doctorDoc._id || doctorDoc.id,
+                _id: doctorDoc._id || doctorDoc.id,
+                firstName: doctorDoc.firstName || "",
+                lastName: doctorDoc.lastName || "",
+                name:
+                  doctorDoc.firstName || doctorDoc.lastName
+                    ? `${doctorDoc.firstName || ""} ${
+                        doctorDoc.lastName || ""
+                      }`.trim()
+                    : authUser.name || "",
+                email: doctorDoc.email || authUser.email || "",
+                phone: doctorDoc.phone || "",
+                clinic: doctorDoc.clinic || "",
+                specialization: doctorDoc.specialization || "",
+              };
+              console.log("Saving doctor to localStorage:", doctorObj);
+              localStorage.setItem("doctor", JSON.stringify(doctorObj));
+            } else {
+              localStorage.removeItem("doctor");
+            }
+          } else {
+            localStorage.removeItem("doctor");
+          }
+        } catch (errFetchDoctor) {
+          console.warn(
+            "Could not fetch doctor doc after login:",
+            errFetchDoctor
+          );
+        }
+      }
+
       // Redirect based on role and profileCompleted
       if (authUser.role === "admin") {
         navigate("/admin-dashboard");
       } else if (authUser.role === "doctor") {
-        navigate("/doctor-dashboard");
+        if (authUser.mustChangePassword) {
+          toast("Please change your default password.", { icon: "🔐" });
+          navigate("/doctor/change-password-first");
+        } else {
+          navigate("/doctor-dashboard");
+        }
       } else if (authUser.role === "receptionist") {
         // 🔥 New logic: first-time login → force password change
         if (authUser.mustChangePassword) {

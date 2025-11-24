@@ -7,6 +7,7 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const Receptionist = require("../models/Receptionist");
 const PatientModel = require("../models/Patient");
+const DoctorModel = require("../models/Doctor");
 
 // Static admin credentials (simple built-in admin)
 const ADMIN_EMAIL = "admin@onecare.com";
@@ -72,7 +73,25 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // 3) If not receptionist, check User collection (patients + doctors)
+    // 3) Check Doctor collection
+    const doctor = await DoctorModel.findOne({ email });
+    if (doctor && doctor.password) {
+      console.log("FOUND IN DOCTOR COLLECTION");
+      const match = await checkPassword(password, doctor.password);
+      if (!match) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+      return res.json({
+        id: doctor._id,
+        email: doctor.email,
+        role: "doctor",
+        name: `${doctor.firstName} ${doctor.lastName}`,
+        mustChangePassword: doctor.mustChangePassword,
+        profileCompleted: true,
+      });
+    }
+
+    // 4) If not receptionist or doctor, check User collection (patients)
     const user = await User.findOne({ email });
 
     if (user) {
@@ -190,6 +209,131 @@ router.put("/receptionists/change-password/:id", async (req, res) => {
     res.status(500).json({
       message: "Server error while updating password",
     });
+  }
+});
+
+// Change password for doctor on first login
+router.put("/doctors/change-password/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({
+        message: "New password must be at least 6 characters long",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    const doctor = await DoctorModel.findByIdAndUpdate(
+      id,
+      {
+        password: hashedPassword,
+        mustChangePassword: false,
+      },
+      { new: true }
+    );
+
+    if (!doctor) {
+      return res.status(404).json({ message: "Doctor not found" });
+    }
+
+    return res.json({
+      message: "Password updated successfully",
+      id: doctor._id,
+      email: doctor.email,
+      role: "doctor",
+      name: `${doctor.firstName} ${doctor.lastName}`,
+      mustChangePassword: doctor.mustChangePassword,
+    });
+  } catch (err) {
+    console.error("Doctor change password error:", err);
+    res.status(500).json({
+      message: "Server error while updating password",
+    });
+  }
+});
+
+// General Change Password (for any logged-in user: Admin, Doctor, Patient, Receptionist)
+router.post("/change-password", async (req, res) => {
+  try {
+    const { email, oldPassword, newPassword } = req.body;
+
+    if (!email || !oldPassword || !newPassword) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    if (newPassword.length < 6) {
+      return res
+        .status(400)
+        .json({ message: "New password must be at least 6 characters long" });
+    }
+
+    // 1. Check if it's the hardcoded admin
+    if (email === ADMIN_EMAIL) {
+      return res.status(403).json({
+        message:
+          "Default Admin password cannot be changed. Please contact support or migrate to a database admin.",
+      });
+    }
+
+    // 2. Check Receptionist Collection
+    const receptionist = await Receptionist.findOne({ email });
+    if (receptionist) {
+      const isMatch = await checkPassword(oldPassword, receptionist.password);
+      if (!isMatch) {
+        return res.status(400).json({ message: "Incorrect old password" });
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      receptionist.password = hashedPassword;
+      receptionist.mustChangePassword = false; // Clear this flag if it was set
+      await receptionist.save();
+
+      return res.json({ message: "Password updated successfully" });
+    }
+
+    // 3. Check User Collection (Doctor, Patient)
+    const user = await User.findOne({ email });
+    if (user) {
+      const isMatch = await checkPassword(oldPassword, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ message: "Incorrect old password" });
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      user.password = hashedPassword;
+      // If user model has a flag, we could clear it here, but it's optional for general users
+      if (user.mustChangePassword) {
+        user.mustChangePassword = false;
+      }
+      await user.save();
+
+      return res.json({ message: "Password updated successfully" });
+      return res.json({ message: "Password updated successfully" });
+    }
+
+    // 4. Check Doctor Collection
+    const doctor = await DoctorModel.findOne({ email });
+    if (doctor) {
+      const isMatch = await checkPassword(oldPassword, doctor.password);
+      if (!isMatch) {
+        return res.status(400).json({ message: "Incorrect old password" });
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      doctor.password = hashedPassword;
+      doctor.mustChangePassword = false;
+      await doctor.save();
+
+      return res.json({ message: "Password updated successfully" });
+    }
+
+    return res.status(404).json({ message: "User not found" });
+  } catch (err) {
+    console.error("Change password error:", err);
+    res.status(500).json({ message: "Server error while changing password" });
   }
 });
 

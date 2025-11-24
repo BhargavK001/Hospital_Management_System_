@@ -40,7 +40,7 @@ function DoctorProfile() {
 
   const loadProfile = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/user/${userId}`);
+      const res = await fetch(`${API_BASE}/doctors/profile/${userId}`);
       if (!res.ok) {
         toast.error("Failed to load profile");
         setLoading(false);
@@ -83,6 +83,13 @@ function DoctorProfile() {
       return;
     }
 
+    // Check file size (2MB max)
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("Image size must be less than 2MB");
+      return;
+    }
+
     const reader = new FileReader();
     reader.onloadend = () => {
       setForm((prev) => ({ ...prev, avatar: reader.result }));
@@ -96,7 +103,7 @@ function DoctorProfile() {
     setSaving(true);
 
     try {
-      const res = await fetch(`${API_BASE}/api/user/${userId}`, {
+      const res = await fetch(`${API_BASE}/doctors/profile/${userId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -112,6 +119,7 @@ function DoctorProfile() {
 
       const stored = JSON.parse(localStorage.getItem("authUser") || "{}");
       stored.name = updated.name;
+      stored.avatar = updated.avatar;
       localStorage.setItem("authUser", JSON.stringify(stored));
 
       toast.success("Profile updated");

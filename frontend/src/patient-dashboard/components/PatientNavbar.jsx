@@ -2,17 +2,39 @@ import React, { useState, useRef, useEffect } from "react";
 import { FaBars } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
-import patient from "../images/Patient.png";
 
 export default function PatientNavbar({ toggleSidebar }) {
   const [open, setOpen] = useState(false);
+  const [profileData, setProfileData] = useState({ name: "Patient", avatar: "" });
   const menuRef = useRef();
   const navigate = useNavigate();
 
-  const name = localStorage.getItem("patientName") || "Patient";
-  const avatar = localStorage.getItem("patientAvatar") || patient;
+  const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+  const userId = authUser?.id;
 
-  // closes dropdown when clicking outside
+  // Fetch patient profile on mount
+  useEffect(() => {
+    if (userId) {
+      fetchProfile();
+    }
+  }, [userId]);
+
+  const fetchProfile = async () => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/user/${userId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setProfileData({
+          name: data.name || "Patient",
+          avatar: data.avatar || "",
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching patient profile:", err);
+    }
+  };
+
+  // Close dropdown when clicking outside
   useEffect(() => {
     const handler = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -27,6 +49,9 @@ export default function PatientNavbar({ toggleSidebar }) {
     localStorage.clear();
     navigate("/");
   };
+
+  // Get first letter for avatar fallback
+  const letter = profileData.name?.trim()?.charAt(0)?.toUpperCase() || "P";
 
   return (
     <nav className="navbar navbar-dark bg-primary px-3 d-flex justify-content-between align-items-center">
@@ -50,14 +75,34 @@ export default function PatientNavbar({ toggleSidebar }) {
           style={{ cursor: "pointer" }}
           onClick={() => setOpen(!open)}
         >
-          <img
-            src={avatar}
-            alt="User Avatar"
-            width="35"
-            height="35"
-            className="rounded-circle"
-          />
-          <span className="text-white ms-2 fw-semibold">{name}</span>
+          {profileData.avatar ? (
+            <img
+              src={profileData.avatar}
+              alt="User Avatar"
+              width="35"
+              height="35"
+              className="rounded-circle"
+              style={{ objectFit: "cover" }}
+            />
+          ) : (
+            <div
+              style={{
+                width: "35px",
+                height: "35px",
+                borderRadius: "50%",
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "white",
+                fontWeight: "600",
+                fontSize: "16px",
+              }}
+            >
+              {letter}
+            </div>
+          )}
+          <span className="text-white ms-2 fw-semibold">{profileData.name}</span>
         </div>
 
         {open && (

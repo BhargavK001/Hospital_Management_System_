@@ -149,8 +149,21 @@ export default function DoctorDashboard() {
       setError(null);
 
       try {
-    
-        const res = await axios.get(`${API_BASE}/appointments`);
+        // Get doctor ID from localStorage
+        const doctorStr = localStorage.getItem("doctor");
+        let doctorId = null;
+        if (doctorStr) {
+          const doctor = JSON.parse(doctorStr);
+          doctorId = doctor._id || doctor.id;
+        }
+
+        // Build URL with doctorId parameter
+        let url = `${API_BASE}/appointments`;
+        if (doctorId) {
+          url += `?doctorId=${doctorId}`;
+        }
+
+        const res = await axios.get(url);
 
         const appointments = Array.isArray(res.data)
           ? res.data

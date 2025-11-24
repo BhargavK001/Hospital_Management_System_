@@ -86,6 +86,13 @@ function ReceptionistProfile() {
       return;
     }
 
+    // Check file size (2MB max)
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("Image size must be less than 2MB");
+      return;
+    }
+
     const reader = new FileReader();
     reader.onloadend = () => {
       setForm((prev) => ({ ...prev, avatar: reader.result }));
@@ -192,7 +199,7 @@ function ReceptionistProfile() {
         <button
           type="button"
           className="btn btn-light border d-flex align-items-center gap-2 mb-3"
-          onClick={() => navigate("/reception")}
+          onClick={() => navigate("/reception-dashboard")}
         >
           <span style={{ fontSize: "18px" }}>←</span>
           <span className="small">Back to dashboard</span>

@@ -15,6 +15,11 @@ const DoctorSchema = new mongoose.Schema({
   city: String,
   country: String,
   postalCode: String,
+  avatar: String, // Profile photo
+  addressLine1: String,
+  addressLine2: String,
+  qualification: String,
+  experienceYears: String,
   qualifications: [
     {
       degree: String,
@@ -23,6 +28,9 @@ const DoctorSchema = new mongoose.Schema({
     },
   ],
   createdAt: { type: Date, default: Date.now },
+  password: { type: String },
+  passwordPlain: { type: String }, // Optional: store temp password if needed for resend (security risk, but requested pattern)
+  mustChangePassword: { type: Boolean, default: true },
 });
 
 const DoctorModel = mongoose.model("doctors", DoctorSchema);
