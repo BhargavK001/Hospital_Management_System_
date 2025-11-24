@@ -1,12 +1,37 @@
 import React, { useState, useRef, useEffect } from "react";
 import "../styles/DoctorLayout.css"; 
-import Docimg from "../images/doctor.png";
 import { useNavigate } from "react-router-dom";
 
 export default function DoctorNavbar({ onToggle, open }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [profileData, setProfileData] = useState({ name: "Doctor", avatar: "" });
   const menuRef = useRef();
   const navigate = useNavigate();
+
+  const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+  const userId = authUser?.id;
+
+  // Fetch doctor profile on mount
+  useEffect(() => {
+    if (userId) {
+      fetchProfile();
+    }
+  }, [userId]);
+
+  const fetchProfile = async () => {
+    try {
+      const res = await fetch(`http://localhost:3001/doctors/profile/${userId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setProfileData({
+          name: data.name || "Doctor",
+          avatar: data.avatar || "",
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching doctor profile:", err);
+    }
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -23,8 +48,12 @@ export default function DoctorNavbar({ onToggle, open }) {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
+    localStorage.removeItem("authUser");
     navigate("/");
   };
+
+  // Get first letter for avatar fallback
+  const letter = profileData.name?.trim()?.charAt(0)?.toUpperCase() || "D";
 
   return (
     <div className="doctor-navbar" ref={menuRef}>
@@ -48,8 +77,38 @@ export default function DoctorNavbar({ onToggle, open }) {
           style={{ cursor: "pointer" }}
           onClick={() => setDropdownOpen(!dropdownOpen)}
         >
-          <img src={Docimg} alt="doctor" className="doctor-avatar" />
-          <span className="doctor-name">Doctor</span>
+          {profileData.avatar ? (
+            <img 
+              src={profileData.avatar} 
+              alt="doctor" 
+              className="doctor-avatar"
+              style={{
+                width: "40px",
+                height: "40px",
+                borderRadius: "50%",
+                objectFit: "cover",
+              }}
+            />
+          ) : (
+            <div
+              className="doctor-avatar"
+              style={{
+                width: "40px",
+                height: "40px",
+                borderRadius: "50%",
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "white",
+                fontWeight: "600",
+                fontSize: "18px",
+              }}
+            >
+              {letter}
+            </div>
+          )}
+          <span className="doctor-name">{profileData.name}</span>
         </div>
 
         {dropdownOpen && (

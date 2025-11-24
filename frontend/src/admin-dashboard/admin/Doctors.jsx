@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
-import { FaSearch, FaPlus, FaTrash, FaEdit, FaDownload } from "react-icons/fa";
+import { FaSearch, FaPlus, FaTrash, FaEdit, FaDownload, FaEnvelope } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../styles/services.css";
@@ -42,6 +42,19 @@ const Doctors = ({ sidebarCollapsed, toggleSidebar }) => {
       } catch (error) {
         console.error("Error deleting doctor:", error);
         alert("Error deleting doctor");
+      }
+    }
+  };
+
+  // Resend Credentials
+  const handleResendCredentials = async (id) => {
+    if (window.confirm("Resend login credentials to this doctor? This will reset their password.")) {
+      try {
+        await axios.post(`http://localhost:3001/doctors/${id}/resend-credentials`);
+        alert("Credentials resent successfully!");
+      } catch (error) {
+        console.error("Error resending credentials:", error);
+        alert("Failed to resend credentials.");
       }
     }
   };
@@ -199,6 +212,13 @@ const Doctors = ({ sidebarCollapsed, toggleSidebar }) => {
                             onClick={() => handleDelete(doctor._id)}
                           >
                             <FaTrash />
+                          </button>
+                          <button
+                            className="btn btn-sm btn-outline-warning"
+                            title="Resend Credentials"
+                            onClick={() => handleResendCredentials(doctor._id)}
+                          >
+                            <FaEnvelope />
                           </button>
                         </div>
                       </td>

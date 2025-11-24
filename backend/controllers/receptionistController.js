@@ -88,19 +88,46 @@ exports.getReceptionistById = async (req, res) => {
 // ------------------------------------------------------------
 exports.updateReceptionist = async (req, res) => {
   try {
-    const { name, email, mobile, address, clinicIds, status } = req.body;
+    const allowedFields = [
+      "name",
+      "email",
+      "mobile",
+      "address",
+      "clinicIds",
+      "status",
+      "avatar",
+      "gender",
+      "dob",
+      "addressLine1",
+      "addressLine2",
+      "city",
+      "postalCode",
+    ];
+
+    const updateData = {};
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field];
+      }
+    });
 
     const updated = await Receptionist.findByIdAndUpdate(
       req.params.id,
-      { name, email, mobile, address, clinicIds, status },
+      updateData,
       { new: true }
     );
 
+    if (!updated) {
+      return res.status(404).json({ message: "Not found" });
+    }
+
     res.json({ message: "Updated successfully", data: updated });
   } catch (error) {
+    console.error("Update Receptionist error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 // ------------------------------------------------------------
 // DELETE Receptionist
@@ -200,5 +227,37 @@ exports.importReceptionists = async (req, res) => {
   } catch (error) {
     console.log("Import Error:", error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+// Change password for receptionist (first-time login)
+exports.changePassword = async (req, res) => {
+  try {
+    const { newPassword } = req.body;
+    const id = req.params.id;
+
+    if (!newPassword) {
+      return res.status(400).json({ message: "New password is required" });
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+
+    const updated = await Receptionist.findByIdAndUpdate(
+      id,
+      {
+        password: hashed,
+        mustChangePassword: false, // so next login goes directly to dashboard
+        passwordPlain: "", // optional: clear plain password for security
+      },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Receptionist not found" });
+    }
+
+    return res.json({ message: "Password updated successfully" });
+  } catch (err) {
+    console.error("Change password error:", err);
+    return res.status(500).json({ message: "Server error during password change" });
   }
 };

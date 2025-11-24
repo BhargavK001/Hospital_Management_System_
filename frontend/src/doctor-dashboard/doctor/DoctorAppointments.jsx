@@ -15,7 +15,23 @@ export default function DoctorAppointments() {
       setLoading(true);
       setErr(null);
       try {
-        const res = await axios.get("http://localhost:3001/appointments");
+        // Get doctor ID from localStorage
+        const doctorStr = localStorage.getItem("doctor");
+        const authUserStr = localStorage.getItem("authUser");
+        
+        let doctorId = null;
+        if (doctorStr) {
+          const doctor = JSON.parse(doctorStr);
+          doctorId = doctor._id || doctor.id;
+        }
+
+        // Build URL with doctorId parameter
+        let url = "http://localhost:3001/appointments";
+        if (doctorId) {
+          url += `?doctorId=${doctorId}`;
+        }
+
+        const res = await axios.get(url);
         if (!mounted) return;
         // res.data is expected to be an array after backend change
         setAppointments(Array.isArray(res.data) ? res.data : []);
