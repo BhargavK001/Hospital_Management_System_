@@ -2,6 +2,7 @@
 import { Link } from "react-router-dom";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -20,7 +21,9 @@ function Login() {
     event.preventDefault();
 
     if (!email || !password) {
-      setError("Please enter both email and password.");
+      const msg = "Please enter both email and password.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -35,7 +38,9 @@ function Login() {
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        setError(errData.message || "Login failed");
+        const msg = errData.message || "Login failed";
+        setError(msg);
+        toast.error(msg);
         return;
       }
 
@@ -47,7 +52,9 @@ function Login() {
 
       // role check vs button selection
       if (user.role !== role) {
-        setError("Invalid Credentials");
+        const msg = "Invalid Credentials";
+        setError(msg);
+        toast.error(msg);
         return;
       }
 
@@ -59,6 +66,10 @@ function Login() {
         role: user.role || "",
         name: user.name || "",
         profileCompleted: !!user.profileCompleted,
+        mustChangePassword:
+          typeof user.mustChangePassword === "boolean"
+            ? user.mustChangePassword
+            : false,
       };
 
       console.log("Saving authUser to localStorage:", authUser);
@@ -79,7 +90,9 @@ function Login() {
               lastName: patientDoc.lastName || "",
               name:
                 (patientDoc.firstName || patientDoc.lastName)
-                  ? `${patientDoc.firstName || ""} ${patientDoc.lastName || ""}`.trim()
+                  ? `${patientDoc.firstName || ""} ${
+                      patientDoc.lastName || ""
+                    }`.trim()
                   : patientDoc.name || authUser.name || "",
               email: patientDoc.email || authUser.email || "",
               phone: patientDoc.phone || "",
@@ -92,21 +105,83 @@ function Login() {
           } else {
             // no patient yet — ensure there's no stale patient key
             localStorage.removeItem("patient");
-            console.log("No patient doc found for user — patient not saved in localStorage.");
+            console.log(
+              "No patient doc found for user — patient not saved in localStorage."
+            );
           }
         }
       } catch (errFetchPatient) {
-        console.warn("Could not fetch patient doc after login:", errFetchPatient);
+        console.warn(
+          "Could not fetch patient doc after login:",
+          errFetchPatient
+        );
         // don't block login on patient fetch failure
+      }
+
+      // Try to fetch doctor doc by email (if user is a doctor)
+      if (authUser.role === "doctor") {
+        try {
+          const doctorRes = await fetch(
+            `${API_BASE}/doctors?email=${encodeURIComponent(authUser.email)}`
+          );
+          if (doctorRes.ok) {
+            const doctorsData = await doctorRes.json();
+            // Assuming the API returns an array, find the doctor by email
+            const doctorDoc = Array.isArray(doctorsData)
+              ? doctorsData.find((d) => d.email === authUser.email)
+              : null;
+
+            if (doctorDoc) {
+              const doctorObj = {
+                id: doctorDoc._id || doctorDoc.id,
+                _id: doctorDoc._id || doctorDoc.id,
+                firstName: doctorDoc.firstName || "",
+                lastName: doctorDoc.lastName || "",
+                name:
+                  doctorDoc.firstName || doctorDoc.lastName
+                    ? `${doctorDoc.firstName || ""} ${
+                        doctorDoc.lastName || ""
+                      }`.trim()
+                    : authUser.name || "",
+                email: doctorDoc.email || authUser.email || "",
+                phone: doctorDoc.phone || "",
+                clinic: doctorDoc.clinic || "",
+                specialization: doctorDoc.specialization || "",
+              };
+              console.log("Saving doctor to localStorage:", doctorObj);
+              localStorage.setItem("doctor", JSON.stringify(doctorObj));
+            } else {
+              localStorage.removeItem("doctor");
+            }
+          } else {
+            localStorage.removeItem("doctor");
+          }
+        } catch (errFetchDoctor) {
+          console.warn(
+            "Could not fetch doctor doc after login:",
+            errFetchDoctor
+          );
+        }
       }
 
       // Redirect based on role and profileCompleted
       if (authUser.role === "admin") {
         navigate("/admin-dashboard");
       } else if (authUser.role === "doctor") {
-        navigate("/doctor-dashboard");
+        if (authUser.mustChangePassword) {
+          toast("Please change your default password.", { icon: "🔐" });
+          navigate("/doctor/change-password-first");
+        } else {
+          navigate("/doctor-dashboard");
+        }
       } else if (authUser.role === "receptionist") {
-        navigate("/reception-dashboard");
+        // 🔥 New logic: first-time login → force password change
+        if (authUser.mustChangePassword) {
+          toast("Please change your default password.", { icon: "🔐" });
+          navigate("/receptionist/change-password");
+        } else {
+          navigate("/reception-dashboard");
+        }
       } else if (authUser.role === "patient") {
         // If profile not completed, route to setup; otherwise dashboard
         if (!authUser.profileCompleted) navigate("/patient/profile-setup");
@@ -115,9 +190,13 @@ function Login() {
         // unknown role — fallback to home
         navigate("/");
       }
+
+      toast.success("Login successful");
     } catch (err) {
       console.error("Network/login error:", err);
-      setError("Network error: backend not responding");
+      const msg = "Network error: backend not responding";
+      setError(msg);
+      toast.error(msg);
     }
   };
 

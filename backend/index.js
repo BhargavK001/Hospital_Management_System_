@@ -2,6 +2,7 @@
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs"); // Added bcrypt
 const User = require("./models/User");
 const PatientModel = require("./models/Patient");
 const DoctorModel = require("./models/Doctor");
@@ -10,15 +11,20 @@ const AppointmentModel = require("./models/Appointment");
 const Service = require("./models/Service");
 const DoctorSessionModel = require("./models/DoctorSession");
 const TaxModel = require("./models/Tax");
-const ADMIN_EMAIL = "admin@onecare.com";
-const ADMIN_PASSWORD = "admin123";
+
 require("dotenv").config();
 
 const { sendEmail } = require("./utils/emailService");
 const { appointmentBookedTemplate } = require("./utils/emailTemplates");
 
+//Authentication Routes
+const authRoutes = require("./routes/auth");
+
+
 //Receptionist Routes
 const receptionistRoutes = require("./routes/receptionistRoutes");
+const doctorRoutes = require("./routes/doctorRoutes");
+
 
 // PDF Libraries
 const { PDFDocument, StandardFonts, rgb } = require("pdf-lib");
@@ -34,7 +40,12 @@ const upload = multer({ dest: path.join(__dirname, "uploads") });
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Increased limit for image uploads
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
+// Authentication routes
+app.use("/", authRoutes);
+app.use("/doctors", doctorRoutes);
 
 // PDF Editor section
 const pdfRoutes = require("./routes/pdfRoutes");
@@ -50,103 +61,82 @@ mongoose
     console.error("❌ MongoDB connection error:", err);
   });
 
-//             LOGIN
+// Profile Section
 
-//  Login route (POST /login)
-app.post("/login", async (req, res) => {
+// 1) by email – this MUST come first
+app.get("/api/user/email/:email", async (req, res) => {
   try {
-    const { email, password } = req.body;
-
-    // admin login
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      return res.json({
-        id: "admin-id",
-        name: "System Admin",
-        email: ADMIN_EMAIL,
-        role: "admin",
-        profileCompleted: true, // admin doesn't need profile setup
-      });
-    }
-
-    const user = await User.findOne({ email });
-
-    if (!user || user.password !== password) {
-      return res.status(401).json({ message: "Invalid email or password" });
-    }
-
-    res.json({
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      name: user.name,
-      profileCompleted: user.profileCompleted,
-    });
+    const email = decodeURIComponent(req.params.email);
+    const user = await User.findOne({ email }).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user);
   } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ message: "Server error during login" });
+    console.error("Profile GET by email error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-/* ===============================
- *             SIGNUP
- * =============================== */
-
-app.post("/signup", async (req, res) => {
+// 2) by id
+app.get("/api/user/:id", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const user = await User.findById(req.params.id).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user);
+  } catch (err) {
+    console.error("Profile GET error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
-
-    const existing = await User.findOne({ email });
-    if (existing) {
-      return res.status(400).json({ message: "Email already registered" });
-    }
-
-    const newUser = await User.create({
-      email,
-      password,
-      role: "patient",
+// 3) update by id (unchanged)
+app.put("/api/user/:id", async (req, res) => {
+  try {
+    const {
       name,
-      profileCompleted: false,
-    });
+      avatar,
+      phone,
+      gender,
+      dob,
+      addressLine1,
+      addressLine2,
+      city,
+      postalCode,
+      qualification,
+      specialization,
+      experienceYears,
+      bloodGroup,
+    } = req.body;
 
-    // also create empty patient record
-    await PatientModel.create({
-      userId: newUser._id,
-      firstName: name,
-      email,
-    });
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      {
+        name,
+        avatar,
+        phone,
+        gender,
+        dob,
+        addressLine1,
+        addressLine2,
+        city,
+        postalCode,
+        qualification,
+        specialization,
+        experienceYears,
+        bloodGroup,
+      },
+      { new: true }
+    ).select("-password");
 
-    res.status(201).json({
-      id: newUser.id,
-      email: newUser.email,
-      role: newUser.role,
-      name: newUser.name,
-      profileCompleted: newUser.profileCompleted,
-    });
+    if (!updatedUser) return res.status(404).json({ message: "User not found" });
+
+    res.json(updatedUser);
   } catch (err) {
-    console.error("Signup error:", err);
-    res.status(500).json({ message: "Server error during signup" });
+    console.error("Profile UPDATE error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-/* ===============================
- *         PATIENT APIs
- * =============================== */
 
-// Add Patient
-app.post("/patients", async (req, res) => {
-  try {
-    const patient = await PatientModel.create(req.body);
-    res.json({ message: "Patient added", data: patient });
-  } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
-});
-
-// Get Patients
 app.get("/patients", (req, res) => {
   PatientModel.find()
     .then((patients) => res.json(patients))
@@ -252,93 +242,7 @@ app.get("/dashboard-stats", async (req, res) => {
  *         DOCTOR APIs
  * =============================== */
 
-app.post("/doctors", async (req, res) => {
-  try {
-    const doctor = await DoctorModel.create(req.body);
-    res.json({ message: "Doctor added", data: doctor });
-  } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
-});
-
-app.get("/doctors", async (req, res) => {
-  try {
-    const doctors = await DoctorModel.find();
-    res.json(doctors);
-  } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
-});
-
-app.delete("/doctors/:id", async (req, res) => {
-  try {
-    await DoctorModel.findByIdAndDelete(req.params.id);
-    res.json({ message: "Doctor deleted successfully" });
-  } catch (err) {
-    res.status(500).json({ message: "Error deleting doctor", error: err.message });
-  }
-});
-
-//doctor Csv Import
-
-app.post("/doctors/import", upload.single("file"), async (req, res) => {
-  try {
-    console.log("📥 /doctors/import hit");
-
-    if (!req.file) {
-      return res.status(400).json({ message: "No file uploaded" });
-    }
-
-    const results = [];
-
-    fs.createReadStream(req.file.path)
-      .pipe(csv())
-      .on("data", (row) => {
-        // CSV headers:
-        // firstName,lastName,clinic,email,phone,dob,specialization,gender,status
-        results.push({
-          firstName: row.firstName,
-          lastName: row.lastName,
-          clinic: row.clinic,
-          email: row.email,
-          phone: row.phone,
-          dob: row.dob, // string is fine, your schema will cast to Date if needed
-          specialization: row.specialization,
-          gender: row.gender,
-          status: row.status || "Active",
-        });
-      })
-      .on("end", async () => {
-        try {
-          console.log("Parsed doctors from CSV:", results.length);
-          if (results.length > 0) {
-            await DoctorModel.insertMany(results);
-          }
-
-          // delete temp file
-          fs.unlinkSync(req.file.path);
-
-          res.json({
-            message: "Imported doctors",
-            count: results.length,
-          });
-        } catch (err) {
-          console.error("❌ Doctor import save error:", err);
-          res.status(500).json({
-            message: "Error saving doctors",
-            error: err.message,
-          });
-        }
-      })
-      .on("error", (err) => {
-        console.error("❌ CSV parse error (doctors):", err);
-        res.status(500).json({ message: "CSV parse error" });
-      });
-  } catch (err) {
-    console.error("❌ Doctor import error:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
-});
+// Doctor routes are now handled in ./routes/doctorRoutes.js
 
 // ===============================
 //        DOCTOR SESSIONS
@@ -402,25 +306,9 @@ app.delete("/doctor-sessions/:id", async (req, res) => {
 //          APPOINTMENTS
 // ===============================
 
-// Create appointment
-app.post("/appointments", async (req, res) => {
-  try {
-    const doc = await AppointmentModel.create(req.body);
-    res.json({ message: "Appointment created", data: doc });
-  } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
-});
 
-// Get appointments
-app.get("/appointments", async (req, res) => {
-  try {
-    const list = await AppointmentModel.find();
-    res.json(list);
-  } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
-});
+
+
 
 // Csv File Import data 
 app.post("/appointments/import", upload.single("file"), async (req, res) => {
@@ -1000,6 +888,29 @@ app.get("/appointments", async (req, res) => {
     if (req.query.doctor) q.doctorName = { $regex: req.query.doctor, $options: "i" };
     if (req.query.status) q.status = req.query.status;
 
+    // Filter by patientId (supports both Patient ID and User ID)
+    if (req.query.patientId) {
+      if (mongoose.Types.ObjectId.isValid(req.query.patientId)) {
+        const p = await PatientModel.findOne({
+          $or: [{ _id: req.query.patientId }, { userId: req.query.patientId }],
+        });
+        if (p) {
+          q.patientId = p._id;
+        } else {
+          q.patientId = req.query.patientId;
+        }
+      } else {
+        q.patientId = req.query.patientId;
+      }
+    }
+
+    // Filter by doctorId (supports both Doctor ID and Doctor document _id)
+    if (req.query.doctorId) {
+      if (mongoose.Types.ObjectId.isValid(req.query.doctorId)) {
+        q.doctorId = req.query.doctorId;
+      }
+    }
+
     // find appointments and populate patientId and doctorId
     const list = await AppointmentModel.find(q)
       .sort({ createdAt: -1 })
@@ -1036,6 +947,123 @@ app.get("/appointments", async (req, res) => {
     res.json(normalized);
   } catch (err) {
     console.error("appointments list error:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// GET /appointments/all
+app.get("/appointments/all", async (req, res) => {
+  try {
+    const list = await AppointmentModel.find()
+      .sort({ createdAt: -1 })
+      .populate({
+        path: "patientId",
+        select: "firstName lastName email phone",
+        model: "patients",
+      })
+      .populate({
+        path: "doctorId",
+        select: "name clinic",
+        model: "doctors",
+      })
+      .lean();
+    res.json(list);
+  } catch (err) {
+    console.error("Error fetching all appointments:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// GET /appointments/today
+app.get("/appointments/today", async (req, res) => {
+  try {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+
+    // Assuming 'date' is stored as "YYYY-MM-DD" string based on dashboard-stats
+    const list = await AppointmentModel.find({ date: todayStr })
+      .sort({ createdAt: -1 })
+      .populate({
+        path: "patientId",
+        select: "firstName lastName email phone",
+        model: "patients",
+      })
+      .populate({
+        path: "doctorId",
+        select: "name clinic",
+        model: "doctors",
+      })
+      .lean();
+    res.json(list);
+  } catch (err) {
+    console.error("Error fetching today's appointments:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// GET /appointments/weekly
+app.get("/appointments/weekly", async (req, res) => {
+  try {
+   
+    const stats = [];
+    const today = new Date();
+    
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      const dateStr = `${yyyy}-${mm}-${dd}`;
+      
+      const count = await AppointmentModel.countDocuments({ date: dateStr });
+      const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+      
+      stats.push({ label: dayName, count });
+    }
+    
+    res.json(stats);
+  } catch (err) {
+    console.error("Error fetching weekly stats:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// GET /appointments/monthly
+app.get("/appointments/monthly", async (req, res) => {
+  try {
+    
+    const stats = [];
+    const today = new Date();
+    
+    
+    for (let i = 3; i >= 0; i--) {
+       
+        const start = new Date(today);
+        start.setDate(today.getDate() - (i * 7) - 6);
+        const end = new Date(today);
+        end.setDate(today.getDate() - (i * 7));
+        
+        let count = 0;
+        for (let j=0; j<7; j++) {
+            const d = new Date(start);
+            d.setDate(start.getDate() + j);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, "0");
+            const dd = String(d.getDate()).padStart(2, "0");
+            const dateStr = `${yyyy}-${mm}-${dd}`;
+            count += await AppointmentModel.countDocuments({ date: dateStr });
+        }
+        
+        stats.push({ label: `Week ${4-i}`, count });
+    }
+
+    res.json(stats);
+  } catch (err) {
+    console.error("Error fetching monthly stats:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
@@ -1398,6 +1426,7 @@ app.get("/patients/by-user/:userId", async (req, res) => {
 // Receptionist 
 
 app.use("/api/receptionists", receptionistRoutes);
+
 
 // Start the server 
 const PORT = 3001;
