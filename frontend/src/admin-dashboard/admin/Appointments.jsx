@@ -255,14 +255,11 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
           }
         );
       } else {
-        await toast.promise(
-          axios.post(`${API_BASE}/appointments`, payload),
-          {
-            loading: "Saving appointment...",
-            success: "Appointment added",
-            error: "Failed to add appointment",
-          }
-        );
+        await toast.promise(axios.post(`${API_BASE}/appointments`, payload), {
+          loading: "Saving appointment...",
+          success: "Appointment added",
+          error: "Failed to add appointment",
+        });
       }
 
       fetchAppointments();
@@ -440,7 +437,7 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
     <div className="d-flex gap-2 appointments-header-actions">
       {/* white button like Add Patient */}
       <button
-        className="btn btn-light btn-sm"
+        className="btn btn-light-toggle btn-sm"
         onClick={openAddForm}
       >
         {panelOpen && !editId ? "Close form" : "Add Appointment"}
@@ -499,7 +496,6 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
            </div>
           <div />
         </div>
-
           {/* FILTER PANEL */}
           <div className={`filter-panel ${filtersOpen ? "open" : ""}`}>
             <div className="p-3">
@@ -530,7 +526,7 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
                       <option key={c._id} value={c.name}>
                         {c.name}
                       </option>
-                    ))}
+                    ))} 
                   </select>
                 </div>
 
@@ -658,8 +654,7 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
                             {form.doctor &&
                               !doctors.some(
                                 (d) =>
-                                  `${d.firstName} ${d.lastName}` ===
-                                  form.doctor
+                                  `${d.firstName} ${d.lastName}` === form.doctor
                               ) && (
                                 <option value={form.doctor}>
                                   {form.doctor}
@@ -713,9 +708,7 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
                       </div>
 
                       <div className="col-md-12">
-                        <label className="form-label">
-                          Appointment Date *
-                        </label>
+                        <label className="form-label">Appointment Date *</label>
                         <input
                           name="date"
                           type="date"
@@ -821,9 +814,7 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
                       )}
                     </div>
 
-                    <label className="form-label">
-                      Service Detail (Price)
-                    </label>
+                    <label className="form-label">Service Detail (Price)</label>
                     <input
                       name="servicesDetail"
                       className="form-control mb-3"
@@ -977,9 +968,7 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
                             <select
                               className="form-select"
                               value={importType}
-                              onChange={(e) =>
-                                setImportType(e.target.value)
-                              }
+                              onChange={(e) => setImportType(e.target.value)}
                             >
                               <option value="csv">CSV</option>
                             </select>
