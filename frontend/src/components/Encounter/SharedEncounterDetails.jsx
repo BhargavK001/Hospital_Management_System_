@@ -263,13 +263,13 @@ export default function SharedEncounterDetails({ role }) {
             Back
           </button>
           <button 
-            className="btn btn-light btn-sm d-flex align-items-center gap-2 text-primary hover-blue"
+            className="btn btn-light btn-sm d-flex align-items-center gap-2 text-dark hover-light-blue"
             style={{ transition: 'all 0.3s' }}
           >
             <FaPrint /> Print Encounter
           </button>
           <button 
-            className="btn btn-light btn-sm d-flex align-items-center gap-2 text-primary hover-blue"
+            className="btn btn-light btn-sm d-flex align-items-center gap-2 text-dark hover-light-blue"
             style={{ transition: 'all 0.3s' }}
           >
             <FaFileUpload /> Upload Report
