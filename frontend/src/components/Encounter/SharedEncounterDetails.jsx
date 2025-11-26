@@ -88,12 +88,7 @@ export default function SharedEncounterDetails({ role }) {
 
   const fetchEncounterDetails = async () => {
     try {
-      // We fetch all and find, or fetch by ID if API supports it. 
-      // The current controller supports get all or update/delete by ID.
-      // Ideally we should have getById. 
-      // But let's stick to what was there: fetch all and find.
-      // Wait, the previous code did: const res = await axios.get(`http://localhost:3001/encounters`); const found = res.data.find(...)
-      // This is inefficient but consistent with existing code.
+      
       
       const res = await axios.get(`http://localhost:3001/encounters`); 
       const found = res.data.find(e => e._id === id);
