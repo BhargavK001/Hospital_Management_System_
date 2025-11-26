@@ -24,10 +24,17 @@ exports.createEncounter = async (req, res) => {
   }
 };
 
-// Get all encounters
+// Get all encounters (with optional filtering)
 exports.getEncounters = async (req, res) => {
   try {
-    const encounters = await EncounterModel.find().sort({ createdAt: -1 });
+    const { doctorId } = req.query;
+    let query = {};
+    
+    if (doctorId) {
+      query.doctorId = doctorId;
+    }
+
+    const encounters = await EncounterModel.find(query).sort({ createdAt: -1 });
     res.json(encounters);
   } catch (err) {
     console.error("Error fetching encounters:", err);

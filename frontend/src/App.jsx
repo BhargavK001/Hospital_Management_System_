@@ -51,6 +51,9 @@ import DoctorAppointmentDetails from "./doctor-dashboard/doctor/DoctorAppointmen
 import DoctorProfile from "./doctor-dashboard/doctor/DoctorProfile.jsx";
 import DoctorChangePassword from "./doctor-dashboard/doctor/DoctorChangePassword";
 import DoctorFirstLoginChangePassword from "./doctor-dashboard/doctor/DoctorFirstLoginChangePassword";
+import DoctorEncounterList from "./doctor-dashboard/doctor/DoctorEncounterList";
+import DoctorEncounterDetails from "./doctor-dashboard/doctor/DoctorEncounterDetails";
+import DoctorEncounterTemplateList from "./doctor-dashboard/doctor/DoctorEncounterTemplateList";
 
 
 // Receptionist
@@ -196,6 +199,9 @@ function App() {
         <Route path="/encounter-template-details/:id" element={
           <EncounterTemplateDetails sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
         } />
+        <Route path="/admin/encounters" element={
+          <EncounterList sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
+        } />
 
         {/* Doctor Section */}
 
@@ -217,6 +223,9 @@ function App() {
         } />
         <Route path="/doctor/change-password" element={<DoctorChangePassword />} />
         <Route path="/doctor/change-password-first" element={<DoctorFirstLoginChangePassword />} />
+        <Route path="/doctor/encounters" element={<DoctorEncounterList />} />
+        <Route path="/doctor/encounters/:id" element={<DoctorEncounterDetails />} />
+        <Route path="/doctor/encounter-templates" element={<DoctorEncounterTemplateList />} />
 
         {/* Patient Section */}
 
