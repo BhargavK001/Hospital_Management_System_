@@ -61,13 +61,7 @@ export default function SharedEncounterTemplateList({ role }) {
         handleCloseModal();
         // Redirect to details page to edit the rest
         if (role === 'doctor') {
-             // Assuming doctor has a similar route or same route?
-             // For now, let's assume they share the same details page or we need a doctor version
-             // The user didn't ask for a doctor specific details page yet, but let's be safe.
-             // Actually, the previous implementation plan didn't create a SharedEncounterTemplateDetails.
-             // Let's check if EncounterTemplateDetails is reusable.
-             // For now I will point to the same route, but I might need to check that file too.
-             navigate(`/encounter-template-details/${res.data._id}`);
+             navigate(`/doctor/encounter-template-details/${res.data._id}`);
         } else {
              navigate(`/encounter-template-details/${res.data._id}`);
         }
@@ -192,7 +186,13 @@ export default function SharedEncounterTemplateList({ role }) {
                         >
                           <FaEdit />
                         </button>
-                        <button className="btn btn-sm template-action-btn btn-outline-info" title="View" onClick={() => navigate(`/encounter-template-details/${t._id}`)}>
+                        <button className="btn btn-sm template-action-btn btn-outline-info" title="View" onClick={() => {
+                          if (role === 'doctor') {
+                            navigate(`/doctor/encounter-template-details/${t._id}`);
+                          } else {
+                            navigate(`/encounter-template-details/${t._id}`);
+                          }
+                        }}>
                           <FaEye />
                         </button>
                         <button 

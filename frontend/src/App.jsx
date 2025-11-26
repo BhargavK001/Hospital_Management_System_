@@ -54,6 +54,7 @@ import DoctorFirstLoginChangePassword from "./doctor-dashboard/doctor/DoctorFirs
 import DoctorEncounterList from "./doctor-dashboard/doctor/DoctorEncounterList";
 import DoctorEncounterDetails from "./doctor-dashboard/doctor/DoctorEncounterDetails";
 import DoctorEncounterTemplateList from "./doctor-dashboard/doctor/DoctorEncounterTemplateList";
+import DoctorEncounterTemplateDetails from "./doctor-dashboard/doctor/DoctorEncounterTemplateDetails";
 
 
 // Receptionist
@@ -226,6 +227,7 @@ function App() {
         <Route path="/doctor/encounters" element={<DoctorEncounterList />} />
         <Route path="/doctor/encounters/:id" element={<DoctorEncounterDetails />} />
         <Route path="/doctor/encounter-templates" element={<DoctorEncounterTemplateList />} />
+        <Route path="/doctor/encounter-template-details/:id" element={<DoctorEncounterTemplateDetails />} />
 
         {/* Patient Section */}
 
