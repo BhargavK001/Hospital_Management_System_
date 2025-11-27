@@ -49,6 +49,12 @@ const EncounterSchema = new mongoose.Schema({
     duration: String,
     instruction: String
   }],
+  medicalReports: [{
+    name: String,
+    date: Date,
+    file: String,
+    originalName: String
+  }],
   createdAt: {
     type: Date,
     default: Date.now,
