@@ -32,6 +32,7 @@ import EncounterList from "./admin-dashboard/admin/EncounterList";
 import EncounterTemplateList from "./admin-dashboard/admin/EncounterTemplateList";
 import EncounterDetails from "./admin-dashboard/admin/EncounterDetails";
 import EncounterTemplateDetails from "./admin-dashboard/admin/EncounterTemplateDetails";
+import MedicalReportPage from "./admin-dashboard/admin/MedicalReportPage";
 
 /* Patient */
 import PatientDashboard from "./patient-dashboard/Patient/PatientDashboard";
@@ -55,6 +56,7 @@ import DoctorEncounterList from "./doctor-dashboard/doctor/DoctorEncounterList";
 import DoctorEncounterDetails from "./doctor-dashboard/doctor/DoctorEncounterDetails";
 import DoctorEncounterTemplateList from "./doctor-dashboard/doctor/DoctorEncounterTemplateList";
 import DoctorEncounterTemplateDetails from "./doctor-dashboard/doctor/DoctorEncounterTemplateDetails";
+import DoctorMedicalReportPage from "./doctor-dashboard/doctor/DoctorMedicalReportPage";
 
 
 // Receptionist
@@ -164,6 +166,9 @@ function App() {
         <Route path="/Appointments" element={
           <Appointment sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
         } />
+        <Route path="/admin/appointments" element={
+          <Appointment sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
+        } />
         <Route path="/BillingRecords" element={
           <BillingRecords sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
         } />
@@ -203,6 +208,12 @@ function App() {
         <Route path="/admin/encounters" element={
           <EncounterList sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
         } />
+        <Route path="/admin/reports" element={
+          <MedicalReportPage sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
+        } />
+        <Route path="/encounters/:id/reports" element={
+          <MedicalReportPage sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
+        } />
 
         {/* Doctor Section */}
 
@@ -228,6 +239,7 @@ function App() {
         <Route path="/doctor/encounters/:id" element={<DoctorEncounterDetails />} />
         <Route path="/doctor/encounter-templates" element={<DoctorEncounterTemplateList />} />
         <Route path="/doctor/encounter-template-details/:id" element={<DoctorEncounterTemplateDetails />} />
+        <Route path="/doctor/encounters/:id/reports" element={<DoctorMedicalReportPage />} />
 
         {/* Patient Section */}
 

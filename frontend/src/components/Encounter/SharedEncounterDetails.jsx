@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FaPrint, FaFileUpload, FaTimes, FaPlus, FaTrash, FaEdit } from "react-icons/fa";
+import { FaPrint, FaFileUpload, FaTimes, FaPlus, FaTrash, FaEdit, FaEye } from "react-icons/fa";
 import axios from "axios";
 import toast from "react-hot-toast";
 import "../../admin-dashboard/styles/services.css"; // Adjust path if needed, or assume global styles
@@ -8,6 +8,7 @@ import "../../admin-dashboard/styles/services.css"; // Adjust path if needed, or
 export default function SharedEncounterDetails({ role }) {
   const { id } = useParams();
   const navigate = useNavigate();
+  const medicalReportRef = useRef(null);
   const [encounter, setEncounter] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -97,6 +98,7 @@ export default function SharedEncounterDetails({ role }) {
         setEncounter(found);
         setProblems(found.problems || []);
         setObservations(found.observations || []);
+        setNotes(found.notes || []);
         setNotes(found.notes || []);
         setPrescriptions(found.prescriptions || []);
 
@@ -242,6 +244,8 @@ export default function SharedEncounterDetails({ role }) {
     updateEncounterData({ prescriptions: updatedPrescriptions });
   };
 
+
+
   if (loading) return <div className="p-5 text-center">Loading...</div>;
   if (!encounter) return <div className="p-5 text-center">Encounter not found</div>;
 
@@ -266,6 +270,13 @@ export default function SharedEncounterDetails({ role }) {
           <button 
             className="btn btn-light btn-sm d-flex align-items-center gap-2 text-dark hover-light-blue"
             style={{ transition: 'all 0.3s' }}
+            onClick={() => {
+              if (role === 'doctor') {
+                navigate(`/doctor/encounters/${id}/reports`);
+              } else {
+                navigate(`/encounters/${id}/reports`);
+              }
+            }}
           >
             <FaFileUpload /> Upload Report
           </button>
@@ -611,6 +622,8 @@ export default function SharedEncounterDetails({ role }) {
            </div>
          </>
        )}
+
+       {/* Medical Report Section Removed - Moved to separate page */}
     </div>
   );
 }
