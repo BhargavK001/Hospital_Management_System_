@@ -22,8 +22,9 @@ const billingRoutes = require("./routes/billingRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const userRoutes = require("./routes/userRoutes");
 const holidayRoutes = require("./routes/holidayRoutes");
-const encounterRoutes = require("./routes/encounterRoutes");
-const encounterTemplateRoutes = require("./routes/encounterTemplateRoutes");
+
+// const encounterRoutes = require("./routes/encounterRoutes");
+// const encounterTemplateRoutes = require("./routes/encounterTemplateRoutes");
 
 const app = express();
 
@@ -54,10 +55,8 @@ app.use("/taxes", taxRoutes);
 app.use("/bills", billingRoutes);
 app.use("/dashboard-stats", dashboardRoutes);
 app.use("/", userRoutes); 
-app.use("/encounters", encounterRoutes);
-app.use("/encounters", encounterRoutes);
-app.use("/encounter-templates", encounterTemplateRoutes);
-app.use("/api/email", require("./routes/emailRoutes"));
+// app.use("/encounters", encounterRoutes);
+// app.use("/encounter-templates", encounterTemplateRoutes);
 
 app.use("/holidays", holidayRoutes);
 

@@ -5,7 +5,6 @@ import EditorSidebar from "./components/EditorSidebar";
 import PdfPreviewPane from "./components/PdfPreviewPane";
 import axios from "axios";
 import "./PdfEditor.css";
-import { toast } from "react-hot-toast";
 
 const defaultLayout = {
   header: {
@@ -85,7 +84,7 @@ export default function PdfEditor() {
       });
       const base64 = res.data.pdfBase64;
       if (!base64) {
-        toast.error("Preview API did not return pdfBase64");
+        alert("Preview API did not return pdfBase64");
         return;
       }
 
@@ -107,7 +106,7 @@ export default function PdfEditor() {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Download (current layout) failed:", err);
-      toast.error("Download failed. Check console.");
+      alert("Download failed. Check console.");
     }
   };
 
@@ -118,11 +117,11 @@ export default function PdfEditor() {
         "http://localhost:3001/pdf/create-next-appointment",
         { appointmentId, layout }
       );
-      toast.success("Next appointment created successfully.");
+      alert("Next appointment created successfully.");
       console.log("Next appointment:", res.data);
     } catch (err) {
       console.error("Create next appointment failed:", err);
-      toast.error("Failed to create next appointment. Check console.");
+      alert("Failed to create next appointment. Check console.");
     }
   };
 

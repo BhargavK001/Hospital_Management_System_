@@ -5,17 +5,14 @@ import Navbar from "../components/Navbar";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { FaDownload } from "react-icons/fa";
 import "../styles/appointments.css";
-import "../styles/admin-shared.css";
+import "../styles/services.css";
 import toast from "react-hot-toast";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import ConfirmationModal from "../../components/ConfirmationModal";
+import { useNavigate } from "react-router-dom";
 
 const API_BASE = "http://localhost:3001";
 
 const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const patientIdParam = searchParams.get("patientId");
 
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -46,7 +43,6 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
     service: "",
     date: "",
     patient: "",
-    patientName: "",
     status: "booked",
     servicesDetail: "",
     slot: "",
@@ -58,15 +54,6 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
   const [importType, setImportType] = useState("csv");
   const [importFile, setImportFile] = useState(null);
   const [importing, setImporting] = useState(false);
-  
-  const [confirmModal, setConfirmModal] = useState({ 
-    show: false, 
-    title: "", 
-    message: "", 
-    action: null,
-    confirmText: "Delete",
-    confirmVariant: "danger"
-  });
 
   // ------------------ FETCH APPOINTMENTS ------------------
   useEffect(() => {
@@ -120,21 +107,6 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
 
     fetchDropdownData();
   }, []);
-
-  // Handle patientId param from URL
-  useEffect(() => {
-    if (patientIdParam && patients.length > 0) {
-      const p = patients.find((pat) => pat._id === patientIdParam);
-      if (p) {
-        setFilters((prev) => ({
-          ...prev,
-          patient: `${p.firstName} ${p.lastName}`,
-        }));
-        // Trigger fetch with this patient
-        fetchAppointments({ patient: `${p.firstName} ${p.lastName}` });
-      }
-    }
-  }, [patientIdParam, patients]);
 
   useEffect(() => {
     setFiltersOpen(false);
@@ -219,17 +191,6 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
       return;
     }
 
-    if (name === "patient") {
-      // value is the patient ID (or name if legacy/custom)
-      const selectedP = patients.find((p) => p._id === value);
-      setForm((p) => ({
-        ...p,
-        patient: value,
-        patientName: selectedP ? `${selectedP.firstName} ${selectedP.lastName}` : value,
-      }));
-      return;
-    }
-
     setForm((p) => ({ ...p, [name]: value }));
   };
 
@@ -241,7 +202,6 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
       service: "",
       date: "",
       patient: "",
-      patientName: "",
       status: "booked",
       servicesDetail: "",
       slot: "",
@@ -257,8 +217,7 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
       doctor: item.doctorName || "",
       service: item.services || "",
       date: item.date ? item.date.substring(0, 10) : "",
-      patient: item.patientId?._id || item.patientName || "",
-      patientName: item.patientName || "",
+      patient: item.patientName || "",
       status: item.status || "booked",
       servicesDetail: item.servicesDetail || "",
       slot: item.slot || "",
@@ -278,8 +237,7 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
       const payload = {
         clinic: form.clinic,
         doctorName: form.doctor,
-        patientId: form.patient, // Sending ID
-        patientName: form.patientName, // Sending Name
+        patientName: form.patient,
         services: form.service,
         date: form.date,
         status: form.status,
@@ -313,32 +271,16 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
   };
 
   // ------------------ DELETE / PDF ------------------
-  const handleDelete = (id) => {
-    setConfirmModal({
-      show: true,
-      title: "Delete Appointment",
-      message: "Are you sure you want to delete this?",
-      action: () => executeDelete(id),
-      confirmText: "Delete",
-      confirmVariant: "danger"
-    });
-  };
-
-  const executeDelete = async (id) => {
+  const handleDelete = async (id) => {
+    const ok = window.confirm("Are you sure you want to delete this?");
+    if (!ok) return;
     try {
       await axios.delete(`${API_BASE}/appointments/${id}`);
       setAppointments((prev) => prev.filter((a) => a._id !== id));
-      toast.success("Appointment deleted");
     } catch (err) {
       console.error("Delete error:", err);
-      toast.error("Error deleting");
-    } finally {
-      closeConfirmModal();
+      alert("Error deleting");
     }
-  };
-
-  const closeConfirmModal = () => {
-    setConfirmModal({ show: false, title: "", message: "", action: null });
   };
 
   const handlePdf = (id) => {
@@ -365,7 +307,7 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
   const handleImportSubmit = async (e) => {
     e.preventDefault();
     if (!importFile) {
-      toast.error("Please choose a CSV file first.");
+      alert("Please choose a CSV file first.");
       return;
     }
 
@@ -383,12 +325,12 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
         }
       );
 
-      toast.success(`Imported ${res.data?.count || 0} appointments`);
+      alert(`Imported ${res.data?.count || 0} appointments`);
       closeImportModal();
       fetchAppointments();
     } catch (err) {
       console.error("Error importing appointments:", err);
-      toast.error("Error importing appointments. Check backend logs.");
+      alert("Error importing appointments. Check backend logs.");
     } finally {
       setImporting(false);
     }
@@ -792,7 +734,7 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
                               !patients.some(
                                 (p) =>
                                   `${p.firstName} ${p.lastName}` ===
-                                    form.patient || p._id === form.patient
+                                  form.patient
                               ) && (
                                 <option value={form.patient}>
                                   {form.patient}
@@ -801,7 +743,7 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
                             {patients.map((p) => (
                               <option
                                 key={p._id}
-                                value={p._id}
+                                value={`${p.firstName} ${p.lastName}`}
                               >
                                 {p.firstName} {p.lastName}
                               </option>
@@ -1085,15 +1027,6 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
             </>
           )}
         </div>
-        <ConfirmationModal
-          show={confirmModal.show}
-          title={confirmModal.title}
-          message={confirmModal.message}
-          onConfirm={confirmModal.action}
-          onCancel={closeConfirmModal}
-          confirmText={confirmModal.confirmText}
-          confirmVariant={confirmModal.confirmVariant}
-        />
       </div>
     </div>
   );

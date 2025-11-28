@@ -155,66 +155,43 @@ export default function PatientAppointments({ sidebarCollapsed, toggleSidebar })
       alert("Failed to cancel. Check console.");
     }
   };
+// --------- Date + Time helpers ----------
+const getDateObj = (a) => {
+  let base = null;
 
-  const handlePdf = (id) => {
-    window.open(`${API_BASE}/appointments/${id}/pdf`, "_blank");
-  };
-
-  // --------- Date + Time helpers ----------
-  const getDateObj = (a) => {
-    // Case 1: If we have separate date and time fields (How your booking saves it)
-    if (a.date && a.time) {
-      const datePart = typeof a.date === 'string' ? a.date.split('T')[0] : a.date;
-      // Create a string like "2025-11-28 11:30 am"
-      const combinedString = `${datePart} ${a.time}`;
-      const d = new Date(combinedString);
-      if (!Number.isNaN(d.getTime())) return d;
+  // full datetime fields (from calendar, etc.)
+  if (a.start || a.datetime) {
+    base = a.start || a.datetime;
+  } else if (a.date) {
+    // if date is a plain "YYYY-MM-DD" string, combine with time/default
+    if (typeof a.date === "string" && a.date.length <= 10 && !a.date.includes("T")) {
+      base = `${a.date}T${a.time || "09:00:00"}`;
+    } else {
+      // already a full ISO datetime or Date object
+      base = a.date;
     }
+  }
 
-    // Case 2: Fallback logic for ISO strings or other formats
-    let base = null;
-    if (a.start || a.datetime) {
-      base = a.start || a.datetime;
-    } else if (a.date) {
-      if (typeof a.date === "string" && a.date.length <= 10 && !a.date.includes("T")) {
-        // Default fallback if no specific time field exists
-        base = `${a.date}T09:00:00`;
-      } else {
-        base = a.date;
-      }
-    }
+  if (!base) return null;
+  const d = new Date(base);
+  if (Number.isNaN(d.getTime())) return null;
+  return d;
+};
 
-    if (!base) return null;
-    const d = new Date(base);
-    if (Number.isNaN(d.getTime())) return null;
-    return d;
-  };
+const fmtDateTime = (a) => {
+  const d = getDateObj(a);
+  if (!d) return "-";
 
-  const fmtDateTime = (a) => {
-    // If we have a specific time string stored (e.g. "11:30 am"), prioritize displaying that directly
-    // This prevents timezone shifting issues completely
-    if (a.date && a.time) {
-      const d = new Date(a.date);
-      const dd = String(d.getDate()).padStart(2, "0");
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const yyyy = d.getFullYear();
-      return `${dd}-${mm}-${yyyy} (${a.time})`;
-    }
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  const dateStr = `${dd}-${mm}-${yyyy}`;
 
-    // Fallback for older data
-    const d = getDateObj(a);
-    if (!d) return "-";
-
-    const dd = String(d.getDate()).padStart(2, "0");
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const yyyy = d.getFullYear();
-    const dateStr = `${dd}-${mm}-${yyyy}`;
-
-    return `${dateStr} (${d.toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    })})`;
-  };
+  return `${dateStr} (${d.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  })})`;
+};
 
 
 
@@ -318,10 +295,11 @@ export default function PatientAppointments({ sidebarCollapsed, toggleSidebar })
               <FaPlus /> Add appointment
             </button>
             <button
-              className="btn btn-sm btn-outline-dark"
-              onClick={() => handlePdf(a._id)}
+              className="btn btn-outline-secondary"
+              onClick={() => window.print()}
+              title="Print list"
             >
-              PDF
+              Print
             </button>
           </div>
         </div>
@@ -341,8 +319,9 @@ export default function PatientAppointments({ sidebarCollapsed, toggleSidebar })
                 a.patientName ||
                 (a.patient &&
                   (a.patient.firstName
-                    ? `${a.patient.firstName} ${a.patient.lastName || ""
-                    }`
+                    ? `${a.patient.firstName} ${
+                        a.patient.lastName || ""
+                      }`
                     : a.patient.name)) ||
                 patientStored?.name ||
                 "You";
@@ -350,8 +329,9 @@ export default function PatientAppointments({ sidebarCollapsed, toggleSidebar })
                 a.doctorName ||
                 (a.doctor &&
                   (a.doctor.firstName
-                    ? `${a.doctor.firstName} ${a.doctor.lastName || ""
-                    }`
+                    ? `${a.doctor.firstName} ${
+                        a.doctor.lastName || ""
+                      }`
                     : a.doctor.name)) ||
                 "Doctor";
               const clinic =
@@ -435,13 +415,14 @@ export default function PatientAppointments({ sidebarCollapsed, toggleSidebar })
                         <div className="d-flex align-items-center gap-2">
                           <div>
                             <span
-                              className={`badge ${status.toLowerCase() === "booked"
-                                ? "bg-primary"
-                                : status.toLowerCase() ===
-                                  "confirmed"
+                              className={`badge ${
+                                status.toLowerCase() === "booked"
+                                  ? "bg-primary"
+                                  : status.toLowerCase() ===
+                                    "confirmed"
                                   ? "bg-success"
                                   : "bg-secondary"
-                                }`}
+                              }`}
                             >
                               {status.toUpperCase()}
                             </span>
@@ -497,9 +478,10 @@ export default function PatientAppointments({ sidebarCollapsed, toggleSidebar })
                               <FaEdit />
                             </button>
                             <button
-                                  className="btn btn-sm btn-outline-dark"
-                                  onClick={() => handlePdf(a._id)}
-                                >
+                              className="btn btn-sm btn-outline-success"
+                              title="Print"
+                              onClick={() => window.print()}
+                            >
                               <FaPrint />
                             </button>
                             <button
