@@ -54,7 +54,7 @@ import PatientProfileSetup from "./patient-dashboard/Patient/PatientProfileSetup
 import PatientProfile from "./patient-dashboard/Patient/PatientProfile.jsx";
 import PatientChangePassword from "./patient-dashboard/Patient/PatientChangePassword";
 import Encounters from "./patient-dashboard/Patient/Encounters";
-import PatientBilling  from "./patient-dashboard/Patient/PatientBills";
+import PatientBilling from "./patient-dashboard/Patient/PatientBills";
 import PatientReport from "./patient-dashboard/Patient/MedicalReport";
 
 /* Doctor */
@@ -106,7 +106,7 @@ function App() {
     } else if (path.startsWith("/patient-dashboard")) {
       title = "OneCare Patient Portal";
       icon = "/patient.ico";
-    }else if (path.startsWith("/reception-dashboard")) {
+    } else if (path.startsWith("/reception-dashboard")) {
       title = "OneCare Receptionist Portal";
       icon = "/receptionist.ico";
     }
@@ -268,12 +268,15 @@ function App() {
         <Route path="/doctor/encounter-templates" element={<DoctorEncounterTemplateList />} />
         <Route path="/doctor/encounter-template-details/:id" element={<DoctorEncounterTemplateDetails />} />
         <Route path="/doctor/encounters/:id/reports" element={<DoctorMedicalReportPage />} />
-
+        <Route
+          path="/doctor/patients/view/:patientId"
+          element={<DoctorEncounterList />}  // Re-use Encounter List to show history
+        />
         {/* Patient Section */}
 
         <Route path="/patient" element={
-          <PatientDashboard sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar}/>
-        }/>
+          <PatientDashboard sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
+        } />
         <Route path="/patient-dashboard" element={
           <PatientDashboard sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
         } />
@@ -286,13 +289,13 @@ function App() {
         <Route path="/patient/profile-setup" element={<PatientProfileSetup />} />
         <Route path="/patient/profile" element={<PatientProfile sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />} />
         <Route path="/patient/change-password" element={<PatientChangePassword sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />} />
-         <Route
+        <Route
           path="/patient/encounters"
           element={<Encounters sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />}
         />
         <Route
           path="/patient/billing"
-          element={<PatientBilling  sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />}
+          element={<PatientBilling sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />}
         />
         <Route
           path="/patient/reports"
@@ -302,7 +305,7 @@ function App() {
 
         <Route path="/reception-dashboard" element={<ReptionistDashboard />} />
         <Route path="/pdf-editor" element={<PdfEditor />} />
-        
+
         {/* Receptionist Section */}
 
         <Route path="/receptionists" element={
@@ -314,7 +317,7 @@ function App() {
         <Route path="/receptionist/change-password" element={<ReceptionistChangePassword />} />
         <Route path="/reception/change-password" element={<ReceptionistChangePasswordPage />} />
         <Route path="/receptionist/profile" element={
-        <ReceptionistProfile sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
+          <ReceptionistProfile sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
         } />
 
         {/* Auth */}
