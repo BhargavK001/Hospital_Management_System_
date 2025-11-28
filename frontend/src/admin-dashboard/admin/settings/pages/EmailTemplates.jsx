@@ -448,7 +448,7 @@ const EmailTemplates = () => {
     },
   ];
 
-  // State to manage expanded items and form data
+ 
   // We'll store edits in a local state map: { [templateId]: { subject, body, enabled } }
   const [edits, setEdits] = useState({});
 

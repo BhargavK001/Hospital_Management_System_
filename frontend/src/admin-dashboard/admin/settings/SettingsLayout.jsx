@@ -1,10 +1,13 @@
 import React from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import Navbar from "../../components/Navbar";
 import SettingsSidebar from "./SettingsSidebar";
+import "./settings-animations.css";
 
 const SettingsLayout = ({ sidebarCollapsed, toggleSidebar }) => {
+  const location = useLocation();
+
   return (
     <div className="d-flex">
       {/* Main Sidebar */}
@@ -34,7 +37,10 @@ const SettingsLayout = ({ sidebarCollapsed, toggleSidebar }) => {
             <div className="col-md-9">
               <div className="card shadow-sm border-0 h-100" style={{ minHeight: "500px" }}>
                 <div className="card-body">
-                  <Outlet />
+                  {/* Key forces re-render and re-animation on route change */}
+                  <div key={location.pathname} className="animate-fade-in-up">
+                    <Outlet />
+                  </div>
                 </div>
               </div>
             </div>
