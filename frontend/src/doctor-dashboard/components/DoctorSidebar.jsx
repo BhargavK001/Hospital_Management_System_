@@ -9,16 +9,17 @@ import {
   FaCalendarCheck,
   FaUserInjured,
   FaListAlt,
-  FaFileInvoice
+  FaFileInvoice,
+  FaChevronDown,
+  FaChevronUp
 } from "react-icons/fa";
 import { NavLink } from "react-router-dom";
-import "../styles/DoctorSidebar.css";
 
 export default function DoctorSidebar({ open = true }) {
   const expandedWidth = 250;
   const collapsedWidth = 64;
 
-  const [encountersOpen, setEncountersOpen] = useState(false);
+  const [isEncountersOpen, setIsEncountersOpen] = useState(false);
 
   const linkClass = ({ isActive }) =>
     "nav-link d-flex align-items-center gap-2 text-primary " +
@@ -26,7 +27,6 @@ export default function DoctorSidebar({ open = true }) {
 
   return (
     <>
-      {/* SAME ACTIVE STYLE AS ADMIN */}
       <style>
         {`
           .nav-pills .nav-link.active {
@@ -55,100 +55,90 @@ export default function DoctorSidebar({ open = true }) {
           zIndex: 1000
         }}
       >
-        {/* LOGO */}
+        {/* Logo */}
         <div className="d-flex align-items-center mb-4">
           <img src={logo} alt="Logo" width="30" height="30" />
           {open && <h4 className="m-0 fw-bold text-primary ms-2">One Care</h4>}
         </div>
 
-        {/* MENU */}
         <ul className="nav nav-pills flex-column">
-
           <li className="nav-item mb-2">
             <NavLink to="/doctor-dashboard" className={linkClass}>
-              <FaTachometerAlt style={{ minWidth: 20 }} />
-              {open && <span>Dashboard</span>}
+              <FaTachometerAlt style={{ minWidth: 20 }} /> {open && "Dashboard"}
             </NavLink>
           </li>
 
           <li className="nav-item mb-2">
             <NavLink to="/doctor/appointments" className={linkClass}>
-              <FaCalendarAlt style={{ minWidth: 20 }} />
-              {open && <span>Appointments</span>}
+              <FaCalendarAlt style={{ minWidth: 20 }} /> {open && "Appointments"}
             </NavLink>
           </li>
 
-          {/* ENCOUTNERS */}
           <li className="nav-item mb-2">
             <div
               className="nav-link d-flex align-items-center gap-2 text-primary"
-              style={{
-                cursor: "pointer",
-                justifyContent: "space-between",
-                minWidth: 20
-              }}
-              onClick={() => setEncountersOpen(!encountersOpen)}
+              style={{ cursor: "pointer", justifyContent: "space-between" }}
+              onClick={() => setIsEncountersOpen(!isEncountersOpen)}
             >
               <div className="d-flex align-items-center gap-2">
                 <FaCalendarCheck style={{ minWidth: 20 }} />
                 {open && <span>Encounters</span>}
               </div>
-
-              {/* Only show arrow when open */}
-              {open && (encountersOpen ? <span>▾</span> : <span>▸</span>)}
+              {open && (isEncountersOpen ? <FaChevronUp /> : <FaChevronDown />)}
             </div>
 
-            {/* Submenu ONLY visible when expanded */}
-            {open && encountersOpen && (
-              <ul className="nav flex-column ms-3">
-                <li className="nav-item mb-2">
-                  <NavLink to="/doctor/encounters/list" className={linkClass}>
-                    <FaListAlt style={{ minWidth: 20 }} />
-                    <span>Encounter List</span>
-                  </NavLink>
-                </li>
-              </ul>
+            {open && (
+              <Collapse in={isEncountersOpen}>
+                <ul className="nav flex-column ms-3">
+                  <li className="nav-item mb-2">
+                    <NavLink to="/doctor/encounters" className={linkClass}>
+                      <FaListAlt style={{ minWidth: 20 }} />
+                      <span>Encounter List</span>
+                    </NavLink>
+                  </li>
+                  <li className="nav-item mb-2">
+                    <NavLink to="/doctor/encounter-templates" className={linkClass}>
+                      <FaCalendarAlt style={{ minWidth: 20 }} />
+                      <span>Encounter Templates</span>
+                    </NavLink>
+                  </li>
+                </ul>
+              </Collapse>
             )}
           </li>
 
           <li className="nav-item mb-2">
             <NavLink to="/doctor/patients" className={linkClass}>
-              <FaUserInjured style={{ minWidth: 20 }} />
-              {open && <span>Patients</span>}
+              <FaUserInjured style={{ minWidth: 20 }} /> {open && "Patients"}
             </NavLink>
           </li>
 
           <li className="nav-item mb-2">
             <NavLink to="/doctor/services" className={linkClass}>
-              <FaListAlt style={{ minWidth: 20 }} />
-              {open && <span>Services</span>}
+              <FaListAlt style={{ minWidth: 20 }} /> {open && "Services"}
             </NavLink>
           </li>
 
           <li className="nav-item mb-2">
             <NavLink to="/doctor/billing" className={linkClass}>
-              <FaFileInvoice style={{ minWidth: 20 }} />
-              {open && <span>Billing Records</span>}
+              <FaFileInvoice style={{ minWidth: 20 }} /> {open && "Billing records"}
             </NavLink>
           </li>
 
-          {/* SETTINGS AT BOTTOM */}
           <li className="nav-item mb-2 mt-auto">
             <NavLink to="/doctor/settings" className={linkClass}>
-              <IoMdSettings style={{ minWidth: 20 }} />
-              {open && <span>Settings</span>}
+              <IoMdSettings style={{ minWidth: 20 }} /> {open && "Settings"}
             </NavLink>
           </li>
         </ul>
-
-        {/* FOOTER */}
+        
         <div
           style={{
             marginTop: "auto",
             padding: 12,
             fontSize: 12,
             color: "#6c757d",
-            textAlign: open ? "left" : "center"
+            textAlign: !open ? "center" : "left"
           }}
         >
           {open ? "© One Care" : "©"}

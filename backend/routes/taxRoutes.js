@@ -1,6 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const TaxModel = require("../models/Tax");
+const multer = require("multer");
+const csv = require("csvtojson");
+const fs = require("fs");
+
+const upload = multer({ dest: "uploads/" });
 
 // Get all taxes
 router.get("/", async (req, res) => {
@@ -27,6 +32,40 @@ router.post("/", async (req, res) => {
     res.json({ message: "Tax created", data: doc });
   } catch (err) {
     console.error("Error creating tax:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// Import taxes from CSV
+router.post("/import", upload.single("file"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    const jsonArray = await csv().fromFile(req.file.path);
+    
+    // Clean up the uploaded file
+    fs.unlinkSync(req.file.path);
+
+    if (!jsonArray || jsonArray.length === 0) {
+      return res.status(400).json({ message: "CSV file is empty" });
+    }
+
+    const taxesToInsert = jsonArray.map((item) => ({
+      name: item.name,
+      taxRate: parseFloat(item.taxRate) || 0,
+      clinicName: item.clinicName,
+      doctor: item.doctor,
+      serviceName: item.serviceName,
+      active: item.active === "true" || item.active === true,
+    }));
+
+    await TaxModel.insertMany(taxesToInsert);
+
+    res.json({ message: "Taxes imported successfully", count: taxesToInsert.length });
+  } catch (err) {
+    console.error("Error importing taxes:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
