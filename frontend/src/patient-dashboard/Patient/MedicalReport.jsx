@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
+import { FiSearch, FiPrinter } from "react-icons/fi";
+import { FaSort } from "react-icons/fa";
 import axios from "axios";
-import { FaFilePdf, FaEye } from "react-icons/fa"; 
-import Navbar from "../components/PatientNavbar";
-import Sidebar from "../components/PatientSidebar";
+import PatientLayout from "../layouts/PatientLayout"; // Layout handles Sidebar/Navbar
 
 const api = axios.create({ baseURL: "http://127.0.0.1:3001" });
 
@@ -12,110 +12,228 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-const reportStyles = `
-  .report-scope { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; }
-  .report-scope .main-content { min-height: 100vh; transition: margin-left 0.3s; }
-  .report-scope .report-header-card { background: #fff; padding: 15px 20px; border-bottom: 1px solid #e9ecef; }
-  .report-scope .report-title { color: #495057; font-weight: 600; font-size: 1.1rem; margin: 0; }
-  .report-scope .content-card { background: #fff; min-height: 200px; border-top: 1px solid #e9ecef; padding: 0; }
-  .report-scope .table-header-row { display: flex; justify-content: space-between; padding: 15px 20px; border-bottom: 1px solid #dee2e6; }
-  .report-scope .table-header-text { font-size: 0.75rem; font-weight: 700; color: #6c757d; text-transform: uppercase; }
-  .report-scope .empty-state { padding: 40px; text-align: center; color: #dc3545; font-weight: 500; font-size: 0.95rem; }
-  .report-scope .footer-text { color: #3b82f6; font-size: 0.8rem; font-weight: 600; padding: 20px; }
-  .report-scope .report-link { text-decoration: none; color: #3b82f6; font-weight: 500; display: flex; align-items: center; gap: 8px; }
-  .report-scope .report-link:hover { text-decoration: underline; }
+const billsStyles = `
+  .bills-scope .table-card { background: white; border: 1px solid #e9ecef; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+  .bills-scope .search-bar-container { padding: 15px; border-bottom: 1px solid #f1f3f5; }
+  .bills-scope .custom-table { font-size: 0.85rem; width: 100%; min-width: 1200px; }
+  .bills-scope .custom-table th { background-color: #f8f9fa; color: #495057; padding: 12px; font-weight: 700; }
+  .bills-scope .filter-input { font-size: 0.75rem; padding: 4px; border-radius: 4px; border: 1px solid #ced4da; width: 100%; }
+  
+  /* Highlight Custom ID */
+  .bills-scope .enc-id-text { 
+      font-family: monospace; font-weight: 700; color: #0d6efd; 
+      background: #f0f9ff; padding: 2px 6px; border-radius: 4px; 
+  }
+  .bills-scope .status-paid { background-color: #d1e7dd; color: #0f5132; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.7rem; }
+  .bills-scope .status-unpaid { background-color: #f8d7da; color: #842029; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.7rem; }
 `;
 
-export default function MedicalReport({ sidebarCollapsed, toggleSidebar }) {
-  const [reports, setReports] = useState([]);
+export default function PatientBills({ sidebarCollapsed, toggleSidebar }) {
+  const [rows, setRows] = useState([]);
+  const [encounters, setEncounters] = useState([]); 
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
+
+  // Filters State
+  const [filters, setFilters] = useState({
+    encounterId: "", doctor: "", clinic: "", patient: "", service: "", 
+    total: "", discount: "", due: "", date: "", status: ""
+  });
+
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [total, setTotal] = useState(0);
+
+  const handleFilter = (key, val) => setFilters(prev => ({ ...prev, [key]: val }));
 
   useEffect(() => {
-    const fetchReports = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
-        // 1. Fetch ALL Encounters
-        const { data } = await api.get("/encounters");
+        const patientId = localStorage.getItem("patientId");
+        
+        // 1. Fetch BOTH Bills and Encounters
+        const [billsRes, encRes] = await Promise.all([
+            api.get("/bills"),
+            api.get("/encounters")
+        ]);
 
-        // ---------------------------------------------------------
-        // BYPASS: SHOW ALL DATA (FOR TESTING ONLY)
-        // ---------------------------------------------------------
-        const myEncounters = data; 
-        // We removed the .filter() here so you can see the UI works
-        // ---------------------------------------------------------
+        const allBills = Array.isArray(billsRes.data) ? billsRes.data : (billsRes.data.bills || []);
+        const allEncounters = Array.isArray(encRes.data) ? encRes.data : (encRes.data.encounters || []);
+        
+        setEncounters(allEncounters);
 
-        // 2. Extract Reports
-        const aggregatedReports = myEncounters.flatMap(encounter => 
-            (encounter.medicalReports || []).map(report => ({
-                ...report,
-                encounterDate: encounter.date 
-            }))
-        );
+        // 2. Filter Bills for THIS patient
+        const myBills = allBills.filter(b => {
+            const pId = b.patientId || b.patient?._id || b.patient;
+            return pId?.toString() === patientId?.toString();
+        });
 
-        setReports(aggregatedReports);
+        // 3. Apply Filters
+        let processedBills = myBills.filter(bill => {
+            const customEncId = lookupCustomId(bill, allEncounters);
+            
+            // Global Search
+            if(search) {
+                const str = (JSON.stringify(bill) + customEncId).toLowerCase();
+                if(!str.includes(search.toLowerCase())) return false;
+            }
+
+            // Column Filters
+            if(filters.encounterId && !customEncId.toLowerCase().includes(filters.encounterId.toLowerCase())) return false;
+            if(filters.doctor && !bill.doctorName?.toLowerCase().includes(filters.doctor.toLowerCase())) return false;
+            if(filters.clinic && !bill.clinicName?.toLowerCase().includes(filters.clinic.toLowerCase())) return false;
+            if(filters.service && !(Array.isArray(bill.services) ? bill.services.join(" ") : "").toLowerCase().includes(filters.service.toLowerCase())) return false;
+            
+            if(filters.status && filters.status !== "Filter" && bill.status?.toLowerCase() !== filters.status.toLowerCase()) return false;
+            
+            return true;
+        });
+
+        setRows(processedBills);
+        setTotal(processedBills.length);
       } catch (e) {
-        console.error("Error fetching reports:", e);
-        setReports([]); 
+        console.error(e);
+        setRows([]);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
-    fetchReports();
-  }, []);
+    fetchData();
+  }, [page, limit, search, filters]);
+
+  const lookupCustomId = (bill, list = encounters) => {
+      // If bill has the short ID saved directly (New bills)
+      if (bill.encounterId && bill.encounterId.startsWith("ENC-")) return bill.encounterId;
+
+      // Otherwise look up using the Mongo ID (Old bills)
+      const refId = bill.encounterId || bill.encounter_id || bill.encounter;
+      if (!refId) return "-";
+      
+      const found = list.find(e => e._id === refId);
+      return found ? (found.encounterId || "Pending") : refId.substring(0,8)+"...";
+  };
 
   const formatDate = (dateString) => {
     if(!dateString) return "-";
     return new Date(dateString).toLocaleDateString();
   };
 
+  const getStatusBadge = (status) => {
+      const s = (status || "").toLowerCase();
+      return s === 'paid' ? <span className="status-paid">PAID</span> : <span className="status-unpaid">{status || "UNPAID"}</span>;
+  };
+
   return (
-    <div className="d-flex report-scope">
-      <style>{reportStyles}</style>
-      <Sidebar collapsed={sidebarCollapsed} />
-
-      <div className="flex-grow-1 main-content" style={{ marginLeft: sidebarCollapsed ? 64 : 250 }}>
-        <Navbar toggleSidebar={toggleSidebar} />
-
-        <div className="report-header-card">
-          <h5 className="report-title">Medical Report</h5>
+    <PatientLayout sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar}>
+      <style>{billsStyles}</style>
+      
+      {/* REMOVED DUPLICATE SIDEBAR/NAVBAR DIVS */}
+      <div className="container-fluid py-4 bills-scope">
+        
+        <div className="d-flex justify-content-between align-items-center mb-3">
+           <h3 className="fw-bold text-primary m-0">Bills</h3>
         </div>
 
-        <div className="content-card">
-          <div className="table-header-row">
-             <span className="table-header-text" style={{ flex: 1 }}>NAME</span>
-             <span className="table-header-text" style={{ width: '150px', textAlign: 'right' }}>DATE</span>
+        <div className="table-card">
+          {/* Search Bar */}
+          <div className="search-bar-container">
+            <div className="input-group">
+              <span className="input-group-text bg-white border-end-0"><FiSearch className="text-muted"/></span>
+              <input 
+                type="text" 
+                className="form-control border-start-0 shadow-none" 
+                placeholder="Search bills data..." 
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
           </div>
 
-          {loading ? (
-             <div className="text-center py-4 text-muted">Loading...</div>
-          ) : reports.length > 0 ? (
-             reports.map((r, i) => (
-                <div key={i} className="d-flex justify-content-between align-items-center p-3 border-bottom">
-                   <div style={{ flex: 1 }}>
-                     <a 
-                        href={`http://127.0.0.1:3001${r.file}`} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="report-link"
-                     >
-                        <FaFilePdf /> {r.name} <FaEye size={12} className="text-muted ms-2"/>
-                     </a>
-                   </div>
-                   <div style={{ width: '150px', textAlign: 'right', color: '#666' }}>
-                     {formatDate(r.date)}
-                   </div>
-                </div>
-             ))
-          ) : (
-             <div className="empty-state">
-                No patient report found
+          {/* Table */}
+          <div className="table-responsive">
+            <table className="table table-hover mb-0 custom-table">
+              <thead>
+                <tr>
+                   <th style={{width:'50px'}}>ID</th>
+                   <th>Encounter ID</th>
+                   <th>Doctor</th>
+                   <th>Clinic</th>
+                   <th>Patient</th>
+                   <th>Services</th>
+                   <th>Total</th>
+                   <th>Disc</th>
+                   <th>Due</th>
+                   <th>Date</th>
+                   <th>Status</th>
+                   <th>Action</th>
+                </tr>
+                <tr className="bg-light">
+                   <td className="p-2"></td>
+                   <td className="p-2"><input className="filter-input" placeholder="Enc ID" onChange={e=>handleFilter('encounterId', e.target.value)}/></td>
+                   <td className="p-2"><input className="filter-input" placeholder="Doctor" onChange={e=>handleFilter('doctor', e.target.value)}/></td>
+                   <td className="p-2"><input className="filter-input" placeholder="Clinic" onChange={e=>handleFilter('clinic', e.target.value)}/></td>
+                   <td className="p-2"><input className="filter-input" placeholder="Patient" onChange={e=>handleFilter('patient', e.target.value)}/></td>
+                   <td className="p-2"><input className="filter-input" placeholder="Service" onChange={e=>handleFilter('service', e.target.value)}/></td>
+                   <td className="p-2"><input className="filter-input" placeholder="Total" onChange={e=>handleFilter('total', e.target.value)}/></td>
+                   <td className="p-2"><input className="filter-input" placeholder="Disc" onChange={e=>handleFilter('discount', e.target.value)}/></td>
+                   <td className="p-2"><input className="filter-input" placeholder="Due" onChange={e=>handleFilter('due', e.target.value)}/></td>
+                   <td className="p-2"><input className="filter-input" placeholder="Date" onFocus={e=>e.target.type='date'} onBlur={e=>e.target.type='text'} onChange={e=>handleFilter('date', e.target.value)}/></td>
+                   <td className="p-2">
+                        <select className="filter-input" onChange={e=>handleFilter('status', e.target.value)}>
+                            <option value="Filter">Filter</option>
+                            <option value="paid">Paid</option>
+                            <option value="unpaid">Unpaid</option>
+                        </select>
+                   </td>
+                   <td className="p-2"></td>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? <tr><td colSpan="12" className="text-center py-5">Loading...</td></tr> : 
+                 rows.length === 0 ? <tr><td colSpan="12" className="text-center py-5 text-muted">No Data Found</td></tr> :
+                 rows.map((row, i) => (
+                    <tr key={row._id || i}>
+                        {/* Sequential ID */}
+                        <td>{(page - 1) * limit + i + 1}</td>
+                        
+                        {/* Custom Encounter ID */}
+                        <td><span className="enc-id-text">{lookupCustomId(row)}</span></td>
+                        
+                        <td>{row.doctorName}</td>
+                        <td>{row.clinicName}</td>
+                        <td>{row.patientName}</td>
+                        <td>{Array.isArray(row.services) ? row.services.join(", ") : row.services}</td>
+                        <td>{row.totalAmount}</td>
+                        <td>{row.discount}</td>
+                        <td>{row.amountDue}</td>
+                        <td>{formatDate(row.date)}</td>
+                        <td>{getStatusBadge(row.status)}</td>
+                        <td><button className="btn btn-sm btn-link text-primary"><FiPrinter/></button></td>
+                    </tr>
+                 ))}
+              </tbody>
+            </table>
+          </div>
+          {/* Pagination Footer */}
+          <div className="pagination-bar">
+             <div className="d-flex align-items-center gap-2">
+                <small className="text-muted">Rows:</small>
+                <select className="form-select form-select-sm w-auto" value={limit} onChange={(e) => setLimit(Number(e.target.value))}><option value={5}>5</option><option value={10}>10</option><option value={20}>20</option></select>
              </div>
-          )}
+             <div className="d-flex align-items-center gap-2">
+                <small className="text-muted">Page {page} of {Math.ceil(total / limit) || 1}</small>
+                <button type="button" className="btn btn-sm btn-outline-secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</button>
+                <button type="button" className="btn btn-sm btn-outline-secondary" disabled={page * limit >= total} onClick={() => setPage((p) => p + 1)}>Next</button>
+             </div>
+          </div>
         </div>
 
-        <div className="footer-text">
+        <div className="mt-3 text-muted small">
            © Western State Pain Institute
         </div>
       </div>
-    </div>
+    </PatientLayout>
   );
 }

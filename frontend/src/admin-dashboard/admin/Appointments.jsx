@@ -95,26 +95,40 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
         const [docRes, servRes, patRes, sessionRes, clinicRes] =
           await Promise.all([
             axios.get(`${API_BASE}/doctors`),
-            axios.get(`${API_BASE}/api/services`),
+            axios.get(`${API_BASE}/services`), // <--- Updated Endpoint Logic Below
             axios.get(`${API_BASE}/patients`),
             axios.get(`${API_BASE}/doctor-sessions`),
             axios.get(`${API_BASE}/api/clinics`),
           ]);
 
-        setDoctors(Array.isArray(docRes.data) ? docRes.data : []);
-        setServicesList(Array.isArray(servRes.data) ? servRes.data : []);
-        setPatients(Array.isArray(patRes.data) ? patRes.data : []);
+        // 1. Extract Doctors
+        setDoctors(Array.isArray(docRes.data) ? docRes.data : docRes.data.data || []);
+
+        // 2. Extract Services (Fix for 404/Empty issue)
+        // Check if it's { rows: [] } or just []
+        const servicesData = servRes.data.rows || servRes.data || [];
+        setServicesList(Array.isArray(servicesData) ? servicesData : []);
+
+        // 3. Extract Patients
+        setPatients(Array.isArray(patRes.data) ? patRes.data : patRes.data.data || []);
+
+        // 4. Extract Sessions
         setDoctorSessions(
           Array.isArray(sessionRes.data) ? sessionRes.data : []
         );
 
+        // 5. Extract Clinics
         if (clinicRes.data?.success && Array.isArray(clinicRes.data.clinics)) {
           setClinics(clinicRes.data.clinics);
+        } else if (Array.isArray(clinicRes.data)) {
+          setClinics(clinicRes.data);
         } else {
           setClinics([]);
         }
+
       } catch (err) {
         console.error("Error fetching dropdown data:", err);
+        // Optional: toast.error("Failed to load dropdown data");
       }
     };
 
@@ -130,7 +144,6 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
           ...prev,
           patient: `${p.firstName} ${p.lastName}`,
         }));
-        // Trigger fetch with this patient
         fetchAppointments({ patient: `${p.firstName} ${p.lastName}` });
       }
     }
@@ -201,7 +214,9 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
           selected.rate ??
           selected.amount ??
           selected.fees ??
-          selected.cost;
+          selected.cost ??
+          selected.charges; // Added 'charges' as it's common in your schema
+        
         if (price !== undefined && price !== null) {
           priceText = price.toString();
         }
@@ -220,7 +235,6 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
     }
 
     if (name === "patient") {
-      // value is the patient ID (or name if legacy/custom)
       const selectedP = patients.find((p) => p._id === value);
       setForm((p) => ({
         ...p,
@@ -278,8 +292,8 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
       const payload = {
         clinic: form.clinic,
         doctorName: form.doctor,
-        patientId: form.patient, // Sending ID
-        patientName: form.patientName, // Sending Name
+        patientId: form.patient,
+        patientName: form.patientName,
         services: form.service,
         date: form.date,
         status: form.status,

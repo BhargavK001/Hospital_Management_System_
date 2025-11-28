@@ -73,7 +73,7 @@ export default function PatientBookAppointment() {
           : (docRes.data?.data || docRes.data?.doctors || []);
 
         // C. Fetch Services
-        const servRes = await axios.get(`${API_BASE}/api/services`);
+        const servRes = await axios.get(`${API_BASE}/services`);
         const servData = Array.isArray(servRes.data)
           ? servRes.data
           : (servRes.data?.data || servRes.data?.services || servRes.data?.rows || []);

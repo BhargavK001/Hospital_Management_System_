@@ -1,15 +1,15 @@
-// backend/routes/services.js
 const express = require("express");
 const router = express.Router();
 const Service = require("../models/Service");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
-const csv = require("csv-parser"); // <--- IMPORT CSV-PARSER
+const csv = require("csv-parser");
 
 // --- 1. CONFIGURATION FOR IMAGE/FILE UPLOAD ---
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
+    // Ensure uploads directory exists
     const uploadPath = path.join(__dirname, "../uploads");
     if (!fs.existsSync(uploadPath)) {
       fs.mkdirSync(uploadPath, { recursive: true });
@@ -24,8 +24,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// --- DEFINING CSV HEADERS FOR VALIDATION ---
-// These must match the columns in your CSV file
+// --- 2. DEFINING CSV HEADERS (MUST MATCH YOUR CSV) ---
 const REQUIRED_HEADERS = [
   "category",
   "name",
@@ -34,13 +33,13 @@ const REQUIRED_HEADERS = [
   "clinicName",
   "doctor",
   "duration",
-  "active", // or 'status', depending on your CSV header name
+  "active",
   "allowMulti"
 ];
 
-// --- 2. ROUTES ---
+// --- 3. ROUTES ---
 
-// GET /services (Existing Code)
+// GET /services (Fetch with Filters)
 router.get("/", async (req, res) => {
   try {
     const {
@@ -90,7 +89,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// --- NEW ROUTE: POST /services/import (CSV Import) ---
+// POST /services/import (CSV Import)
 router.post("/import", upload.single("file"), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: "No file uploaded" });
@@ -100,14 +99,15 @@ router.post("/import", upload.single("file"), (req, res) => {
   const errors = [];
   let headersValidated = false;
 
-  // Read the uploaded file
-  fs.createReadStream(req.file.path)
+  // Use absolute path safely
+  const filePath = path.resolve(req.file.path);
+
+  fs.createReadStream(filePath)
     .pipe(csv())
     .on("headers", (headers) => {
-      // Clean headers (remove BOM, trim whitespace)
-      const fileHeaders = headers.map((h) => h.trim().replace(/^"|"$/g, ""));
+      // Clean headers (remove BOM which looks like ï»¿, trim whitespace, remove quotes)
+      const fileHeaders = headers.map((h) => h.trim().replace(/^"|"$/g, "").replace(/^\uFEFF/, ''));
       
-      // Check if required headers exist
       const missingHeaders = REQUIRED_HEADERS.filter(
         (reqHeader) => !fileHeaders.includes(reqHeader)
       );
@@ -120,37 +120,40 @@ router.post("/import", upload.single("file"), (req, res) => {
     })
     .on("data", (data) => {
       if (headersValidated) {
-        // Map CSV string data to Mongoose Schema types
+        // Helper to check truthy strings loosely
+        const isTrue = (val) => {
+             const s = String(val).trim().toLowerCase();
+             return s === "active" || s === "true" || s === "yes" || s === "1";
+        };
+
         results.push({
-          serviceId: data.serviceId || "", // Optional in CSV
+          serviceId: data.serviceId || `SVC-${Date.now()}-${Math.floor(Math.random()*1000)}`, // Auto-generate if missing
           name: data.name,
           category: data.category,
           clinicName: data.clinicName,
           doctor: data.doctor,
           charges: data.charges,
           duration: data.duration,
-          // Convert "ACTIVE" or "Yes" to Boolean true
-          active: (data.active === "ACTIVE" || data.active === "true" || data.active === "Yes"),
-          isTelemed: (data.isTelemed === "Yes" || data.isTelemed === "true"),
-          allowMulti: (data.allowMulti === "Yes" || data.allowMulti === "true"),
-          imageUrl: "" // CSV usually doesn't carry images, set default
+          active: isTrue(data.active),
+          isTelemed: isTrue(data.isTelemed),
+          allowMulti: isTrue(data.allowMulti),
+          imageUrl: "" 
         });
       }
     })
     .on("end", async () => {
-      // Clean up the temp file
-      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      // Delete temp file
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 
       if (errors.length > 0) {
         return res.status(400).json({ message: errors[0] });
       }
 
       if (results.length === 0) {
-        return res.status(400).json({ message: "File is empty or contains no data." });
+        return res.status(400).json({ message: "File is empty or contains no valid data rows." });
       }
 
       try {
-        // Bulk Insert into MongoDB
         await Service.insertMany(results);
         res.status(200).json({ message: `Successfully imported ${results.length} services.` });
       } catch (err) {
@@ -159,20 +162,26 @@ router.post("/import", upload.single("file"), (req, res) => {
       }
     })
     .on("error", (err) => {
-      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
       res.status(500).json({ message: "Error parsing CSV file.", error: err.message });
     });
 });
 
-// POST /services (Create - Existing Code)
+// POST /services (Create Single)
 router.post("/", upload.single("image"), async (req, res) => {
   try {
     const payload = {
       ...req.body,
-      active: req.body.active === "true",
-      isTelemed: req.body.isTelemed === "true",
-      allowMulti: req.body.allowMulti === "true",
+      // Explicit string-to-boolean conversion for FormData
+      active: req.body.active === "true" || req.body.active === true,
+      isTelemed: req.body.isTelemed === "true" || req.body.isTelemed === true,
+      allowMulti: req.body.allowMulti === "true" || req.body.allowMulti === true,
     };
+
+    // Auto-generate ID if not provided
+    if (!payload.serviceId) {
+        payload.serviceId = `SVC-${Date.now()}`;
+    }
 
     if (req.file) {
       const protocol = req.protocol;
@@ -183,18 +192,20 @@ router.post("/", upload.single("image"), async (req, res) => {
     const created = await Service.create(payload);
     res.status(201).json(created);
   } catch (err) {
+    console.error("Create Error:", err);
     res.status(400).json({ message: "Database Save Failed", error: err.message });
   }
 });
 
-// PUT /services/:id (Update - Existing Code)
+// PUT /services/:id (Update)
 router.put("/:id", upload.single("image"), async (req, res) => {
   try {
     const payload = { ...req.body };
-    // Handle Boolean conversions if sending as FormData strings
-    if (payload.active !== undefined) payload.active = payload.active === "true";
-    if (payload.isTelemed !== undefined) payload.isTelemed = payload.isTelemed === "true";
-    if (payload.allowMulti !== undefined) payload.allowMulti = payload.allowMulti === "true";
+    
+    // Safe boolean conversion
+    if (payload.active !== undefined) payload.active = payload.active === "true" || payload.active === true;
+    if (payload.isTelemed !== undefined) payload.isTelemed = payload.isTelemed === "true" || payload.isTelemed === true;
+    if (payload.allowMulti !== undefined) payload.allowMulti = payload.allowMulti === "true" || payload.allowMulti === true;
 
     if (req.file) {
       const protocol = req.protocol;
@@ -210,11 +221,12 @@ router.put("/:id", upload.single("image"), async (req, res) => {
   }
 });
 
-// DELETE /services/:id (Existing Code)
+// DELETE /services/:id
 router.delete("/:id", async (req, res) => {
   try {
-    await Service.findByIdAndDelete(req.params.id);
-    res.json({ success: true });
+    const deleted = await Service.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Service not found" });
+    res.json({ success: true, message: "Service deleted" });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
