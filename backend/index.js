@@ -53,7 +53,9 @@ app.use("/bills", billingRoutes);
 app.use("/dashboard-stats", dashboardRoutes);
 app.use("/", userRoutes); 
 app.use("/encounters", encounterRoutes);
+app.use("/encounters", encounterRoutes);
 app.use("/encounter-templates", encounterTemplateRoutes);
+app.use("/api/email", require("./routes/emailRoutes"));
 
 
 // Start the server

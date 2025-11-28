@@ -34,6 +34,18 @@ import EncounterDetails from "./admin-dashboard/admin/EncounterDetails";
 import EncounterTemplateDetails from "./admin-dashboard/admin/EncounterTemplateDetails";
 import MedicalReportPage from "./admin-dashboard/admin/MedicalReportPage";
 
+/* Settings */
+import SettingsLayout from "./admin-dashboard/admin/settings/SettingsLayout";
+import HolidaySettings from "./admin-dashboard/admin/settings/pages/HolidaySettings";
+import EmailTemplates from "./admin-dashboard/admin/settings/pages/EmailTemplates";
+import SmsWhatsappTemplates from "./admin-dashboard/admin/settings/pages/SmsWhatsappTemplates";
+import GoogleMeetSettings from "./admin-dashboard/admin/settings/pages/GoogleMeetSettings";
+import ZoomTelemedSettings from "./admin-dashboard/admin/settings/pages/ZoomTelemedSettings";
+import ListingSettings from "./admin-dashboard/admin/settings/pages/ListingSettings";
+import ProSettings from "./admin-dashboard/admin/settings/pages/ProSettings";
+import PaymentSettings from "./admin-dashboard/admin/settings/pages/PaymentSettings";
+import AppointmentSettings from "./admin-dashboard/admin/settings/pages/AppointmentSettings";
+
 /* Patient */
 import PatientDashboard from "./patient-dashboard/Patient/PatientDashboard";
 import PatientAppointments from "./patient-dashboard/Patient/PatientAppointments";
@@ -214,6 +226,20 @@ function App() {
         <Route path="/encounters/:id/reports" element={
           <MedicalReportPage sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
         } />
+
+        {/* Settings Section */}
+        <Route path="/settings" element={<SettingsLayout sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />}>
+          <Route index element={<HolidaySettings />} />
+          <Route path="holidays" element={<HolidaySettings />} />
+          <Route path="email-templates" element={<EmailTemplates />} />
+          <Route path="sms-whatsapp-templates" element={<SmsWhatsappTemplates />} />
+          <Route path="google-meet" element={<GoogleMeetSettings />} />
+          <Route path="zoom-telemed" element={<ZoomTelemedSettings />} />
+          <Route path="listings" element={<ListingSettings />} />
+          <Route path="pro-settings" element={<ProSettings />} />
+          <Route path="payments" element={<PaymentSettings />} />
+          <Route path="appointment-settings" element={<AppointmentSettings />} />
+        </Route>
 
         {/* Doctor Section */}
 
