@@ -53,7 +53,9 @@ import PatientBookAppointment from "./patient-dashboard/Patient/PatientBookAppoi
 import PatientProfileSetup from "./patient-dashboard/Patient/PatientProfileSetup";
 import PatientProfile from "./patient-dashboard/Patient/PatientProfile.jsx";
 import PatientChangePassword from "./patient-dashboard/Patient/PatientChangePassword";
-
+import Encounters from "./patient-dashboard/Patient/Encounters";
+import PatientBilling  from "./patient-dashboard/Patient/PatientBills";
+import PatientReport from "./patient-dashboard/Patient/MedicalReport";
 
 /* Doctor */
 import DoctorDashboard from "./doctor-dashboard/doctor/DoctorDashboard";
@@ -284,7 +286,18 @@ function App() {
         <Route path="/patient/profile-setup" element={<PatientProfileSetup />} />
         <Route path="/patient/profile" element={<PatientProfile sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />} />
         <Route path="/patient/change-password" element={<PatientChangePassword sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />} />
-
+         <Route
+          path="/patient/encounters"
+          element={<Encounters sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />}
+        />
+        <Route
+          path="/patient/billing"
+          element={<PatientBilling  sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />}
+        />
+        <Route
+          path="/patient/reports"
+          element={<PatientReport sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />}
+        />
         {/* Others */}
 
         <Route path="/reception-dashboard" element={<ReptionistDashboard />} />
