@@ -9,14 +9,109 @@ const mongoose = require("mongoose");
 const AppointmentModel = require("../models/Appointment");
 const PatientModel = require("../models/Patient");
 const DoctorModel = require("../models/Doctor");
+const HolidayModel = require("../models/Holiday"); // <--- IMPORT HOLIDAY MODEL
 const { sendEmail } = require("../utils/emailService");
 const { appointmentBookedTemplate } = require("../utils/emailTemplates");
 const { sendWhatsAppMessage } = require("../utils/whatsappService");
 const upload = require("../middleware/upload");
 
-// POST /appointments - create appointment
+// --- HELPER: Generate Time Slots ---
+const generateTimeSlots = (startStr, endStr, intervalMins) => {
+  const slots = [];
+  let current = new Date(`2000-01-01T${startStr}`);
+  const end = new Date(`2000-01-01T${endStr}`);
+
+  while (current < end) {
+    const timeString = current.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    slots.push(timeString);
+    current.setMinutes(current.getMinutes() + intervalMins);
+  }
+  return slots;
+};
+
+// ==========================================
+// 1. GET AVAILABLE SLOTS (Logic for Frontend)
+// ==========================================
+router.get("/slots", async (req, res) => {
+  try {
+    const { doctorId, date } = req.query;
+
+    if (!doctorId || !date) {
+      return res.status(400).json({ message: "Doctor ID and Date are required" });
+    }
+
+    // 1. CHECK IF DOCTOR IS ON HOLIDAY
+    // We convert the requested date to a Date object
+    const requestDate = new Date(date); 
+    
+    // Check if the requested date falls within any holiday range for this doctor
+    const holiday = await HolidayModel.findOne({
+      doctorId: doctorId,
+      fromDate: { $lte: requestDate },
+      toDate: { $gte: requestDate }
+    });
+
+    if (holiday) {
+      // If on holiday, return empty array immediately
+      return res.json({ 
+        message: "Doctor is on holiday", 
+        slots: [], 
+        isHoliday: true 
+      });
+    }
+
+    // 2. IF NOT ON HOLIDAY, GENERATE SLOTS
+    // (Assuming standard 9 AM - 5 PM for now, customize based on DoctorModel if needed)
+    const allSlots = generateTimeSlots("09:00:00", "17:00:00", 30);
+
+    // 3. REMOVE BOOKED SLOTS
+    // Find existing appointments for this doctor on this date
+    // Note: Assuming 'date' in AppointmentModel is stored as YYYY-MM-DD string or Date object. 
+    // Adjust query matches your DB format.
+    const bookedAppointments = await AppointmentModel.find({
+      doctorId: doctorId,
+      date: date, // Ensuring string match "YYYY-MM-DD"
+      status: { $ne: "cancelled" }
+    }).select("time");
+
+    const bookedTimes = bookedAppointments.map(a => a.time);
+
+    // Filter out booked times
+    const availableSlots = allSlots.filter(time => !bookedTimes.includes(time));
+
+    res.json({ slots: availableSlots, isHoliday: false });
+
+  } catch (err) {
+    console.error("Error fetching slots:", err);
+    res.status(500).json({ message: "Server error checking slots" });
+  }
+});
+
+
+// ==========================================
+// 2. CREATE APPOINTMENT (With Holiday Block)
+// ==========================================
 router.post("/", async (req, res) => {
   try {
+    // --- STEP 1: HOLIDAY VALIDATION ---
+    if (req.body.doctorId && req.body.date) {
+        const apptDate = new Date(req.body.date);
+        
+        // Check if date falls in a holiday range
+        const onHoliday = await HolidayModel.findOne({
+            doctorId: req.body.doctorId,
+            fromDate: { $lte: apptDate },
+            toDate: { $gte: apptDate }
+        });
+
+        if (onHoliday) {
+            return res.status(400).json({ 
+                message: `Doctor is on holiday from ${new Date(onHoliday.fromDate).toLocaleDateString()} to ${new Date(onHoliday.toDate).toLocaleDateString()}. Please choose another date.` 
+            });
+        }
+    }
+    // ----------------------------------
+
     const payload = {
       patientId: req.body.patientId || null,
       patientName: req.body.patientName || req.body.patient || "Patient",
@@ -119,16 +214,14 @@ router.get("/", async (req, res) => {
     const list = await AppointmentModel.find(q)
       .sort({ createdAt: -1 })
       .limit(1000)
-      // --- FIX: Model name must be "Patient" (Capitalized, Singular) ---
       .populate({
         path: "patientId",
         select: "firstName lastName email phone",
         model: "Patient" 
       })
-      // --- FIX: Model name must be "Doctor" (Capitalized, Singular) ---
       .populate({
         path: "doctorId",
-        select: "name clinic firstName lastName", // added firstname/lastname
+        select: "name clinic firstName lastName", 
         model: "Doctor"
       })
       .lean();
@@ -166,12 +259,12 @@ router.get("/all", async (req, res) => {
       .populate({
         path: "patientId",
         select: "firstName lastName email phone",
-        model: "Patient", // FIX
+        model: "Patient", 
       })
       .populate({
         path: "doctorId",
         select: "name clinic firstName lastName",
-        model: "Doctor", // FIX
+        model: "Doctor", 
       })
       .lean();
     res.json(list);
@@ -195,12 +288,12 @@ router.get("/today", async (req, res) => {
       .populate({
         path: "patientId",
         select: "firstName lastName email phone",
-        model: "Patient", // FIX
+        model: "Patient",
       })
       .populate({
         path: "doctorId",
         select: "name clinic firstName lastName",
-        model: "Doctor", // FIX
+        model: "Doctor", 
       })
       .lean();
     res.json(list);

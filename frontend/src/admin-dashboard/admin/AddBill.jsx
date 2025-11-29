@@ -17,8 +17,8 @@ const AddBill = () => {
     doctorId: "",
     doctorName: "",
     clinicId: "",
-    clinicName: "",
-    encounterId: "", // This will store "ENC-1001" or _id
+    clinicName: "", // Will be auto-filled
+    encounterId: "",
     services: "",
     totalAmount: "",
     discount: "0",
@@ -28,13 +28,14 @@ const AddBill = () => {
     notes: "",
   });
 
+  // --- Data States ---
   const [doctors, setDoctors] = useState([]);
   const [patients, setPatients] = useState([]);
-  const [clinics, setClinics] = useState([]);
+  const [clinics, setClinics] = useState([]); 
   const [encounters, setEncounters] = useState([]);
   const [saving, setSaving] = useState(false);
 
-  // --- 2. Fetch Initial Data ---
+  // --- 2. Fetch Initial Dropdown Data ---
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -44,26 +45,29 @@ const AddBill = () => {
           axios.get(`${BASE}/api/clinics`)
         ]);
 
+        // Normalize Data
         setDoctors(Array.isArray(docRes.data) ? docRes.data : docRes.data.data || []);
         setPatients(Array.isArray(patRes.data) ? patRes.data : patRes.data.data || []);
         
-        // Handle Clinic Data Structure
-        const cData = clinicRes.data.clinics || (Array.isArray(clinicRes.data) ? clinicRes.data : []);
+        // Handle Clinic Response
+        const cData = Array.isArray(clinicRes.data) 
+            ? clinicRes.data 
+            : clinicRes.data.clinics || [];
+        
+        console.log("Clinics Loaded:", cData); 
         setClinics(cData);
 
       } catch (err) {
-        console.error(err);
+        console.error("Fetch error:", err);
         toast.error("Failed to load dropdown data");
       }
     };
     fetchData();
   }, []);
 
-  // --- 3. Fetch Encounters (FIXED: Use Server-Side Filter) ---
+  // --- 3. Fetch Encounters (Server-Side Filter) ---
   useEffect(() => {
     if (form.patientId) {
-      // We pass ?patientId=... to the backend. 
-      // The backend handles the filtering, avoiding the Object vs String mismatch issue.
       axios.get(`${BASE}/encounters?patientId=${form.patientId}`)
         .then((res) => {
            const data = Array.isArray(res.data) ? res.data : res.data.encounters || [];
@@ -98,22 +102,24 @@ const AddBill = () => {
       ...prev,
       patientId: selectedId,
       patientName: selectedObj ? `${selectedObj.firstName} ${selectedObj.lastName}` : "",
-      encounterId: "" // Reset encounter selection on patient change
+      encounterId: "" 
     }));
   };
 
+  // ✅ FIXED: Clinic Selection Logic
   const handleClinicChange = (e) => {
     const selectedId = e.target.value;
     const selectedObj = clinics.find(c => c._id === selectedId);
     
     if (selectedObj) {
+        // Auto-fill the clinic name based on selection
         setForm(prev => ({
             ...prev,
             clinicId: selectedId,
-            clinicName: selectedObj.name || selectedObj.clinicName || ""
+            clinicName: selectedObj.name || selectedObj.clinicName || "" 
         }));
     } else {
-        setForm(prev => ({ ...prev, clinicId: "", clinicName: e.target.value }));
+        setForm(prev => ({ ...prev, clinicId: "", clinicName: "" }));
     }
   };
 
@@ -137,13 +143,14 @@ const AddBill = () => {
 
     if (!form.doctorId) return toast.error("Please select a Doctor");
     if (!form.patientId) return toast.error("Please select a Patient");
+    if (!form.clinicId) return toast.error("Please select a Clinic");
 
     try {
       setSaving(true);
 
       const payload = {
         ...form,
-        services: form.services.split(",").map(s => s.trim()),
+        services: form.services.split(",").map(s => s.trim()), 
         clinicId: form.clinicId || null 
       };
 
@@ -205,31 +212,25 @@ const AddBill = () => {
                 </select>
               </div>
 
-              {/* Clinic */}
+              {/* ✅ FIXED: Clinic Name is NOW ALWAYS A DROPDOWN */}
               <div className="col-md-6 mb-3">
                 <label className="form-label">Clinic Name <span className="text-danger">*</span></label>
-                {clinics.length > 0 ? (
-                    <select 
-                        name="clinicId"
-                        className="form-select" 
-                        value={form.clinicId} 
-                        onChange={handleClinicChange} 
-                        required
-                    >
-                        <option value="">-- Select Clinic --</option>
-                        {clinics.map((c) => (
-                            <option key={c._id} value={c._id}>{c.name || c.clinicName}</option>
-                        ))}
-                    </select>
-                ) : (
-                    <input
-                      name="clinicName"
-                      className="form-control"
-                      value={form.clinicName}
-                      onChange={handleGenericChange}
-                      placeholder="Enter Clinic Name"
-                      required
-                    />
+                <select 
+                    name="clinicId"
+                    className="form-select" 
+                    value={form.clinicId} 
+                    onChange={handleClinicChange} 
+                    required
+                >
+                    <option value="">-- Select Clinic --</option>
+                    {clinics.map((c) => (
+                        <option key={c._id} value={c._id}>
+                            {c.name || c.clinicName || "Unnamed Clinic"}
+                        </option>
+                    ))}
+                </select>
+                {clinics.length === 0 && (
+                    <small className="text-danger">No clinics found. Please add a clinic first.</small>
                 )}
               </div>
 

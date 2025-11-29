@@ -4,6 +4,7 @@ import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import { FaSearch, FaPlus, FaTrash, FaEdit, FaFilePdf } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import toast, { Toaster } from "react-hot-toast"; // Ensure you have this installed
 
 const BASE = "http://localhost:3001";
 
@@ -69,7 +70,7 @@ const billingStyles = `
     border-collapse: collapse;
     font-size: 0.9rem;
     color: #212529;
-    min-width: 1200px; /* Ensure table doesn't squish on small screens */
+    min-width: 1200px;
   }
 
   /* Table Headers */
@@ -78,7 +79,7 @@ const billingStyles = `
     border-bottom: 2px solid #dee2e6;
     padding: 12px 10px;
     text-align: left;
-    white-space: nowrap; /* Prevent wrapping */
+    white-space: nowrap;
     vertical-align: middle;
     color: #000;
   }
@@ -138,7 +139,7 @@ const billingStyles = `
   .billing-scope .action-group {
     display: flex;
     align-items: center;
-    justify-content: flex-end; /* Align actions to right */
+    justify-content: flex-end;
     gap: 8px;
   }
   .billing-scope .btn-icon {
@@ -202,6 +203,10 @@ export default function BillingRecords({ sidebarCollapsed = false, toggleSidebar
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
+  // --- DELETE MODAL STATE ---
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [billToDelete, setBillToDelete] = useState(null);
+
   // Filters
   const [filter, setFilter] = useState({
     id: "",
@@ -234,13 +239,28 @@ export default function BillingRecords({ sidebarCollapsed = false, toggleSidebar
     fetchData();
   }, []);
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this bill?")) return;
+  // --- DELETE HANDLERS ---
+  
+  // 1. Open Modal (Does not delete yet)
+  const openDeleteModal = (id) => {
+    setBillToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  // 2. Confirm Delete (Actually deletes)
+  const confirmDelete = async () => {
+    if (!billToDelete) return;
+    
+    // Close modal first
+    setShowDeleteModal(false);
+
     try {
-      await axios.delete(`${BASE}/bills/${id}`);
-      setBills((p) => p.filter((b) => b._id !== id));
+      await axios.delete(`${BASE}/bills/${billToDelete}`);
+      setBills((p) => p.filter((b) => b._id !== billToDelete));
+      setBillToDelete(null);
+      toast.success("Bill deleted successfully");
     } catch {
-      alert("Delete failed");
+      toast.error("Failed to delete bill");
     }
   };
 
@@ -291,6 +311,9 @@ export default function BillingRecords({ sidebarCollapsed = false, toggleSidebar
 
       <div className="flex-grow-1 main-content" style={{ marginLeft: sidebarCollapsed ? 64 : 250 }}>
         <Navbar toggleSidebar={toggleSidebar} />
+        
+        {/* Toast Container for Notifications */}
+        <Toaster position="top-right" />
 
         <div className="page-title-bar">
           <h5 className="page-title">Billing Records</h5>
@@ -326,21 +349,20 @@ export default function BillingRecords({ sidebarCollapsed = false, toggleSidebar
                   <th>Clinic Name</th>
                   <th>Patient Name</th>
                   <th>Services</th>
-                  <th>Total</th>
-                  <th style={{textAlign: 'center'}}>Discount</th>
-                  <th style={{textAlign: 'center'}}>Amount due</th>
-                  <th style={{textAlign: 'center'}}>Date</th>
-                  <th style={{textAlign: 'center'}}>Status</th>
-                  <th style={{textAlign: 'center'}}>Action</th>
+                  <th style={{textAlign: 'right'}}>Total</th>
+                  <th style={{textAlign: 'right'}}>Discount</th>
+                  <th style={{textAlign: 'right'}}>Amount due</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th style={{textAlign: 'right'}}>Action</th>
                 </tr>
-                {/* Header Filters - Matched to Screenshot */}
+                {/* Header Filters */}
                 <tr className="filter-row">
                   <td><input className="filter-input" placeholder="ID" style={{width: '40px'}} onChange={(e) => handleFilterChange("id", e.target.value)}/></td>
                   <td><input className="filter-input" placeholder="Enc ID" onChange={(e) => handleFilterChange("encounterId", e.target.value)}/></td>
                   <td><input className="filter-input" placeholder="Doctor" onChange={(e) => handleFilterChange("doctor", e.target.value)}/></td>
                   <td><input className="filter-input" placeholder="Clinic" onChange={(e) => handleFilterChange("clinic", e.target.value)}/></td>
                   <td><input className="filter-input" placeholder="Patient" onChange={(e) => handleFilterChange("patient", e.target.value)}/></td>
-                  {/* Empty cells for columns that don't need filtering as per image */}
                   <td></td>
                   <td></td>
                   <td></td>
@@ -366,29 +388,26 @@ export default function BillingRecords({ sidebarCollapsed = false, toggleSidebar
                 ) : (
                   pageItems.map((bill, i) => (
                     <tr key={bill._id || i}>
-                      {/* 1. Sequential ID */}
                       <td style={{fontWeight: 'bold', color: '#6c757d'}}>
                         {(page - 1) * rowsPerPage + i + 1}
                       </td>
                       
-                      {/* 2. Encounter ID */}
                       <td>
                         <span className="enc-badge">{lookupCustomId(bill)}</span>
                       </td>
 
                       <td>{bill.doctorName}</td>
-                      <td >{bill.clinicName}</td>
+                      <td>{bill.clinicName}</td>
                       <td>{bill.patientName}</td>
-                      <td style={{textAlign: 'center'}}>{Array.isArray(bill.services) ? bill.services[0] : (bill.services || "-")}</td>
+                      <td>{Array.isArray(bill.services) ? bill.services[0] : (bill.services || "-")}</td>
                       
-                      {/* Numbers Right Aligned */}
-                      <td style={{textAlign: 'center'}}>{bill.totalAmount}</td>
-                      <td style={{textAlign: 'center'}}>{bill.discount}</td>
-                      <td style={{textAlign: 'center'}}>{bill.amountDue}</td>
+                      <td style={{textAlign: 'right'}}>{bill.totalAmount}</td>
+                      <td style={{textAlign: 'right'}}>{bill.discount}</td>
+                      <td style={{textAlign: 'right'}}>{bill.amountDue}</td>
                       
-                      <td style={{textAlign: 'center'}}>{bill.date ? new Date(bill.date).toLocaleDateString() : "-"}</td>
+                      <td>{bill.date ? new Date(bill.date).toLocaleDateString() : "-"}</td>
                       
-                      <td style={{textAlign: 'center'}}>
+                      <td>
                         <span className={bill.status === 'paid' ? "badge-status status-paid" : "badge-status status-unpaid"}>
                           {bill.status.toUpperCase()}
                         </span>
@@ -399,9 +418,12 @@ export default function BillingRecords({ sidebarCollapsed = false, toggleSidebar
                           <button className="btn-icon text-edit" onClick={() => navigate(`/EditBill/${bill._id}`)}>
                             <FaEdit size={16}/>
                           </button>
-                          <button className="btn-icon text-delete" onClick={() => handleDelete(bill._id)}>
+                          
+                          {/* UPDATED DELETE BUTTON */}
+                          <button className="btn-icon text-delete" onClick={() => openDeleteModal(bill._id)}>
                             <FaTrash size={14}/>
                           </button>
+                          
                           <a href={`${BASE}/bills/${bill._id}/pdf`} target="_blank" rel="noopener noreferrer" className="pdf-link">
                             <FaFilePdf /> PDF
                           </a>
@@ -414,6 +436,7 @@ export default function BillingRecords({ sidebarCollapsed = false, toggleSidebar
             </table>
           </div>
 
+          {/* Footer */}
           <div className="table-footer">
             <div className="d-flex align-items-center">
               Rows per page: 
@@ -433,6 +456,43 @@ export default function BillingRecords({ sidebarCollapsed = false, toggleSidebar
         </div>
         <div className="px-4 text-muted small">© Western State Pain Institute</div>
       </div>
+
+      {/* --- CUSTOM DELETE MODAL --- */}
+      {showDeleteModal && (
+        <>
+          <div className="modal-backdrop fade show" style={{ zIndex: 1050 }}></div>
+          <div className="modal fade show d-block" tabIndex="-1" style={{ zIndex: 1055 }}>
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content shadow-lg border-0">
+                <div className="modal-header border-bottom-0">
+                  <h5 className="modal-title fw-bold text-danger">Confirm Delete</h5>
+                  <button type="button" className="btn-close" onClick={() => setShowDeleteModal(false)}></button>
+                </div>
+                <div className="modal-body text-center py-4">
+                  <div className="mb-3 text-danger opacity-75">
+                    <FaTrash size={40} />
+                  </div>
+                  <p className="mb-1 fw-bold text-dark">
+                    Are you sure you want to delete this bill?
+                  </p>
+                  <p className="text-muted small">
+                    This action cannot be undone.
+                  </p>
+                </div>
+                <div className="modal-footer border-top-0 justify-content-center gap-2 pb-4">
+                  <button type="button" className="btn btn-light border px-4" onClick={() => setShowDeleteModal(false)}>
+                    Cancel
+                  </button>
+                  <button type="button" className="btn btn-danger px-4" onClick={confirmDelete}>
+                    Yes, Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
     </div>
   );
 }

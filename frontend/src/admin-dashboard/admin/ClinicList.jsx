@@ -1,4 +1,3 @@
-// src/admin-dashboard/admin/ClinicList.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -31,11 +30,15 @@ const SPECIALIZATION_OPTIONS = [
 export default function ClinicList({ sidebarCollapsed, toggleSidebar }) {
   const navigate = useNavigate();
 
+  // --- States ---
   const [clinics, setClinics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
-
   const [search, setSearch] = useState("");
+
+  // --- Delete Modal States ---
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [clinicToDelete, setClinicToDelete] = useState(null);
 
   const [filters, setFilters] = useState({
     id: "",
@@ -116,34 +119,21 @@ export default function ClinicList({ sidebarCollapsed, toggleSidebar }) {
         const global = search.trim().toLowerCase();
         if (global) {
           const combined = (
-            row.tableId +
-            " " +
-            row.name +
-            " " +
-            row.email +
-            " " +
-            row.adminEmail +
-            " " +
-            row.contact +
-            " " +
-            row.specialization +
-            " " +
-            row.address +
-            " " +
+            row.tableId + " " +
+            row.name + " " +
+            row.email + " " +
+            row.adminEmail + " " +
+            row.contact + " " +
+            row.specialization + " " +
+            row.address + " " +
             row.status
           ).toLowerCase();
           if (!combined.includes(global)) return false;
         }
 
-        const idMatch =
-          !filters.id || String(row.tableId).startsWith(filters.id);
-
-        const statusMatch =
-          !filters.status || filters.status === row.status;
-
-        const specializationMatch =
-          !filters.specialization ||
-          row.specialization === filters.specialization;
+        const idMatch = !filters.id || String(row.tableId).startsWith(filters.id);
+        const statusMatch = !filters.status || filters.status === row.status;
+        const specializationMatch = !filters.specialization || row.specialization === filters.specialization;
 
         return (
           idMatch &&
@@ -158,18 +148,31 @@ export default function ClinicList({ sidebarCollapsed, toggleSidebar }) {
       });
   }, [clinics, filters, search]);
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this clinic?")) return;
+  // --- DELETE HANDLERS ---
+
+  // 1. Open Modal (No deletion yet)
+  const openDeleteModal = (id) => {
+    setClinicToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  // 2. Confirm Delete (Actually deletes)
+  const confirmDelete = async () => {
+    if (!clinicToDelete) return;
+
+    // Close modal immediately
+    setShowDeleteModal(false);
 
     const promise = axios
-      .delete(`${API_BASE_URL}/api/clinics/${id}`)
+      .delete(`${API_BASE_URL}/api/clinics/${clinicToDelete}`)
       .then(() => {
-        setClinics((list) => list.filter((c) => c._id !== id));
+        setClinics((list) => list.filter((c) => c._id !== clinicToDelete));
+        setClinicToDelete(null);
       });
 
     await toast.promise(promise, {
       loading: "Deleting clinic...",
-      success: "Clinic deleted",
+      success: "Clinic deleted successfully",
       error: "Failed to delete clinic",
     });
   };
@@ -415,7 +418,8 @@ export default function ClinicList({ sidebarCollapsed, toggleSidebar }) {
 
                               <button
                                 className="btn btn-sm btn-outline-danger"
-                                onClick={() => handleDelete(row._id)}
+                                // MODIFIED: Call openDeleteModal instead of window.confirm logic
+                                onClick={() => openDeleteModal(row._id)}
                               >
                                 <FaTrash />
                               </button>
@@ -431,6 +435,58 @@ export default function ClinicList({ sidebarCollapsed, toggleSidebar }) {
           </div>
         </div>
       </div>
+
+      {/* --- DELETE CONFIRMATION MODAL --- */}
+      {showDeleteModal && (
+        <>
+          <div className="modal-backdrop fade show" style={{ zIndex: 1050 }}></div>
+          <div 
+            className="modal fade show d-block" 
+            tabIndex="-1" 
+            style={{ zIndex: 1055 }}
+          >
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content shadow-lg border-0">
+                <div className="modal-header border-bottom-0">
+                  <h5 className="modal-title fw-bold text-danger">Confirm Delete</h5>
+                  <button 
+                    type="button" 
+                    className="btn-close" 
+                    onClick={() => setShowDeleteModal(false)}
+                  ></button>
+                </div>
+                <div className="modal-body text-center py-4">
+                  <div className="mb-3 text-danger opacity-75">
+                    <FaTrash size={40} />
+                  </div>
+                  <p className="mb-1 fw-bold text-dark">
+                    Are you sure you want to delete this clinic?
+                  </p>
+                  <p className="text-muted small">
+                    This action cannot be undone.
+                  </p>
+                </div>
+                <div className="modal-footer border-top-0 justify-content-center gap-2 pb-4">
+                  <button 
+                    type="button" 
+                    className="btn btn-light border px-4" 
+                    onClick={() => setShowDeleteModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn btn-danger px-4" 
+                    onClick={confirmDelete}
+                  >
+                    Yes, Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
