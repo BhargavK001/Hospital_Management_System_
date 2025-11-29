@@ -2,173 +2,237 @@ import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
-import { FaSearch, FaPlus, FaTrash, FaEdit, FaSort } from "react-icons/fa";
+import { FaSearch, FaPlus, FaTrash, FaEdit, FaFilePdf } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
 const BASE = "http://localhost:3001";
 
 /* ---------- SCOPED CSS ---------- */
 const billingStyles = `
-  .billing-scope { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; }
+  .billing-scope { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f5f7fb; }
   .billing-scope .main-content { min-height: 100vh; transition: margin-left 0.3s; }
   
+  /* --- Top Bar --- */
   .billing-scope .page-title-bar {
     background-color: #fff;
-    padding: 15px 20px;
-    border-bottom: 1px solid #e9ecef;
-    margin-bottom: 20px;
-  }
-  .billing-scope .page-title {
-    color: #495057;
-    font-weight: 700;
-    font-size: 1.1rem;
-    margin: 0;
-  }
-
-  .billing-scope .table-card {
-    background: white;
-    border: 1px solid #dee2e6;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-    border-radius: 4px;
-    margin: 0 20px;
-  }
-
-  .billing-scope .search-container {
-    padding: 15px;
-    border-bottom: 1px solid #f1f3f5;
-  }
-  .billing-scope .search-input {
-    background-color: #fff;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    padding-left: 10px;
-  }
-
-  .billing-scope .custom-table {
-    font-size: 0.85rem;
-    width: 100%;
-    min-width: 1400px;
-  }
-  .billing-scope .custom-table thead th {
-    background-color: #f8f9fa;
-    color: #495057;
-    font-weight: 700;
-    border-bottom: 2px solid #dee2e6;
-    padding: 12px 8px;
-    vertical-align: middle;
-    white-space: nowrap;
-  }
-  .billing-scope .custom-table tbody td {
-    vertical-align: middle;
-    padding: 10px 8px;
-    border-bottom: 1px solid #e9ecef;
-    color: #495057;
-  }
-
-  .billing-scope .filter-row td {
-    background-color: #f8f9fa;
-    padding: 5px;
-  }
-  .billing-scope .filter-input {
-    font-size: 0.75rem;
-    padding: 4px 8px;
-    border-radius: 4px;
-    border: 1px solid #ced4da;
-    width: 100%;
-  }
-
-  .billing-scope .status-badge {
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-  }
-  .billing-scope .badge-paid { background-color: #d1e7dd; color: #0f5132; }
-  .billing-scope .badge-unpaid { background-color: #f8d7da; color: #842029; }
-  .billing-scope .badge-pending { background-color: #fff3cd; color: #664d03; }
-
-  .billing-scope .pagination-bar {
-    padding: 10px 20px;
-    background-color: #f8f9fa;
-    border-top: 1px solid #dee2e6;
+    padding: 15px 30px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  .billing-scope .page-title {
+    color: #333;
+    font-weight: 700;
+    font-size: 1.2rem;
+    margin: 0;
+  }
+
+  /* --- Main Card --- */
+  .billing-scope .table-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin: 20px 30px;
+    padding: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+  }
+
+  /* --- Search Container --- */
+  .billing-scope .search-container {
+    margin-bottom: 20px;
+  }
+  .billing-scope .search-input-group {
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background: #fff;
+    max-width: 100%;
+  }
+  .billing-scope .search-input {
+    border: none;
+    margin-left: 10px;
+    width: 100%;
+    outline: none;
+    color: #495057;
+    font-size: 0.95rem;
+  }
+
+  /* --- Table Structure --- */
+  .billing-scope .table-responsive {
+    overflow-x: auto;
+  }
+  .billing-scope .custom-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    color: #212529;
+    min-width: 1200px; /* Ensure table doesn't squish on small screens */
+  }
+
+  /* Table Headers */
+  .billing-scope .custom-table thead th {
+    font-weight: 700;
+    border-bottom: 2px solid #dee2e6;
+    padding: 12px 10px;
+    text-align: left;
+    white-space: nowrap; /* Prevent wrapping */
+    vertical-align: middle;
+    color: #000;
+  }
+
+  /* Table Body */
+  .billing-scope .custom-table tbody td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #dee2e6;
+    vertical-align: middle;
+    color: #444;
+  }
+
+  /* Filter Inputs */
+  .billing-scope .filter-row td {
+    padding: 5px 10px;
+    background-color: #fff;
+    border-bottom: 1px solid #dee2e6;
+  }
+  .billing-scope .filter-input {
+    width: 100%;
+    padding: 6px 10px;
     font-size: 0.85rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color 0.15s;
   }
-  
-  /* Highlight Custom Encounter ID */
-  .billing-scope .enc-id-text { 
-      font-family: monospace; 
-      font-weight: 700; 
-      color: #0d6efd; 
-      background: #f0f9ff; 
-      padding: 2px 6px; 
-      border-radius: 4px; 
+  .billing-scope .filter-input:focus {
+    border-color: #86b7fe;
   }
+
+  /* Badges & IDs */
+  .billing-scope .enc-badge {
+    color: #0d6efd;
+    background-color: #f0f9ff;
+    border: 1px solid #cce5ff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    font-family: monospace;
+  }
+
+  .billing-scope .badge-status {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: inline-block;
+  }
+  .billing-scope .status-paid { background-color: #d1e7dd; color: #0f5132; }
+  .billing-scope .status-unpaid { background-color: #f8d7da; color: #dc3545; }
+  .billing-scope .status-partial { background-color: #fff3cd; color: #664d03; }
+
+  /* Actions */
+  .billing-scope .action-group {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end; /* Align actions to right */
+    gap: 8px;
+  }
+  .billing-scope .btn-icon {
+    border: none;
+    background: transparent;
+    padding: 4px;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  .billing-scope .btn-icon:hover { transform: scale(1.1); }
+  .billing-scope .text-edit { color: #0d6efd; }
+  .billing-scope .text-delete { color: #dc3545; }
+  .billing-scope .pdf-link { 
+    color: #198754; 
+    text-decoration: none; 
+    font-weight: 600; 
+    font-size: 0.85rem; 
+    display: flex; 
+    align-items: center; 
+    gap: 3px; 
+  }
+
+  /* Footer */
+  .billing-scope .table-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 20px;
+    color: #6c757d;
+    font-size: 0.9rem;
+  }
+  .billing-scope .rows-selector {
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 4px 8px;
+    margin-left: 5px;
+    outline: none;
+  }
+  .billing-scope .pagination-btn {
+    border: none;
+    background: none;
+    color: #6c757d;
+    cursor: pointer;
+    font-weight: 500;
+    margin-left: 15px;
+  }
+  .billing-scope .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 `;
 
-export default function BillingRecords({
-  sidebarCollapsed = false,
-  toggleSidebar,
-}) {
+export default function BillingRecords({ sidebarCollapsed = false, toggleSidebar }) {
   const navigate = useNavigate();
 
+  // Data
   const [bills, setBills] = useState([]);
-  const [encountersList, setEncountersList] = useState([]); // To store fetched encounters
+  const [encountersList, setEncountersList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  
+  // UI State
   const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
+  // Filters
   const [filter, setFilter] = useState({
     id: "",
-    encounterId: "", // Added filter for Enc ID
+    encounterId: "",
     doctor: "",
     clinic: "",
     patient: "",
-    service: "",
-    total: "",
-    discount: "",
-    due: "",
     date: "",
     status: "",
   });
 
-  const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-
-  // Load Data
+  // --- FETCH ---
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [billsRes, encRes] = await Promise.all([
+          axios.get(`${BASE}/bills`),
+          axios.get(`${BASE}/encounters`),
+        ]);
+        setBills(billsRes.data || []);
+        setEncountersList(Array.isArray(encRes.data) ? encRes.data : encRes.data.encounters || []);
+      } catch (err) {
+        console.error("Fetch error:", err);
+        setError("Failed to load records.");
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchData();
   }, []);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      // Fetch BOTH Bills and Encounters in parallel
-      const [billsRes, encRes] = await Promise.all([
-        axios.get(`${BASE}/bills`),
-        axios.get(`${BASE}/encounters`),
-      ]);
-
-      const allBills = billsRes.data || [];
-      // Handle encounter response structure (array vs {encounters: []})
-      const allEncounters = Array.isArray(encRes.data)
-        ? encRes.data
-        : encRes.data.encounters || [];
-
-      setBills(allBills);
-      setEncountersList(allEncounters);
-    } catch (err) {
-      console.error("Error fetching data:", err);
-      setError("Failed to load records.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this bill?")) return;
@@ -180,306 +244,113 @@ export default function BillingRecords({
     }
   };
 
+  // --- HELPERS ---
   const handleFilterChange = (key, value) => {
     setFilter((prev) => ({ ...prev, [key]: value }));
     setPage(1);
   };
 
-  // --- LOOKUP FUNCTION (Mongo ID -> ENC-XXXX) ---
   const lookupCustomId = (bill) => {
-    // If the bill already has the short ID stored (new system), use it
-    if (bill.encounterId && bill.encounterId.startsWith("ENC-")) {
-      return bill.encounterId;
-    }
-
-    // Otherwise, lookup using the Mongo ID (old system)
+    if (bill.encounterId && bill.encounterId.startsWith("ENC-")) return bill.encounterId;
     const mongoId = bill.encounterId || bill.encounter_id || bill.encounter;
-
     if (!mongoId) return "-";
-
     const found = encountersList.find((e) => e._id === mongoId);
-    if (found && found.encounterId) {
-      return found.encounterId;
-    }
-
-    // Fallback
-    return typeof mongoId === "string" ? mongoId.substring(0, 8) + "..." : "-";
+    return (found && found.encounterId) ? found.encounterId : (typeof mongoId === "string" ? mongoId.substring(0, 8) + "..." : "-");
   };
 
-  // Filtering logic
+  // --- FILTER LOGIC ---
   const filtered = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
+    return bills.filter((bill) => {
+      const customEncId = lookupCustomId(bill);
+      const combined = `${bill._id} ${customEncId} ${bill.doctorName} ${bill.clinicName} ${bill.patientName} ${bill.status}`.toLowerCase();
+      
+      if (q && !combined.includes(q)) return false;
 
-    return bills
-      .filter((bill) => {
-        // Get the Readable Encounter ID for searching/filtering
-        const customEncId = lookupCustomId(bill);
+      // Column Filters
+      if (filter.id && !bill._id?.toLowerCase().includes(filter.id.toLowerCase())) return false;
+      if (filter.encounterId && !customEncId.toLowerCase().includes(filter.encounterId.toLowerCase())) return false;
+      if (filter.doctor && !bill.doctorName?.toLowerCase().includes(filter.doctor.toLowerCase())) return false;
+      if (filter.clinic && !bill.clinicName?.toLowerCase().includes(filter.clinic.toLowerCase())) return false;
+      if (filter.patient && !bill.patientName?.toLowerCase().includes(filter.patient.toLowerCase())) return false;
+      if (filter.date && bill.date !== filter.date) return false;
+      if (filter.status && filter.status !== "Filter" && bill.status?.toLowerCase() !== filter.status.toLowerCase()) return false;
 
-        // Global Search
-        if (q) {
-          const combined = `${bill._id || ""} ${customEncId} ${
-            bill.doctorName || ""
-          } ${bill.clinicName || ""} ${bill.patientName || ""} ${(
-            bill.services || []
-          ).join(" ")} ${bill.status || ""}`.toLowerCase();
-          if (!combined.includes(q)) return false;
-        }
-
-        // Column Filters
-        if (
-          filter.id &&
-          !bill._id?.toLowerCase().includes(filter.id.toLowerCase())
-        )
-          return false;
-
-        // Filter by Custom ID (ENC-XXXX)
-        if (
-          filter.encounterId &&
-          !customEncId.toLowerCase().includes(filter.encounterId.toLowerCase())
-        )
-          return false;
-
-        if (
-          filter.doctor &&
-          !bill.doctorName?.toLowerCase().includes(filter.doctor.toLowerCase())
-        )
-          return false;
-        if (
-          filter.clinic &&
-          !bill.clinicName?.toLowerCase().includes(filter.clinic.toLowerCase())
-        )
-          return false;
-        if (
-          filter.patient &&
-          !bill.patientName
-            ?.toLowerCase()
-            .includes(filter.patient.toLowerCase())
-        )
-          return false;
-        if (
-          filter.service &&
-          !(Array.isArray(bill.services) ? bill.services.join(" ") : "")
-            .toLowerCase()
-            .includes(filter.service.toLowerCase())
-        )
-          return false;
-
-        if (filter.total && bill.totalAmount?.toString() !== filter.total)
-          return false;
-        if (filter.discount && bill.discount?.toString() !== filter.discount)
-          return false;
-        if (filter.due && bill.amountDue?.toString() !== filter.due)
-          return false;
-
-        if (
-          filter.status &&
-          filter.status !== "Filter" &&
-          bill.status?.toLowerCase() !== filter.status.toLowerCase()
-        )
-          return false;
-
-        return true;
-      })
-      .sort((a, b) => new Date(b.date) - new Date(a.date));
+      return true;
+    }).sort((a, b) => new Date(b.date) - new Date(a.date));
   }, [bills, encountersList, searchTerm, filter]);
 
+  // --- PAGINATION ---
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
-  const pageItems = filtered.slice(
-    (page - 1) * rowsPerPage,
-    page * rowsPerPage
-  );
-
-  const getStatusBadgeClass = (status) => {
-    const s = (status || "").toLowerCase();
-    if (s === "paid") return "status-badge badge-paid";
-    if (s === "unpaid") return "status-badge badge-unpaid";
-    return "status-badge badge-pending";
-  };
+  const pageItems = filtered.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
   return (
     <div className="d-flex billing-scope">
       <style>{billingStyles}</style>
-
       <Sidebar collapsed={sidebarCollapsed} />
 
-      <div
-        className="flex-grow-1 main-content"
-        style={{
-          marginLeft: sidebarCollapsed ? 64 : 250,
-        }}
-      >
+      <div className="flex-grow-1 main-content" style={{ marginLeft: sidebarCollapsed ? 64 : 250 }}>
         <Navbar toggleSidebar={toggleSidebar} />
 
-        <div className="page-title-bar d-flex justify-content-between align-items-center">
+        <div className="page-title-bar">
           <h5 className="page-title">Billing Records</h5>
-          <div className="services-actions">
-            <button
-              className="btn btn-light btn-sm border"
-              onClick={() => navigate("/AddBill")}
-            >
-              <FaPlus className="me-1" /> Add Bill
-            </button>
-          </div>
+          <button className="btn btn-primary btn-sm d-flex align-items-center gap-2" onClick={() => navigate("/AddBill")}>
+            <FaPlus /> Add Bill
+          </button>
         </div>
 
         <div className="table-card">
+          {/* Global Search */}
           <div className="search-container">
-            <div className="input-group">
-              <span className="input-group-text bg-white border-end-0">
-                <FaSearch className="text-muted" />
-              </span>
-              <input
+            <div className="search-input-group">
+              <FaSearch className="text-muted" />
+              <input 
+                type="text" 
+                className="search-input" 
+                placeholder="Search bills data..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                type="text"
-                className="form-control border-start-0 search-input shadow-none"
-                placeholder="Search bills data..."
               />
             </div>
           </div>
 
+          {/* Table */}
           <div className="table-responsive">
-            <table className="custom-table table-hover">
+            <table className="custom-table">
               <thead>
+                {/* Header Titles */}
                 <tr>
-                  <th style={{ width: "50px" }}>
-                    ID <FaSort size={10} className="text-muted" />
-                  </th>
-                  <th>
-                    Encounter ID <FaSort size={10} className="text-muted" />
-                  </th>
-                  <th>
-                    Doctor Name <FaSort size={10} className="text-muted" />
-                  </th>
-                  <th>
-                    Clinic Name <FaSort size={10} className="text-muted" />
-                  </th>
-                  <th>
-                    Patient Name <FaSort size={10} className="text-muted" />
-                  </th>
+                  <th style={{width: '50px'}}>ID</th>
+                  <th>Encounter ID</th>
+                  <th>Doctor Name</th>
+                  <th>Clinic Name</th>
+                  <th>Patient Name</th>
                   <th>Services</th>
-                  <th style={{ width: "80px" }}>
-                    Total <FaSort size={10} className="text-muted" />
-                  </th>
-                  <th style={{ width: "80px" }}>
-                    Discount <FaSort size={10} className="text-muted" />
-                  </th>
-                  <th style={{ width: "90px" }}>
-                    Amount due <FaSort size={10} className="text-muted" />
-                  </th>
-                  <th style={{ width: "120px" }}>
-                    Date <FaSort size={10} className="text-muted" />
-                  </th>
-                  <th style={{ width: "80px" }}>
-                    Status <FaSort size={10} className="text-muted" />
-                  </th>
-                  <th style={{ width: "100px" }}>Action</th>
+                  <th>Total</th>
+                  <th style={{textAlign: 'center'}}>Discount</th>
+                  <th style={{textAlign: 'center'}}>Amount due</th>
+                  <th style={{textAlign: 'center'}}>Date</th>
+                  <th style={{textAlign: 'center'}}>Status</th>
+                  <th style={{textAlign: 'center'}}>Action</th>
                 </tr>
-
+                {/* Header Filters - Matched to Screenshot */}
                 <tr className="filter-row">
+                  <td><input className="filter-input" placeholder="ID" style={{width: '40px'}} onChange={(e) => handleFilterChange("id", e.target.value)}/></td>
+                  <td><input className="filter-input" placeholder="Enc ID" onChange={(e) => handleFilterChange("encounterId", e.target.value)}/></td>
+                  <td><input className="filter-input" placeholder="Doctor" onChange={(e) => handleFilterChange("doctor", e.target.value)}/></td>
+                  <td><input className="filter-input" placeholder="Clinic" onChange={(e) => handleFilterChange("clinic", e.target.value)}/></td>
+                  <td><input className="filter-input" placeholder="Patient" onChange={(e) => handleFilterChange("patient", e.target.value)}/></td>
+                  {/* Empty cells for columns that don't need filtering as per image */}
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td> 
                   <td>
-                    <input
-                      className="filter-input"
-                      placeholder="ID"
-                      onChange={(e) => handleFilterChange("id", e.target.value)}
-                    />
+                    <input type="date" className="filter-input" style={{width: '130px'}} onChange={(e) => handleFilterChange("date", e.target.value)}/>
                   </td>
                   <td>
-                    <input
-                      className="filter-input"
-                      placeholder="Enc ID"
-                      onChange={(e) =>
-                        handleFilterChange("encounterId", e.target.value)
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      className="filter-input"
-                      placeholder="Doctor"
-                      onChange={(e) =>
-                        handleFilterChange("doctor", e.target.value)
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      className="filter-input"
-                      placeholder="Clinic"
-                      onChange={(e) =>
-                        handleFilterChange("clinic", e.target.value)
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      className="filter-input"
-                      placeholder="Patient"
-                      onChange={(e) =>
-                        handleFilterChange("patient", e.target.value)
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      className="filter-input"
-                      placeholder="Service"
-                      onChange={(e) =>
-                        handleFilterChange("service", e.target.value)
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      className="filter-input"
-                      placeholder="Total"
-                      onChange={(e) =>
-                        handleFilterChange("total", e.target.value)
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      className="filter-input"
-                      placeholder="Disc"
-                      onChange={(e) =>
-                        handleFilterChange("discount", e.target.value)
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      className="filter-input"
-                      placeholder="Due"
-                      onChange={(e) =>
-                        handleFilterChange("due", e.target.value)
-                      }
-                    />
-                  </td>
-                  <td>
-                    <div className="d-flex bg-white border rounded">
-                      <input
-                        type="text"
-                        className="form-control border-0 p-1 py-0 shadow-none"
-                        style={{ fontSize: "0.7rem", height: 24 }}
-                        placeholder="Date"
-                        onFocus={(e) => (e.target.type = "date")}
-                        onBlur={(e) => (e.target.type = "text")}
-                        onChange={(e) =>
-                          handleFilterChange("date", e.target.value)
-                        }
-                      />
-                    </div>
-                  </td>
-                  <td>
-                    <select
-                      className="form-select border-secondary shadow-none p-0 ps-1"
-                      style={{ fontSize: "0.7rem", height: 26 }}
-                      onChange={(e) =>
-                        handleFilterChange("status", e.target.value)
-                      }
-                    >
-                      <option>Filter</option>
+                    <select className="filter-input" onChange={(e) => handleFilterChange("status", e.target.value)}>
+                      <option value="">Filter</option>
                       <option value="paid">Paid</option>
                       <option value="unpaid">Unpaid</option>
                     </select>
@@ -487,85 +358,53 @@ export default function BillingRecords({
                   <td></td>
                 </tr>
               </thead>
-
               <tbody>
                 {loading ? (
-                  <tr>
-                    <td colSpan="12" className="text-center py-5 text-muted">
-                      Loading bills...
-                    </td>
-                  </tr>
-                ) : error ? (
-                  <tr>
-                    <td colSpan="12" className="text-center py-5 text-danger">
-                      {error}
-                    </td>
-                  </tr>
+                  <tr><td colSpan="12" className="text-center py-5">Loading...</td></tr>
                 ) : pageItems.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan="12"
-                      className="text-center py-5"
-                      style={{ color: "#3b82f6", fontWeight: 500 }}
-                    >
-                      No Data Found
-                    </td>
-                  </tr>
+                  <tr><td colSpan="12" className="text-center py-5 text-muted">No records found</td></tr>
                 ) : (
                   pageItems.map((bill, i) => (
                     <tr key={bill._id || i}>
-                      {/* 1. ID Column: Database _id */}
-                      <td>{bill._id ? bill._id.substring(0, 6) : "-"}</td>
-
-                      {/* 2. Encounter ID Column: Custom ID lookup */}
+                      {/* 1. Sequential ID */}
+                      <td style={{fontWeight: 'bold', color: '#6c757d'}}>
+                        {(page - 1) * rowsPerPage + i + 1}
+                      </td>
+                      
+                      {/* 2. Encounter ID */}
                       <td>
-                        <span className="enc-id-text">
-                          {lookupCustomId(bill)}
-                        </span>
+                        <span className="enc-badge">{lookupCustomId(bill)}</span>
                       </td>
 
                       <td>{bill.doctorName}</td>
-                      <td>{bill.clinicName}</td>
+                      <td >{bill.clinicName}</td>
                       <td>{bill.patientName}</td>
-                      <td>{bill.services?.join(", ")}</td>
-                      <td>{bill.totalAmount}</td>
-                      <td>{bill.discount}</td>
-                      <td>{bill.amountDue}</td>
-                      <td>
-                        {bill.date
-                          ? new Date(bill.date).toLocaleDateString()
-                          : "-"}
-                      </td>
-                      <td>
-                        <span className={getStatusBadgeClass(bill.status)}>
-                          {bill.status}
+                      <td style={{textAlign: 'center'}}>{Array.isArray(bill.services) ? bill.services[0] : (bill.services || "-")}</td>
+                      
+                      {/* Numbers Right Aligned */}
+                      <td style={{textAlign: 'center'}}>{bill.totalAmount}</td>
+                      <td style={{textAlign: 'center'}}>{bill.discount}</td>
+                      <td style={{textAlign: 'center'}}>{bill.amountDue}</td>
+                      
+                      <td style={{textAlign: 'center'}}>{bill.date ? new Date(bill.date).toLocaleDateString() : "-"}</td>
+                      
+                      <td style={{textAlign: 'center'}}>
+                        <span className={bill.status === 'paid' ? "badge-status status-paid" : "badge-status status-unpaid"}>
+                          {bill.status.toUpperCase()}
                         </span>
                       </td>
+
                       <td>
-                        <div className="d-flex gap-2">
-                          <button
-                            className="btn btn-sm text-primary p-0"
-                            onClick={() => navigate(`/EditBill/${bill._id}`)}
-                            title="Edit"
-                          >
-                            <FaEdit size={14} />
+                        <div className="action-group">
+                          <button className="btn-icon text-edit" onClick={() => navigate(`/EditBill/${bill._id}`)}>
+                            <FaEdit size={16}/>
                           </button>
-                          <button
-                            className="btn btn-sm text-danger p-0"
-                            onClick={() => handleDelete(bill._id)}
-                            title="Delete"
-                          >
-                            <FaTrash size={14} />
+                          <button className="btn-icon text-delete" onClick={() => handleDelete(bill._id)}>
+                            <FaTrash size={14}/>
                           </button>
-                          <button
-                            className="btn btn-sm text-success p-0"
-                            onClick={() =>
-                              window.open(`${BASE}/bills/${bill._id}/pdf`)
-                            }
-                            title="Download PDF"
-                          >
-                            PDF
-                          </button>
+                          <a href={`${BASE}/bills/${bill._id}/pdf`} target="_blank" rel="noopener noreferrer" className="pdf-link">
+                            <FaFilePdf /> PDF
+                          </a>
                         </div>
                       </td>
                     </tr>
@@ -575,55 +414,24 @@ export default function BillingRecords({
             </table>
           </div>
 
-          <div className="pagination-bar">
-            <div className="d-flex align-items-center gap-2">
-              <span className="text-muted">Rows per page:</span>
-              <select
-                className="form-select form-select-sm border-secondary shadow-none"
-                style={{ width: 60 }}
-                value={rowsPerPage}
-                onChange={(e) => {
-                  setRowsPerPage(Number(e.target.value));
-                  setPage(1);
-                }}
-              >
+          <div className="table-footer">
+            <div className="d-flex align-items-center">
+              Rows per page: 
+              <select className="rows-selector" value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(1); }}>
                 <option value={10}>10</option>
                 <option value={20}>20</option>
                 <option value={50}>50</option>
               </select>
             </div>
-
-            <div className="d-flex align-items-center gap-3">
-              <span className="text-muted">
-                Page{" "}
-                <span className="border px-2 py-1 rounded bg-white text-dark fw-bold">
-                  {page}
-                </span>{" "}
-                of {totalPages}
-              </span>
-              <div className="btn-group">
-                <button
-                  className="btn btn-sm btn-link text-secondary text-decoration-none"
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => p - 1)}
-                >
-                  Prev
-                </button>
-                <button
-                  className="btn btn-sm btn-link text-secondary text-decoration-none"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage((p) => p + 1)}
-                >
-                  Next
-                </button>
-              </div>
+            <div>
+              <span className="me-3">Page {page} of {totalPages}</span>
+              <button className="pagination-btn" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Prev</button>
+              <button className="pagination-btn" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</button>
             </div>
           </div>
-        </div>
 
-        <div className="px-4 py-3 text-primary fw-bold small">
-          © Western State Pain Institute
         </div>
+        <div className="px-4 text-muted small">© Western State Pain Institute</div>
       </div>
     </div>
   );

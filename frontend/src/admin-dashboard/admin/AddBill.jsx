@@ -10,7 +10,7 @@ const BASE = "http://localhost:3001";
 const AddBill = () => {
   const navigate = useNavigate();
 
-  // --- 1. Form State with IDs ---
+  // --- 1. Form State ---
   const [form, setForm] = useState({
     patientId: "",
     patientName: "",
@@ -18,7 +18,7 @@ const AddBill = () => {
     doctorName: "",
     clinicId: "",
     clinicName: "",
-    encounterId: "", // This will store "ENC-1001"
+    encounterId: "", // This will store "ENC-1001" or _id
     services: "",
     totalAmount: "",
     discount: "0",
@@ -41,7 +41,7 @@ const AddBill = () => {
         const [docRes, patRes, clinicRes] = await Promise.all([
           axios.get(`${BASE}/doctors`),
           axios.get(`${BASE}/patients`),
-          axios.get(`${BASE}/api/clinics`) // Ensure route matches your backend
+          axios.get(`${BASE}/api/clinics`)
         ]);
 
         setDoctors(Array.isArray(docRes.data) ? docRes.data : docRes.data.data || []);
@@ -59,19 +59,20 @@ const AddBill = () => {
     fetchData();
   }, []);
 
-  // --- 3. Fetch Encounters when Patient Selected ---
+  // --- 3. Fetch Encounters (FIXED: Use Server-Side Filter) ---
   useEffect(() => {
     if (form.patientId) {
-      axios.get(`${BASE}/encounters`)
+      // We pass ?patientId=... to the backend. 
+      // The backend handles the filtering, avoiding the Object vs String mismatch issue.
+      axios.get(`${BASE}/encounters?patientId=${form.patientId}`)
         .then((res) => {
-           // Filter encounters for this specific patient
-           const allEncounters = Array.isArray(res.data) ? res.data : res.data.encounters || [];
-           const myEncounters = allEncounters.filter(e => 
-              e.patientId === form.patientId || e.patient?._id === form.patientId
-           );
-           setEncounters(myEncounters);
+           const data = Array.isArray(res.data) ? res.data : res.data.encounters || [];
+           setEncounters(data);
         })
-        .catch(err => console.error(err));
+        .catch(err => {
+            console.error("Error fetching encounters:", err);
+            setEncounters([]);
+        });
     } else {
         setEncounters([]);
         setForm(prev => ({ ...prev, encounterId: "" }));
@@ -97,13 +98,12 @@ const AddBill = () => {
       ...prev,
       patientId: selectedId,
       patientName: selectedObj ? `${selectedObj.firstName} ${selectedObj.lastName}` : "",
-      encounterId: "" // Reset encounter selection
+      encounterId: "" // Reset encounter selection on patient change
     }));
   };
 
   const handleClinicChange = (e) => {
     const selectedId = e.target.value;
-    // Find clinic object if possible
     const selectedObj = clinics.find(c => c._id === selectedId);
     
     if (selectedObj) {
@@ -113,7 +113,6 @@ const AddBill = () => {
             clinicName: selectedObj.name || selectedObj.clinicName || ""
         }));
     } else {
-        // Fallback if entering manually
         setForm(prev => ({ ...prev, clinicId: "", clinicName: e.target.value }));
     }
   };
@@ -145,7 +144,6 @@ const AddBill = () => {
       const payload = {
         ...form,
         services: form.services.split(",").map(s => s.trim()),
-        // Ensure clinicId is sent (if manually typed, backend might need to allow null)
         clinicId: form.clinicId || null 
       };
 
@@ -154,7 +152,7 @@ const AddBill = () => {
       navigate("/BillingRecords");
     } catch (err) {
       console.error(err);
-      toast.error("Error creating bill.");
+      toast.error("Error creating bill. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -207,7 +205,7 @@ const AddBill = () => {
                 </select>
               </div>
 
-              {/* Clinic - Dynamic Dropdown */}
+              {/* Clinic */}
               <div className="col-md-6 mb-3">
                 <label className="form-label">Clinic Name <span className="text-danger">*</span></label>
                 {clinics.length > 0 ? (
@@ -235,7 +233,7 @@ const AddBill = () => {
                 )}
               </div>
 
-              {/* Encounter - Links "ENC-XXXX" */}
+              {/* Encounter */}
               <div className="col-md-6 mb-3">
                 <label className="form-label">Link Encounter (Optional)</label>
                 <select
@@ -247,9 +245,7 @@ const AddBill = () => {
                 >
                   <option value="">-- Select Encounter --</option>
                   {encounters.map((enc) => (
-                    /* --- KEY CHANGE: Use enc.encounterId as value --- */
                     <option key={enc._id} value={enc.encounterId || enc._id}>
-                      {/* Display Date and the readable ID */}
                       {new Date(enc.date).toLocaleDateString()} (ID: {enc.encounterId || "Pending"})
                     </option>
                   ))}
@@ -346,7 +342,6 @@ const AddBill = () => {
               {saving ? "Saving..." : "Create Bill"}
             </button>
 
-            {/* ----- CANCEL BUTTON ADDED (from backup) ----- */}
             <button
               type="button"
               className="btn btn-secondary ms-2"
