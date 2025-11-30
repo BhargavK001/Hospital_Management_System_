@@ -51,6 +51,37 @@ function Taxes({ sidebarCollapsed = false, toggleSidebar }) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [taxToDelete, setTaxToDelete] = useState(null);
 
+  // --- NEW: Dropdown Data States ---
+  const [clinics, setClinics] = useState([]);
+  const [doctors, setDoctors] = useState([]);
+  const [services, setServices] = useState([]);
+
+  // --- FETCH DROPDOWN DATA ---
+  const fetchDropdownData = async () => {
+    try {
+      const [clinicRes, doctorRes, serviceRes] = await Promise.all([
+        axios.get("http://localhost:3001/api/clinics"),
+        axios.get("http://localhost:3001/doctors"),
+        axios.get("http://localhost:3001/services?limit=1000") // Fetch enough services
+      ]);
+
+      if (clinicRes.data?.success) {
+        setClinics(clinicRes.data.clinics || []);
+      }
+
+      setDoctors(doctorRes.data || []);
+      setServices(serviceRes.data?.rows || []);
+
+    } catch (err) {
+      console.error("Error fetching dropdown data:", err);
+      // toast.error("Failed to load some dropdown data");
+    }
+  };
+
+  useEffect(() => {
+    fetchDropdownData();
+  }, []);
+
   // ---------- FETCH TAXES ----------
   const fetchTaxes = async () => {
     try {
@@ -675,31 +706,55 @@ function Taxes({ sidebarCollapsed = false, toggleSidebar }) {
 
                       <div className="col-md-6">
                         <label className="form-label">Clinic Name</label>
-                        <input
-                          className="form-control"
+                        <select
+                          className="form-select"
                           name="clinicName"
                           value={form.clinicName}
                           onChange={handleFormChange}
-                        />
+                        >
+                          <option value="">Select Clinic</option>
+                          {clinics.map((c) => (
+                            <option key={c._id} value={c.name || c.clinicName}>
+                              {c.name || c.clinicName}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                       <div className="col-md-6">
                         <label className="form-label">Doctor</label>
-                        <input
-                          className="form-control"
+                        <select
+                          className="form-select"
                           name="doctor"
                           value={form.doctor}
                           onChange={handleFormChange}
-                        />
+                        >
+                          <option value="">Select Doctor</option>
+                          {doctors.map((d) => {
+                            const fullName = `${d.firstName} ${d.lastName}`;
+                            return (
+                              <option key={d._id} value={fullName}>
+                                {fullName}
+                              </option>
+                            );
+                          })}
+                        </select>
                       </div>
 
                       <div className="col-md-12">
                         <label className="form-label">Service Name</label>
-                        <input
-                          className="form-control"
+                        <select
+                          className="form-select"
                           name="serviceName"
                           value={form.serviceName}
                           onChange={handleFormChange}
-                        />
+                        >
+                          <option value="">Select Service</option>
+                          {services.map((s) => (
+                            <option key={s._id} value={s.name}>
+                              {s.name}
+                            </option>
+                          ))}
+                        </select>
                       </div>
 
                       <div className="col-md-12">
