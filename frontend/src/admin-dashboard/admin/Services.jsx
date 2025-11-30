@@ -16,7 +16,6 @@ import Sidebar from "../components/Sidebar";
 
 /* ---------- Local axios instance ---------- */
 const api = axios.create({ baseURL: "http://127.0.0.1:3001" });
-// choose ONE and keep consistent with server mount
 const SERVICES_BASE = "/services";
 
 const REQUIRED_HEADERS = [
@@ -87,11 +86,6 @@ function StatusToggle({ active, onClick }) {
         tabIndex={0}
         className={`status-toggle-track ${active ? "active" : ""}`}
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClick(!active); }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault(); e.stopPropagation(); onClick(!active);
-          }
-        }}
       >
         <div className="status-toggle-thumb" />
       </div>
@@ -153,18 +147,29 @@ function DurationPicker({ value, onChange }) {
   );
 }
 
-function ServiceForm({ initial, onClose, onSave }) {
-  const defaultCategories = ["System Service", "General Dentistry", "Telemed"];
+// ------------------------------------------------------
+// Service Form (Dynamic Categories from Props)
+// ------------------------------------------------------
+function ServiceForm({ initial, onClose, onSave, availableCategories }) {
   const [clinics, setClinics] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
 
-  const [categories] = useState(defaultCategories);
   const [form, setForm] = useState(
     initial || {
-      serviceId: "", name: "", category: defaultCategories[0] || "",
-      charges: "", isTelemed: "No", clinicName: "", doctor: "",
-      duration: "00:00", active: true, allowMulti: "Yes", imageFile: null, imagePreview: ""
+      serviceId: "", 
+      name: "", 
+      // Set default category from real-time list if available
+      category: availableCategories.length > 0 ? availableCategories[0] : "",
+      charges: "", 
+      isTelemed: "No", 
+      clinicName: "", 
+      doctor: "",
+      duration: "00:00", 
+      active: true, 
+      allowMulti: "Yes", 
+      imageFile: null, 
+      imagePreview: ""
     }
   );
 
@@ -238,12 +243,17 @@ function ServiceForm({ initial, onClose, onSave }) {
             <div className="row g-3">
               <div className="col-lg-9">
                 <div className="row g-3">
+                  
+                  {/* --- Dynamic Category Dropdown --- */}
                   <div className="col-md-6">
                     <label className="form-label">Category*</label>
-                    <select className="form-select" value={form.category} onChange={change("category")}>
-                      {categories.map(c => <option key={c}>{c}</option>)}
+                    <select className="form-select" value={form.category} onChange={change("category")} required>
+                      <option value="">Select Category</option>
+                      {availableCategories.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
+                    {availableCategories.length === 0 && <small className="text-danger">No categories in settings</small>}
                   </div>
+
                   <div className="col-md-6"><label className="form-label">Name*</label><input className="form-control" value={form.name} onChange={change("name")} required /></div>
                   <div className="col-md-6"><label className="form-label">Charges*</label><input className="form-control" value={form.charges} onChange={change("charges")} required /></div>
                   <div className="col-md-6"><label className="form-label">Telemed?*</label><select className="form-select" value={form.isTelemed} onChange={change("isTelemed")}><option>No</option><option>Yes</option></select></div>
@@ -292,7 +302,6 @@ function ServiceForm({ initial, onClose, onSave }) {
   );
 }
 
-/* ---------- Confirm Delete Modal ---------- */
 function ConfirmDelete({ open, onCancel, onConfirm }) {
   if (!open) return null;
   return (
@@ -338,6 +347,23 @@ export default function Services({ sidebarCollapsed = false, toggleSidebar }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
+  // --- NEW: State for Categories fetched from Listings ---
+  const [categories, setCategories] = useState([]);
+
+  // --- Fetch Categories on Mount ---
+  useEffect(() => {
+    const fetchCategories = async () => {
+        try {
+            const res = await api.get("/listings?type=service type&status=Active");
+            const catNames = res.data.map(item => item.name);
+            setCategories(catNames);
+        } catch (err) {
+            console.error("Error fetching categories:", err);
+        }
+    };
+    fetchCategories();
+  }, []);
+
   const handleFilterChange = (key, value) => { setFilters(prev => ({ ...prev, [key]: value })); setPage(1); };
 
   const load = async () => {
@@ -351,8 +377,8 @@ export default function Services({ sidebarCollapsed = false, toggleSidebar }) {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, [page, limit]); // eslint-disable-line
-  useEffect(() => { const t = setTimeout(() => { setPage(1); load(); }, 400); return () => clearTimeout(t); }, [search, filters]); // eslint-disable-line
+  useEffect(() => { load(); }, [page, limit]); 
+  useEffect(() => { const t = setTimeout(() => { setPage(1); load(); }, 400); return () => clearTimeout(t); }, [search, filters]);
 
   const onAdd = () => { setEditing(null); setModalOpen(true); };
   const onEdit = (r) => { setEditing(r); setModalOpen(true); };
@@ -395,26 +421,16 @@ export default function Services({ sidebarCollapsed = false, toggleSidebar }) {
   const handleFileChange = async (e) => {
     const file = e.target.files[0]; if (!file) return;
     if (!file.name.endsWith(".csv")) { toast.error("Invalid file type. Please upload a .csv file"); e.target.value = null; return; }
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const text = event.target.result;
-      const firstLine = text.split("\n")[0];
-      if (!firstLine) { toast.error("File is empty"); return; }
-      const fileHeaders = firstLine.split(",").map(h => h.trim().replace(/^"|"$/g, ""));
-      const missingHeaders = REQUIRED_HEADERS.filter(req => !fileHeaders.includes(req));
-      if (missingHeaders.length > 0) { toast.error(`Missing columns: ${missingHeaders.join(", ")}`); e.target.value = null; return; }
-      const formData = new FormData(); formData.append("file", file);
-      try {
-        setLoading(true);
-        await toast.promise(api.post(`${SERVICES_BASE}/import`, formData, { headers: { "Content-Type": "multipart/form-data" } }), { loading: "Importing...", success: "Import successful!", error: "Import failed" });
-        load();
-      } finally { setLoading(false); e.target.value = null; }
-    };
-    reader.readAsText(file);
+    const formData = new FormData(); formData.append("file", file);
+    try {
+      setLoading(true);
+      await toast.promise(api.post(`${SERVICES_BASE}/import`, formData, { headers: { "Content-Type": "multipart/form-data" } }), { loading: "Importing...", success: "Import successful!", error: "Import failed" });
+      load();
+    } finally { setLoading(false); e.target.value = null; }
   };
 
   return (
-    <div className="d-flex services-scope" onKeyDown={(e)=>{ /* prevent stray Enter from triggering any parent form */ if (e.key === "Enter" && (e.target.tagName !== "TEXTAREA")) e.stopPropagation(); }}>
+    <div className="d-flex services-scope" onKeyDown={(e)=>{ if (e.key === "Enter" && (e.target.tagName !== "TEXTAREA")) e.stopPropagation(); }}>
       <style>{servicesStyles}</style>
 
       <Toaster position="top-right" reverseOrder={false} containerStyle={{ zIndex: 2147483647 }} />
@@ -472,19 +488,20 @@ export default function Services({ sidebarCollapsed = false, toggleSidebar }) {
                       <td className="border-bottom p-1"><input className="form-control form-control-sm table-filter-input" placeholder="Filter Charge" value={filters.charges} onChange={(e) => handleFilterChange("charges", e.target.value)}/></td>
                       <td className="border-bottom p-1"><input className="form-control form-control-sm table-filter-input" placeholder="HH:mm" value={filters.duration} onChange={(e) => handleFilterChange("duration", e.target.value)}/></td>
                       <td className="border-bottom p-1">
-                         <select className="form-select form-select-sm table-filter-input" value={filters.category} onChange={(e) => handleFilterChange("category", e.target.value)}>
-                            <option value="">Filter Name</option>
-                            <option value="System Service">System Service</option>
-                            <option value="General Dentistry">General Dentistry</option>
-                            <option value="Telemed">Telemed</option>
-                         </select>
+                        {/* Dynamic Category Filter */}
+                        <select className="form-select form-select-sm table-filter-input" value={filters.category} onChange={(e) => handleFilterChange("category", e.target.value)}>
+                           <option value="">Filter Category</option>
+                           {categories.map(c => (
+                               <option key={c} value={c}>{c}</option>
+                           ))}
+                        </select>
                       </td>
                       <td className="border-bottom p-1">
-                         <select className="form-select form-select-sm table-filter-input" value={filters.status} onChange={(e) => handleFilterChange("status", e.target.value)}>
-                            <option value="">Filter status</option>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                         </select>
+                        <select className="form-select form-select-sm table-filter-input" value={filters.status} onChange={(e) => handleFilterChange("status", e.target.value)}>
+                           <option value="">Filter status</option>
+                           <option value="active">Active</option>
+                           <option value="inactive">Inactive</option>
+                        </select>
                       </td>
                       <td className="border-bottom p-1"></td>
                   </tr>
@@ -557,9 +574,10 @@ export default function Services({ sidebarCollapsed = false, toggleSidebar }) {
           </div>
 
           <div className="mt-3 text-secondary small">© Western State Pain Institute</div>
-          {modalOpen && <ServiceForm initial={editing} onClose={() => setModalOpen(false)} onSave={save} />}
+          
+          {/* Pass dynamic categories to form */}
+          {modalOpen && <ServiceForm initial={editing} onClose={() => setModalOpen(false)} onSave={save} availableCategories={categories} />}
 
-          {/* Delete confirmation modal */}
           <ConfirmDelete
             open={confirmOpen}
             onCancel={() => { setConfirmOpen(false); setPendingDeleteId(null); }}

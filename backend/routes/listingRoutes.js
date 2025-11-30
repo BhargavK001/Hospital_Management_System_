@@ -1,17 +1,38 @@
 const express = require('express');
 const router = express.Router();
-const listingController = require('../controllers/listingController');
+const Listing = require('../models/Listing'); // Ensure path is correct
 
-// GET all listings
-router.get('/', listingController.getListings);
+// GET
+router.get('/', async (req, res) => {
+  try {
+    const listings = await Listing.find().sort({ createdAt: -1 });
+    res.status(200).json(listings);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
 
-// POST new listing
-router.post('/', listingController.createListing);
+// POST
+router.post('/', async (req, res) => {
+  try {
+    const newListing = new Listing(req.body);
+    const saved = await newListing.save();
+    res.status(201).json(saved);
+  } catch (err) { res.status(400).json({ message: err.message }); }
+});
 
-// PUT (Update) listing
-router.put('/:id', listingController.updateListing);
+// PUT
+router.put('/:id', async (req, res) => {
+  try {
+    const updated = await Listing.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(updated);
+  } catch (err) { res.status(400).json({ message: err.message }); }
+});
 
-// DELETE listing
-router.delete('/:id', listingController.deleteListing);
+// DELETE
+router.delete('/:id', async (req, res) => {
+  try {
+    await Listing.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Deleted' });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
 
 module.exports = router;

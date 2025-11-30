@@ -1,6 +1,6 @@
 const Listing = require('../models/Listing');
 
-// Get all listings (with optional filtering)
+// Get listings (supports filtering by type for the Encounter form)
 exports.getListings = async (req, res) => {
   try {
     const { type, status, search } = req.query;
@@ -8,9 +8,7 @@ exports.getListings = async (req, res) => {
 
     if (type) query.type = type;
     if (status) query.status = status;
-    if (search) {
-      query.name = { $regex: search, $options: 'i' }; // Case-insensitive search
-    }
+    if (search) query.name = { $regex: search, $options: 'i' };
 
     const listings = await Listing.find(query).sort({ createdAt: -1 });
     res.status(200).json(listings);
@@ -19,7 +17,6 @@ exports.getListings = async (req, res) => {
   }
 };
 
-// Create a new listing item
 exports.createListing = async (req, res) => {
   try {
     const newListing = new Listing(req.body);
@@ -30,7 +27,6 @@ exports.createListing = async (req, res) => {
   }
 };
 
-// Update a listing item
 exports.updateListing = async (req, res) => {
   try {
     const updatedListing = await Listing.findByIdAndUpdate(
@@ -44,7 +40,6 @@ exports.updateListing = async (req, res) => {
   }
 };
 
-// Delete a listing item
 exports.deleteListing = async (req, res) => {
   try {
     await Listing.findByIdAndDelete(req.params.id);
@@ -53,5 +48,3 @@ exports.deleteListing = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
-//This handles the generic listing data (Specializations, Service types).

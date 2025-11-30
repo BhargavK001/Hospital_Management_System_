@@ -1,14 +1,19 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-require("./models/Doctor");
 require("dotenv").config({ path: path.resolve(__dirname, ".env") });
-console.log("🔧 Dotenv loaded. TWILIO_ACCOUNT_SID present:", !!process.env.TWILIO_ACCOUNT_SID);
-require('./models/Appointment');
 
+// --- DB Connection ---
 const connectDB = require("./config/db");
 
-// Route imports
+// --- Model Registration (Ensure models are loaded) ---
+require("./models/Doctor");
+require("./models/Appointment");
+// (Add other models here if they rely on being registered early)
+
+console.log("🔧 Dotenv loaded. TWILIO_ACCOUNT_SID present:", !!process.env.TWILIO_ACCOUNT_SID);
+
+// --- Route Imports ---
 const authRoutes = require("./routes/auth");
 const receptionistRoutes = require("./routes/receptionistRoutes");
 const doctorRoutes = require("./routes/doctorRoutes");
@@ -25,28 +30,32 @@ const userRoutes = require("./routes/userRoutes");
 const encounterRoutes = require("./routes/encounterRoutes");
 const encounterTemplateRoutes = require("./routes/encounterTemplateRoutes");
 const holidayRoutes = require("./routes/holidayRoutes");
+const emailRoutes = require("./routes/emailRoutes");
+
+// ✅ NEW: Import Listing Routes
+const listingRoutes = require("./routes/listingRoutes");
 
 const app = express();
 
-// Connect to Database
+// --- Connect to Database ---
 connectDB();
 
-// Middleware
+// --- Middleware ---
 app.use(cors());
 app.use(express.json({ limit: '10mb' })); 
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// Static for uploaded images
+// --- Static Folder for Uploads ---
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Routes
+// --- Route Registration ---
 app.use("/", authRoutes);
 app.use("/doctors", doctorRoutes); 
 app.use("/pdf", pdfRoutes);
 app.use("/api", clinicRoutes); 
 app.use("/api/receptionists", receptionistRoutes);
 
-// New Refactored Routes
+// Application Routes
 app.use("/patients", patientRoutes);
 app.use("/doctor-sessions", doctorSessionRoutes);
 app.use("/appointments", appointmentRoutes);
@@ -57,10 +66,13 @@ app.use("/dashboard-stats", dashboardRoutes);
 app.use("/", userRoutes); 
 app.use("/encounters", encounterRoutes);
 app.use("/encounter-templates", encounterTemplateRoutes);
-app.use("/api/email", require("./routes/emailRoutes"));
+app.use("/api/email", emailRoutes);
 app.use("/holidays", holidayRoutes);
 
-// Start the server
+// ✅ NEW: Register Listing Routes
+app.use("/listings", listingRoutes);
+
+// --- Start Server ---
 const PORT = 3001;
 app.listen(PORT, () => {
   console.log("Backend server running on http://localhost:" + PORT);

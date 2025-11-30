@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import axios from "axios";
 import { 
   FaPlus, 
   FaFileImport, 
@@ -14,26 +15,20 @@ import {
   FaChevronRight,
   FaTrash
 } from "react-icons/fa";
-import { toast } from "react-hot-toast";
+import { toast, Toaster } from "react-hot-toast";
+
+// --- 1. IMPORT EXPORT LIBRARIES ---
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
+// Configure your base URL
+const BASE_URL = "http://localhost:3001/listings";
 
 const Listings = () => {
   // --- Data State ---
-  const [listings, setListings] = useState([
-    { id: 16, name: "ksihan cart", type: "service type", status: "Active" },
-    { id: 13, name: "ab", type: "prescription medicine", status: "Active" },
-    { id: 12, name: "lmno", type: "clinical observations", status: "Active" },
-    { id: 11, name: "hijk", type: "clinical observations", status: "Active" },
-    { id: 10, name: "efgh", type: "clinical problems", status: "Active" },
-    { id: 9, name: "abcd", type: "clinical problems", status: "Active" },
-    { id: 8, name: "Other", type: "service type", status: "Active" },
-    { id: 7, name: "Psychology Services", type: "service type", status: "Active" },
-    { id: 6, name: "Weight Management", type: "service type", status: "Active" },
-    { id: 5, name: "General Dentistry", type: "service type", status: "Active" },
-    { id: 4, name: "Allergy and Immunology", type: "specialization", status: "Active" },
-    { id: 3, name: "Neurology", type: "specialization", status: "Active" },
-    { id: 2, name: "Family Medicine", type: "specialization", status: "Active" },
-    { id: 1, name: "Dermatology", type: "specialization", status: "Active" },
-  ]);
+  const [listings, setListings] = useState([]);
+  const [loading, setLoading] = useState(false);
   
   // --- UI States ---
   const [showForm, setShowForm] = useState(false);
@@ -41,34 +36,136 @@ const Listings = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRows, setSelectedRows] = useState([]); 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false); 
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   // --- Pagination States ---
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
 
   // Form State
-  const [formData, setFormData] = useState({ label: "", type: "specialization", status: "Active" });
+  // FIX: Changed default type to lowercase "Specialization" to match backend enum and prevent 400 Error
+  const [formData, setFormData] = useState({ label: "", type: "Specialization", status: "Active" });
 
   // Filters
   const [filters, setFilters] = useState({ id: "", name: "", type: "", status: "" });
 
-  // --- Pagination Logic ---
-  const indexOfLastRow = currentPage * rowsPerPage;
-  const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-  const currentRows = listings.slice(indexOfFirstRow, indexOfLastRow);
-  const totalPages = Math.ceil(listings.length / rowsPerPage);
-
-  const handlePageChange = (newPage) => {
-    if (newPage > 0 && newPage <= totalPages) {
-      setCurrentPage(newPage);
+  // --- FETCH DATA ---
+  const fetchListings = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(BASE_URL);
+      setListings(res.data);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to fetch listings");
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchListings();
+  }, []);
+
+  // --- Filtering Logic (Moved up so Export can use it) ---
+  const filteredListings = useMemo(() => {
+    return listings.filter(item => 
+        (item.name?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+        (item.type?.toLowerCase() || "").includes(searchTerm.toLowerCase())
+    );
+  }, [listings, searchTerm]);
+
+  // --- EXPORT FUNCTIONS ---
+
+  // 1. Helper for PDF Logo
+  const getBase64Image = (url) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => reject("Image load failed");
+      img.src = url;
+    });
+  };
+
+  // 2. Export to CSV
+  const exportCSV = () => {
+    const headers = ["ID,Name,Type,Status"];
+    const rows = filteredListings.map((item, index) => [
+      `${index + 1},${item.name},${item.type},${item.status}`
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," + headers.concat(rows).join("\n");
+    const link = document.createElement("a");
+    link.href = encodeURI(csvContent);
+    link.download = "Listings.csv";
+    link.click();
+  };
+
+  // 3. Export to Excel
+  const exportExcel = () => {
+    const worksheetData = filteredListings.map((item, index) => ({
+      ID: index + 1,
+      Name: item.name,
+      Type: item.type,
+      Status: item.status,
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Listings");
+    XLSX.writeFile(workbook, "Listings.xlsx");
+  };
+
+  // 4. Export to PDF
+  const exportPDF = async () => {
+    const doc = new jsPDF();
+    
+    // Add Logo
+    try {
+      const logoBase64 = await getBase64Image(`${window.location.origin}/logo.png`);
+      if(logoBase64) doc.addImage(logoBase64, "PNG", 15, 10, 20, 20);
+    } catch(e) { console.log("No logo found"); }
+
+    doc.setFontSize(18);
+    doc.text("Listing Data", 105, 25, { align: "center" });
+
+    const tableColumn = ["ID", "Name", "Type", "Status"];
+    const tableRows = filteredListings.map((item, index) => [
+      index + 1,
+      item.name,
+      item.type,
+      item.status,
+    ]);
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 40,
+      theme: 'grid',
+      headStyles: { fillColor: [13, 110, 253] } // Blue header
+    });
+
+    doc.save("Listings.pdf");
+  };
+
+  // 5. Handle Trigger
+  const handleExport = (type) => {
+     if(type === "Excel") exportExcel();
+     if(type === "CSV") exportCSV();
+     if(type === "PDF") exportPDF();
+  };
+
   // --- Handlers ---
+
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      // Select only visible rows or all rows? Usually all rows in current view or dataset
-      setSelectedRows(listings.map(l => l.id));
+      setSelectedRows(listings.map(l => l._id));
     } else {
       setSelectedRows([]);
     }
@@ -81,20 +178,37 @@ const Listings = () => {
   };
 
   const handleDeleteTrigger = () => {
+    setItemToDelete(null); // null means bulk delete
     setShowDeleteConfirm(true);
   };
 
-  const confirmDelete = () => {
-    setListings(prev => prev.filter(item => !selectedRows.includes(item.id)));
-    setSelectedRows([]);
+  const handleSingleDeleteTrigger = (id) => {
+      setItemToDelete(id);
+      setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+        if (itemToDelete) {
+            await axios.delete(`${BASE_URL}/${itemToDelete}`);
+        } else {
+            await Promise.all(selectedRows.map(id => axios.delete(`${BASE_URL}/${id}`)));
+        }
+        toast.success("Records Deleted Successfully");
+        fetchListings(); 
+        setSelectedRows([]);
+        setItemToDelete(null);
+    } catch (error) {
+        console.error(error);
+        toast.error("Failed to delete records");
+    }
     setShowDeleteConfirm(false);
-    toast.success("Records Deleted Successfully");
   };
 
   const toggleForm = () => {
     setShowForm(!showForm);
     setEditingItem(null);
-    setFormData({ label: "", type: "specialization", status: "Active" });
+    setFormData({ label: "", type: "Specialization", status: "Active" });
   };
 
   const handleEdit = (item) => {
@@ -104,27 +218,55 @@ const Listings = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    if(editingItem) {
-        setListings(prev => prev.map(item => item.id === editingItem.id ? {...item, name: formData.label, type: formData.type, status: formData.status} : item));
-        toast.success("Listing Updated");
-    } else {
-        const newId = Math.max(...listings.map(l => l.id), 0) + 1;
-        setListings([{ id: newId, name: formData.label, type: formData.type, status: formData.status }, ...listings]);
-        toast.success("Listing Added");
+    try {
+        const payload = {
+            name: formData.label,
+            type: formData.type,
+            status: formData.status
+        };
+
+        if(editingItem) {
+            await axios.put(`${BASE_URL}/${editingItem._id}`, payload);
+            toast.success("Listing Updated");
+        } else {
+            await axios.post(BASE_URL, payload);
+            toast.success("Listing Added");
+        }
+        toggleForm();
+        fetchListings(); 
+    } catch (error) {
+        console.error("Save Error:", error.response?.data || error.message);
+        toast.error("Failed to save listing. Check inputs.");
     }
-    toggleForm();
   };
 
-  const handleToggleStatus = (id) => {
-    setListings(prev => prev.map(item => 
-      item.id === id ? { ...item, status: item.status === "Active" ? "Inactive" : "Active" } : item
-    ));
-    toast.success("Status Updated");
+  const handleToggleStatus = async (id, currentStatus) => {
+    try {
+        const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
+        await axios.put(`${BASE_URL}/${id}`, { status: newStatus });
+        
+        setListings(prev => prev.map(item => 
+            item._id === id ? { ...item, status: newStatus } : item
+        ));
+        toast.success("Status Updated");
+    } catch (error) {
+        toast.error("Failed to update status");
+    }
   };
 
-  const handleExport = (type) => toast.success(`Exporting as ${type}...`);
+  // --- Pagination Logic ---
+  const indexOfLastRow = currentPage * rowsPerPage;
+  const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+  const currentRows = filteredListings.slice(indexOfFirstRow, indexOfLastRow);
+  const totalPages = Math.ceil(filteredListings.length / rowsPerPage);
+
+  const handlePageChange = (newPage) => {
+    if (newPage > 0 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
 
   // --- Components ---
   const SortableHeader = ({ label }) => (
@@ -136,6 +278,7 @@ const Listings = () => {
 
   return (
     <div className="position-relative">
+      <Toaster position="top-right" />
       <style>
         {`
           .fade-in { animation: fadeIn 0.3s ease-in-out; }
@@ -146,52 +289,16 @@ const Listings = () => {
           .custom-checkbox:checked { background-color: #0d6efd; border-color: #0d6efd; }
           .action-bar { background-color: #e9ecef; border-bottom: 1px solid #dee2e6; }
           
-          /* Pagination Input Styling */
-          .page-input {
-             width: 35px;
-             text-align: center;
-             border: 1px solid #dee2e6;
-             border-radius: 4px;
-             font-size: 0.85rem;
-             padding: 4px;
-             font-weight: 600;
-             color: #495057;
-          }
+          .page-input { width: 35px; text-align: center; border: 1px solid #dee2e6; border-radius: 4px; font-size: 0.85rem; padding: 4px; font-weight: 600; color: #495057; }
           
-          /* Custom Action Button (Blue Square Outline) */
-          .btn-action-square {
-             width: 32px;
-             height: 32px;
-             display: flex;
-             align-items: center;
-             justify-content: center;
-             border-radius: 4px;
-             background-color: #fff;
-             border: 1px solid #0d6efd;
-             color: #0d6efd;
-             transition: all 0.2s;
-          }
-          .btn-action-square:hover {
-             background-color: #0d6efd;
-             color: #fff;
-          }
+          .btn-action-square { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px; background-color: #fff; border: 1px solid #0d6efd; color: #0d6efd; transition: all 0.2s; }
+          .btn-action-square:hover { background-color: #0d6efd; color: #fff; }
 
-          /* Export Button Styling */
-          .btn-export {
-             width: 35px;
-             height: 35px;
-             display: flex;
-             align-items: center;
-             justify-content: center;
-             background-color: #fff;
-             border: 1px solid #dee2e6;
-             border-radius: 6px;
-             transition: all 0.2s;
-          }
-          .btn-export:hover {
-             background-color: #f8f9fa;
-             border-color: #ced4da;
-          }
+          .btn-export { width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; background-color: #fff; border: 1px solid #dee2e6; border-radius: 6px; transition: all 0.2s; cursor: pointer; }
+          .btn-export:hover { background-color: #f8f9fa; border-color: #ced4da; }
+          .btn-export.excel { color: #198754; }
+          .btn-export.csv { color: #0d6efd; }
+          .btn-export.pdf { color: #dc3545; }
         `}
       </style>
 
@@ -223,8 +330,11 @@ const Listings = () => {
                  <div className="col-md-4">
                     <label className="form-label small fw-bold text-secondary">Type <span className="text-danger">*</span></label>
                     <select className="form-select" value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value})}>
-                        <option value="specialization">specialization</option>
-                        <option value="service type">service type</option>
+                        <option value="Specialization">Specialization</option>
+                        <option value="Service type">Service type</option>
+                        <option value="Observations">Observations</option>
+                        <option value="Problems">Problems</option>
+                        <option value="Prescription">Prescription</option>
                     </select>
                  </div>
                  <div className="col-md-4">
@@ -236,7 +346,7 @@ const Listings = () => {
                  </div>
               </div>
               <div className="d-flex justify-content-end gap-2 mt-4 pt-2 border-top">
-                 <button type="submit" className="btn btn-primary px-4"><FaFileImport size={12} className="me-2" /> Save</button>
+                 <button type="submit" className="btn btn-primary px-4"> Save</button>
                  <button type="button" className="btn btn-outline-primary px-4" onClick={toggleForm}>Cancel</button>
               </div>
            </form>
@@ -252,7 +362,7 @@ const Listings = () => {
             <input
                 type="text"
                 className="form-control border-0 bg-transparent shadow-none"
-                placeholder="Search listing-data by name, type and status(active or :inactive)"
+                placeholder="Search listing-data by name, type..."
                 style={{ fontSize: '0.95rem' }}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -260,13 +370,13 @@ const Listings = () => {
         </div>
         {/* Export Icons */}
         <div className="d-flex gap-2">
-            <button className="btn-export" onClick={() => handleExport('Excel')} title="Export Excel">
+            <button className="btn-export excel" onClick={() => handleExport('Excel')} title="Export Excel">
                 <FaFileExcel className="text-success" size={18} />
             </button>
-            <button className="btn-export" onClick={() => handleExport('CSV')} title="Export CSV">
+            <button className="btn-export csv" onClick={() => handleExport('CSV')} title="Export CSV">
                 <FaFileCsv className="text-success" size={18} />
             </button>
-            <button className="btn-export" onClick={() => handleExport('PDF')} title="Export PDF">
+            <button className="btn-export pdf" onClick={() => handleExport('PDF')} title="Export PDF">
                 <FaFilePdf className="text-danger" size={18} />
             </button>
         </div>
@@ -295,6 +405,7 @@ const Listings = () => {
                     type="checkbox" 
                     className="form-check-input custom-checkbox" 
                     onChange={handleSelectAll}
+                    checked={listings.length > 0 && selectedRows.length === listings.length}
                 />
               </th>
               <th className="py-3 fw-semibold text-secondary border-bottom-0" style={{ width: '80px', fontSize: '0.85rem' }}><SortableHeader label="ID" /></th>
@@ -303,109 +414,100 @@ const Listings = () => {
               <th className="py-3 fw-semibold text-secondary border-bottom-0" style={{ width: '20%', fontSize: '0.85rem' }}><SortableHeader label="Status" /></th>
               <th className="py-3 fw-semibold text-secondary border-bottom-0 text-start pe-4" style={{ width: '100px', fontSize: '0.85rem' }}>Action</th>
             </tr>
-            {/* Filters */}
-            <tr className="bg-white border-bottom">
-              <td className="p-2"></td>
-              <td className="p-2"><input type="text" className="form-control form-control-sm" placeholder="ID" /></td>
-              <td className="p-2"><input type="text" className="form-control form-control-sm" placeholder="Filter by name" /></td>
-              <td className="p-2">
-                 <select className="form-select form-select-sm"><option value="">Filter by type</option></select>
-              </td>
-              <td className="p-2">
-                 <select className="form-select form-select-sm"><option value="">Filter by status</option></select>
-              </td>
-              <td className="p-2"></td>
-            </tr>
           </thead>
           <tbody>
-              {currentRows.map((item) => (
-                <tr key={item.id} className={`align-middle ${selectedRows.includes(item.id) ? 'table-active' : ''}`}>
-                  <td className="ps-3">
-                    <input 
-                        type="checkbox" 
-                        className="form-check-input custom-checkbox" 
-                        checked={selectedRows.includes(item.id)}
-                        onChange={() => handleSelectRow(item.id)}
-                    />
-                  </td>
-                  <td className="text-muted small">{item.id}</td>
-                  <td className="text-muted small">{item.name}</td>
-                  <td className="text-muted small">{item.type}</td>
-                  <td>
-                    <div className="d-flex align-items-center gap-2">
-                        <div className="form-check form-switch">
-                            <input 
-                                className="form-check-input" 
-                                type="checkbox" 
-                                role="switch" 
-                                checked={item.status === 'Active'}
-                                onChange={() => handleToggleStatus(item.id)}
-                                style={{ cursor: 'pointer' }}
-                            />
+              {loading ? (
+                  <tr><td colSpan="6" className="text-center py-4">Loading...</td></tr>
+              ) : currentRows.length === 0 ? (
+                  <tr><td colSpan="6" className="text-center py-4 text-muted">No data found</td></tr>
+              ) : (
+                  currentRows.map((item, i) => (
+                    <tr key={item._id} className={`align-middle ${selectedRows.includes(item._id) ? 'table-active' : ''}`}>
+                      <td className="ps-3">
+                        <input 
+                            type="checkbox" 
+                            className="form-check-input custom-checkbox" 
+                            checked={selectedRows.includes(item._id)}
+                            onChange={() => handleSelectRow(item._id)}
+                        />
+                      </td>
+                      {/* Calculate ID based on pagination */}
+                      <td className="text-muted small">{(currentPage-1)*rowsPerPage + i + 1}</td>
+                      <td className="text-muted small">{item.name}</td>
+                      <td className="text-muted small">{item.type}</td>
+                      <td>
+                        <div className="d-flex align-items-center gap-2">
+                            <div className="form-check form-switch">
+                                <input 
+                                    className="form-check-input" 
+                                    type="checkbox" 
+                                    role="switch" 
+                                    checked={item.status === 'Active'}
+                                    onChange={() => handleToggleStatus(item._id, item.status)}
+                                    style={{ cursor: 'pointer' }}
+                                />
+                            </div>
+                            <span className={`badge ${item.status === 'Active' ? 'bg-success-subtle text-success border-success-subtle' : 'bg-secondary-subtle text-secondary border-secondary-subtle'} border rounded-1`} style={{ fontSize: '0.65rem', fontWeight: '700', textTransform: 'uppercase', padding: '4px 6px' }}>{item.status}</span>
                         </div>
-                        <span className={`badge ${item.status === 'Active' ? 'bg-success-subtle text-success border-success-subtle' : 'bg-secondary-subtle text-secondary border-secondary-subtle'} border rounded-1`} style={{ fontSize: '0.65rem', fontWeight: '700', textTransform: 'uppercase', padding: '4px 6px' }}>{item.status}</span>
-                    </div>
-                  </td>
-                  <td className="text-center pe-4">
-                     {/* Square Action Button */}
-                     <div className="d-flex justify-content-start">
-                        <button className="btn-action-square" onClick={() => handleEdit(item)}>
-                            <FaEdit size={14} />
-                        </button>
-                     </div>
-                  </td>
-                </tr>
-              ))}
+                      </td>
+                      <td className="text-center pe-4">
+                          <div className="d-flex justify-content-start gap-2">
+                             <button className="btn-action-square" onClick={() => handleEdit(item)}>
+                                <FaEdit size={14} />
+                             </button>
+                             <button className="btn-action-square border-danger text-danger" onClick={() => handleSingleDeleteTrigger(item._id)}>
+                                <FaTrash size={14} />
+                             </button>
+                          </div>
+                      </td>
+                    </tr>
+                  ))
+              )}
           </tbody>
         </table>
       </div>
 
       {/* --- Footer (Pagination) --- */}
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-3 text-secondary bg-light p-3 rounded" style={{ fontSize: "0.85rem" }}>
-        
-        {/* Rows per page selector */}
         <div className="d-flex align-items-center gap-2 mb-2 mb-md-0">
-          <span>Rows per page:</span>
-          <select 
-             className="form-select form-select-sm border-0 bg-transparent fw-bold" 
-             style={{ width: "auto", boxShadow: 'none' }} 
-             value={rowsPerPage} 
-             onChange={(e) => setRowsPerPage(Number(e.target.value))}
-          >
-            <option value="10">10</option>
-            <option value="25">25</option>
-            <option value="50">50</option>
-          </select>
+           <span>Rows per page:</span>
+           <select 
+              className="form-select form-select-sm border-0 bg-transparent fw-bold" 
+              style={{ width: "auto", boxShadow: 'none' }} 
+              value={rowsPerPage} 
+              onChange={(e) => setRowsPerPage(Number(e.target.value))}
+           >
+             <option value="10">10</option>
+             <option value="25">25</option>
+             <option value="50">50</option>
+           </select>
         </div>
 
-        {/* Page Control */}
         <div className="d-flex align-items-center gap-4">
-          <div className="d-flex align-items-center gap-2">
-              <span>Page</span> 
-              <input 
-                  type="text" 
-                  className="page-input" 
-                  value={currentPage} 
-                  readOnly 
-              />
-              <span>of {totalPages}</span>
-          </div>
-          <div className="d-flex gap-2">
-            <button 
-                className={`btn btn-sm text-secondary d-flex align-items-center gap-1 ${currentPage === 1 ? 'disabled' : ''}`} 
-                onClick={() => handlePageChange(currentPage - 1)}
-                style={{ fontSize: '0.85rem', cursor: currentPage === 1 ? 'default' : 'pointer' }}
-            >
-                <FaChevronLeft size={10} /> Prev
-            </button>
-            <button 
-                className={`btn btn-sm text-secondary d-flex align-items-center gap-1 ${currentPage === totalPages ? 'disabled' : ''}`}
-                onClick={() => handlePageChange(currentPage + 1)}
-                style={{ fontSize: '0.85rem', cursor: currentPage === totalPages ? 'default' : 'pointer' }}
-            >
-                Next <FaChevronRight size={10} />
-            </button>
-          </div>
+           <div className="d-flex align-items-center gap-2">
+               <span>Page</span> 
+               <input 
+                   type="text" 
+                   className="page-input" 
+                   value={currentPage} 
+                   readOnly 
+               />
+               <span>of {totalPages}</span>
+           </div>
+           <div className="d-flex gap-2">
+             <button 
+                 className={`btn btn-sm text-secondary d-flex align-items-center gap-1 ${currentPage === 1 ? 'disabled' : ''}`} 
+                 onClick={() => handlePageChange(currentPage - 1)}
+             >
+                 <FaChevronLeft size={10} /> Prev
+             </button>
+             <button 
+                 className={`btn btn-sm text-secondary d-flex align-items-center gap-1 ${currentPage === totalPages ? 'disabled' : ''}`} 
+                 onClick={() => handlePageChange(currentPage + 1)}
+             >
+                 Next <FaChevronRight size={10} />
+             </button>
+           </div>
         </div>
       </div>
 

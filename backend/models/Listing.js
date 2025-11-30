@@ -1,19 +1,16 @@
 const mongoose = require('mongoose');
 
 const listingSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true
+  name: { type: String, required: true },
+  type: { 
+    type: String, 
+    required: true, 
+    enum: ['Service type', 'Specialization', 'Observations', 'Problems', 'Prescription']
   },
-  type: {
-    type: String,
-    required: true,
-    enum: ['service type', 'specialization', 'clinical observations', 'clinical problems', 'prescription medicine']
-  },
-  status: {
-    type: String,
-    enum: ['Active', 'Inactive'],
-    default: 'Active'
+  status: { 
+    type: String, 
+    enum: ['Active', 'Inactive'], 
+    default: 'Active' 
   }
 }, { timestamps: true });
 

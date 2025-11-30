@@ -10,8 +10,8 @@ import {
 import { FaSort } from "react-icons/fa";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
-import Navbar from "../components/DoctorNavbar"; // Doctor Layout
-import Sidebar from "../components/DoctorSidebar"; // Doctor Layout
+import Navbar from "../components/DoctorNavbar"; 
+import Sidebar from "../components/DoctorSidebar"; 
 
 /* ---------- Local axios instance ---------- */
 const api = axios.create({ baseURL: "http://127.0.0.1:3001" });
@@ -141,10 +141,9 @@ function DurationPicker({ value, onChange }) {
 }
 
 // ----------------------------------------------------
-// Service Form (Modified for Doctor: Locked Fields)
+// Service Form (Modified for Doctor: Locked Fields + Dynamic Category)
 // ----------------------------------------------------
-function ServiceForm({ initial, onClose, onSave, doctorInfo }) {
-  const defaultCategories = ["General Dentistry", "Consultation", "Telemed", "Other"];
+function ServiceForm({ initial, onClose, onSave, doctorInfo, availableCategories }) {
   
   // Construct Doctor Name String
   const currentDoctorName = `${doctorInfo.firstName} ${doctorInfo.lastName}`.trim();
@@ -154,10 +153,10 @@ function ServiceForm({ initial, onClose, onSave, doctorInfo }) {
     initial || {
       serviceId: "", 
       name: "", 
-      category: defaultCategories[0],
+      // Default to first available category or empty
+      category: availableCategories.length > 0 ? availableCategories[0] : "",
       charges: "", 
       isTelemed: "No", 
-      // Auto-fill and lock these for doctor
       clinicName: currentClinic, 
       doctor: currentDoctorName,
       duration: "00:30", 
@@ -210,12 +209,17 @@ function ServiceForm({ initial, onClose, onSave, doctorInfo }) {
             <div className="row g-3">
               <div className="col-lg-9">
                 <div className="row g-3">
+                  
+                  {/* --- DYNAMIC CATEGORY DROPDOWN --- */}
                   <div className="col-md-6">
                     <label className="form-label">Category*</label>
-                    <select className="form-select" value={form.category} onChange={change("category")}>
-                      {defaultCategories.map(c => <option key={c}>{c}</option>)}
+                    <select className="form-select" value={form.category} onChange={change("category")} required>
+                      <option value="">Select Category</option>
+                      {availableCategories.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
+                    {availableCategories.length === 0 && <small className="text-danger">No categories found in Listings</small>}
                   </div>
+
                   <div className="col-md-6"><label className="form-label">Name*</label><input className="form-control" value={form.name} onChange={change("name")} required /></div>
                   <div className="col-md-6"><label className="form-label">Charges*</label><input className="form-control" type="number" value={form.charges} onChange={change("charges")} required /></div>
                   <div className="col-md-6"><label className="form-label">Telemed?*</label><select className="form-select" value={form.isTelemed} onChange={change("isTelemed")}><option>No</option><option>Yes</option></select></div>
@@ -298,6 +302,9 @@ export default function DoctorServices({ sidebarCollapsed = false, toggleSidebar
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
+  // --- NEW STATE FOR CATEGORIES ---
+  const [categories, setCategories] = useState([]);
+
   // --- GET DOCTOR INFO FROM LOCAL STORAGE ---
   const [currentDoctor, setCurrentDoctor] = useState({ firstName: "", lastName: "", clinic: "" });
 
@@ -306,6 +313,24 @@ export default function DoctorServices({ sidebarCollapsed = false, toggleSidebar
     if (stored) {
       setCurrentDoctor(JSON.parse(stored));
     }
+  }, []);
+
+  // --- FETCH CATEGORIES ON MOUNT ---
+  useEffect(() => {
+    const fetchCategories = async () => {
+        try {
+            // Only fetch where type is 'service type' and status is 'Active'
+            const res = await api.get("/listings?type=service type&status=Active");
+            // listings endpoint returns array of objects {name, type, status, ...}
+            // We map to just names
+            const catNames = res.data.map(item => item.name);
+            setCategories(catNames);
+        } catch (err) {
+            console.error("Error fetching categories:", err);
+            // Optional: Toast error only if critical
+        }
+    };
+    fetchCategories();
   }, []);
 
   const handleFilterChange = (key, value) => { setFilters(prev => ({ ...prev, [key]: value })); setPage(1); };
@@ -395,7 +420,6 @@ export default function DoctorServices({ sidebarCollapsed = false, toggleSidebar
           <div className="d-flex justify-content-between align-items-center mb-3 bg-white p-3 rounded shadow-sm border">
             <h5 className="mb-0 fw-bold text-primary">My Services</h5>
             <div className="d-flex gap-2">
-              {/* REMOVED IMPORT BUTTON FOR SECURITY/SIMPLICITY */}
               <button type="button" className="btn btn-primary btn-sm px-3 fw-bold btn-primary-custom" onClick={onAdd}>
                 <FiPlus className="me-1" /> Add Service
               </button>
@@ -419,7 +443,6 @@ export default function DoctorServices({ sidebarCollapsed = false, toggleSidebar
                     <th className="py-3 ps-3" style={{width: '40px'}}><input type="checkbox" className="form-check-input"/></th>
                     <th className="py-3" style={{width: '60px'}}>ID</th>
                     <th className="py-3">Name</th>
-                    {/* Clinic/Doctor columns removed as they are always ME */}
                     <th className="py-3">Charges</th>
                     <th className="py-3">Duration</th>
                     <th className="py-3">Category</th>
@@ -434,11 +457,12 @@ export default function DoctorServices({ sidebarCollapsed = false, toggleSidebar
                       <td className="border-bottom p-1"><input className="form-control form-control-sm table-filter-input" placeholder="Filter Charge" value={filters.charges} onChange={(e) => handleFilterChange("charges", e.target.value)}/></td>
                       <td className="border-bottom p-1"><input className="form-control form-control-sm table-filter-input" placeholder="HH:mm" value={filters.duration} onChange={(e) => handleFilterChange("duration", e.target.value)}/></td>
                       <td className="border-bottom p-1">
+                        {/* DYNAMIC CATEGORY FILTER */}
                         <select className="form-select form-select-sm table-filter-input" value={filters.category} onChange={(e) => handleFilterChange("category", e.target.value)}>
                            <option value="">Filter Category</option>
-                           <option value="General Dentistry">General Dentistry</option>
-                           <option value="Consultation">Consultation</option>
-                           <option value="Telemed">Telemed</option>
+                           {categories.map(c => (
+                               <option key={c} value={c}>{c}</option>
+                           ))}
                         </select>
                       </td>
                       <td className="border-bottom p-1">
@@ -518,8 +542,16 @@ export default function DoctorServices({ sidebarCollapsed = false, toggleSidebar
 
           <div className="mt-3 text-secondary small">© Western State Pain Institute</div>
           
-          {/* Modal passes doctorInfo to auto-fill and lock fields */}
-          {modalOpen && <ServiceForm initial={editing} onClose={() => setModalOpen(false)} onSave={save} doctorInfo={currentDoctor} />}
+          {/* Modal passes doctorInfo AND availableCategories */}
+          {modalOpen && (
+              <ServiceForm 
+                  initial={editing} 
+                  onClose={() => setModalOpen(false)} 
+                  onSave={save} 
+                  doctorInfo={currentDoctor}
+                  availableCategories={categories} // <--- Passed here
+              />
+          )}
 
           <ConfirmDelete
             open={confirmOpen}
