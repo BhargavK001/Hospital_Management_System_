@@ -36,6 +36,20 @@ export default function PatientDashboard({ sidebarCollapsed, toggleSidebar }) {
   const token = localStorage.getItem("token") || localStorage.getItem("patientToken");
   const API_BASE = "http://localhost:3001";
 
+  // --- 1. NEW HELPER FUNCTION: FORMAT DATE ---
+  const formatDate = (isoString) => {
+    if (!isoString) return "";
+    const date = new Date(isoString);
+    // Check if date is valid
+    if (isNaN(date.getTime())) return isoString; 
+    
+    return date.toLocaleDateString("en-US", {
+      month: "short", // Nov
+      day: "numeric", // 30
+      year: "numeric" // 2025
+    });
+  };
+
   // --- Map Data to Calendar Events ---
   const mapAppointmentToEvent = (a) => {
     const id = a._id ?? a.id;
@@ -193,7 +207,12 @@ export default function PatientDashboard({ sidebarCollapsed, toggleSidebar }) {
                         <span className="badge bg-white text-dark border">{a.status}</span>
                       </div>
                       <div className="small text-muted">{a.clinic}</div>
-                      <div className="small mt-1 fw-semibold">{a.date} {a.time ? `• ${a.time}` : ''}</div>
+                      
+                      {/* --- 2. UPDATED CODE HERE --- */}
+                      <div className="small mt-1 fw-semibold">
+                        {formatDate(a.date)} {a.time ? `• ${a.time}` : ''}
+                      </div>
+
                     </div>
                  ))
                 }
@@ -281,11 +300,9 @@ export default function PatientDashboard({ sidebarCollapsed, toggleSidebar }) {
                   </div>
                 </div>
                 <div className="modal-footer">
-                  {/* ✅ UPDATED: Robust Navigation to Receipt */}
                   <button 
                     className="btn btn-outline-primary btn-sm"
                     onClick={() => {
-                        // Handle both _id (MongoDB) and id (FullCalendar or custom)
                         const targetId = selectedAppointment._id || selectedAppointment.id;
                         if (targetId) {
                             navigate(`/patient/appointments/${targetId}`);
