@@ -38,6 +38,7 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
   const [servicesList, setServicesList] = useState([]);
   const [patients, setPatients] = useState([]);
   const [clinics, setClinics] = useState([]);
+  const [taxes, setTaxes] = useState([]); // ✅ New State for Taxes
 
   // ✅ New State for Server-Side Slots
   const [dynamicSlots, setDynamicSlots] = useState([]);
@@ -54,6 +55,8 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
     status: "booked",
     servicesDetail: "",
     slot: "",
+    tax: "", // ✅ New Field for Tax
+    taxAmount: 0, // ✅ New Field for Tax Amount
   });
 
   const [editId, setEditId] = useState(null);
@@ -94,12 +97,13 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
   useEffect(() => {
     const fetchDropdownData = async () => {
       try {
-        const [docRes, servRes, patRes, clinicRes] =
+        const [docRes, servRes, patRes, clinicRes, taxRes] =
           await Promise.all([
             axios.get(`${API_BASE}/doctors`),
             axios.get(`${API_BASE}/services`),
             axios.get(`${API_BASE}/patients`),
             axios.get(`${API_BASE}/api/clinics`),
+            axios.get(`${API_BASE}/taxes`), // ✅ Fetch Taxes
           ]);
 
         setDoctors(Array.isArray(docRes.data) ? docRes.data : docRes.data.data || []);
@@ -116,6 +120,8 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
         } else {
           setClinics([]);
         }
+
+        setTaxes(Array.isArray(taxRes.data) ? taxRes.data : []); // ✅ Set Taxes
 
       } catch (err) {
         console.error("Error fetching dropdown data:", err);
@@ -157,6 +163,32 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
 
     fetchSlots();
   }, [form.doctorId, form.date]);
+
+  // ✅ New Effect: Calculate Tax whenever Doctor or Service changes
+  useEffect(() => {
+    if (form.doctor && form.service) {
+      // Find matching tax rule
+      const rule = taxes.find(t => 
+        t.active && 
+        (t.doctor === form.doctor) && 
+        (t.serviceName === form.service)
+      );
+
+      if (rule) {
+        const price = parseFloat(form.servicesDetail) || 0;
+        const taxAmt = (price * rule.taxRate) / 100;
+        setForm(p => ({
+          ...p,
+          tax: `${rule.name} (${rule.taxRate}%) - ₹${taxAmt.toFixed(2)}`,
+          taxAmount: taxAmt
+        }));
+      } else {
+        setForm(p => ({ ...p, tax: "", taxAmount: 0 }));
+      }
+    } else {
+      setForm(p => ({ ...p, tax: "", taxAmount: 0 }));
+    }
+  }, [form.doctor, form.service, taxes, form.servicesDetail]);
 
 
   // Handle patientId param from URL
@@ -279,6 +311,8 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
       status: "booked",
       servicesDetail: "",
       slot: "",
+      tax: "",
+      taxAmount: 0,
     });
     setPanelOpen(true);
     setFiltersOpen(false);
@@ -302,6 +336,8 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
       status: item.status || "booked",
       servicesDetail: item.charges || item.servicesDetail || "",
       slot: item.time || item.slot || "",
+      tax: item.tax || "",
+      taxAmount: item.taxAmount || 0,
     });
     setPanelOpen(true);
     setFiltersOpen(false);
@@ -328,6 +364,8 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
         servicesDetail: form.servicesDetail,
         time: form.slot,
         slot: form.slot,
+        tax: form.tax,
+        taxAmount: form.taxAmount,
       };
 
       if (editId) {
@@ -551,7 +589,7 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
                     <input name="servicesDetail" className="form-control mb-3" placeholder="Service price" value={form.servicesDetail} disabled onChange={handleFormChange} />
 
                     <label className="form-label">Tax</label>
-                    <input className="form-control mb-3" value="Tax not available" disabled />
+                    <input className="form-control mb-3" value={form.tax || "No Tax"} disabled />
                   </div>
                 </div>
 

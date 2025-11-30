@@ -38,6 +38,7 @@ export default function PatientBookAppointment() {
 
   const [dynamicSlots, setDynamicSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [taxes, setTaxes] = useState([]); // ✅ New State for Taxes
   
   // ✅ New State for Holiday Handling
   const [isHoliday, setIsHoliday] = useState(false);
@@ -82,9 +83,14 @@ export default function PatientBookAppointment() {
           ? servRes.data
           : (servRes.data?.data || servRes.data?.services || servRes.data?.rows || []);
 
+        // D. Fetch Taxes
+        const taxRes = await axios.get(`${API_BASE}/taxes`);
+        const taxData = Array.isArray(taxRes.data) ? taxRes.data : [];
+
         if (mounted) {
           setClinics(clinicData);
           setAllDoctors(docData);
+          setTaxes(taxData); // ✅ Set Taxes
 
           // --- UPDATED MAPPING LOGIC ---
           setAllServices(servData.map(s => {
@@ -206,6 +212,21 @@ export default function PatientBookAppointment() {
 
   const totalAmount = selectedServiceDetails.reduce((sum, s) => sum + (Number(s.price) || 0), 0);
 
+  // ✅ Calculate Total Tax
+  const totalTaxAmount = selectedServiceDetails.reduce((sum, s) => {
+    // Find matching tax rule for this service and selected doctor
+    const rule = taxes.find(t => 
+      t.active && 
+      (t.doctor === form.doctorLabel) && // Match by Doctor Name
+      (t.serviceName === s.name)
+    );
+
+    if (rule) {
+      return sum + ((Number(s.price) || 0) * rule.taxRate) / 100;
+    }
+    return sum;
+  }, 0);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -241,7 +262,8 @@ export default function PatientBookAppointment() {
         services: servicesNames,
         status: "booked",
         servicesDetail: servicesDetailText,
-        charges: totalAmount,
+        charges: totalAmount + totalTaxAmount, // Total includes tax
+        taxAmount: totalTaxAmount, // Send tax amount separately
         paymentMode: "Manual",
         createdAt: new Date(),
       };
@@ -381,7 +403,9 @@ export default function PatientBookAppointment() {
 
               <div className="mb-3">
                 <label className="form-label">Tax</label>
-                <div className="border rounded p-3 text-muted small bg-light">No tax found.</div>
+                <div className="border rounded p-3 text-muted small bg-light">
+                  {totalTaxAmount > 0 ? `Total Tax: ₹${totalTaxAmount.toFixed(2)}` : "No tax applicable."}
+                </div>
               </div>
             </div>
           </div>

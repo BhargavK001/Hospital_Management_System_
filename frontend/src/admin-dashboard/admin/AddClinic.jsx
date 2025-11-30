@@ -54,11 +54,17 @@ export default function AddClinic() {
   useEffect(() => {
     const fetchSpecializations = async () => {
       try {
-        // Filter by type='specialization' and status='Active'
-        const res = await axios.get(`${API_BASE_URL}/listings?type=specialization&status=Active`);
+        // Fetch all listings
+        const res = await axios.get(`${API_BASE_URL}/listings`);
         
-        // Map to simple string array of names
-        const options = res.data.map(item => item.name);
+        // Filter manually since backend returns all listings
+        const options = res.data
+          .filter(item => 
+            (item.type?.toLowerCase() === 'specialization') && 
+            (item.status === 'Active')
+          )
+          .map(item => item.name);
+        
         setSpecializationOptions(options);
       } catch (err) {
         console.error("Failed to fetch specializations", err);
