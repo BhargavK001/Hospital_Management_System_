@@ -58,11 +58,11 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
   const [importType, setImportType] = useState("csv");
   const [importFile, setImportFile] = useState(null);
   const [importing, setImporting] = useState(false);
-  
-  const [confirmModal, setConfirmModal] = useState({ 
-    show: false, 
-    title: "", 
-    message: "", 
+
+  const [confirmModal, setConfirmModal] = useState({
+    show: false,
+    title: "",
+    message: "",
     action: null,
     confirmText: "Delete",
     confirmVariant: "danger"
@@ -216,7 +216,7 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
           selected.fees ??
           selected.cost ??
           selected.charges; // Added 'charges' as it's common in your schema
-        
+
         if (price !== undefined && price !== null) {
           priceText = price.toString();
         }
@@ -502,72 +502,68 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
         <Navbar toggleSidebar={toggleSidebar} />
 
         <div className="container-fluid py-3">
-  {/* TOP BLUE BAR LIKE PATIENTS PAGE */}
-  <div className="services-topbar services-card d-flex justify-content-between align-items-center mb-3">
-    <h5 className="fw-bold text-white mb-0">Appointments</h5>
+          {/* TOP BLUE BAR LIKE PATIENTS PAGE */}
+          <div className="services-topbar services-card d-flex justify-content-between align-items-center mb-3">
+            <h5 className="fw-bold text-white mb-0">Appointments</h5>
 
-    <div className="d-flex gap-2 appointments-header-actions">
-      {/* white button like Add Patient */}
-      <button
-        className="btn btn-light-toggle btn-sm"
-        onClick={openAddForm}
-      >
-        {panelOpen && !editId ? "Close form" : "Add Appointment"}
-      </button>
+            <div className="d-flex gap-2 appointments-header-actions">
+              {/* white button like Add Patient */}
+              <button
+                className="btn btn-light-toggle btn-sm"
+                onClick={openAddForm}
+              >
+                {panelOpen && !editId ? "Close form" : "Add Appointment"}
+              </button>
 
-      {/* blue-outline filter button */}
-      <button
-        className={`btn btn-filter-toggle btn-sm ${
-          filtersOpen ? "active" : ""
-        }`}
-        onClick={() => setFiltersOpen((s) => !s)}
-      >
-        Filters
-      </button>
+              {/* blue-outline filter button */}
+              <button
+                className={`btn btn-filter-toggle btn-sm ${filtersOpen ? "active" : ""
+                  }`}
+                onClick={() => setFiltersOpen((s) => !s)}
+              >
+                Filters
+              </button>
 
-      {/* blue-outline import button with icon */}
-      <button
-        className="btn btn-import btn-sm"
-        onClick={openImportModal}
-      >
-        <FaDownload className="me-1" /> Import Data
-      </button>
-    </div>
-  </div>
+              {/* blue-outline import button with icon */}
+              <button
+                className="btn btn-import btn-sm"
+                onClick={openImportModal}
+              >
+                <FaDownload className="me-1" /> Import Data
+              </button>
+            </div>
+          </div>
 
           {/* TABS UNDER THE BLUE BAR */}
-  <div className="d-flex justify-content-between align-items-center mb-3 appointments-header">
-    <div className="btn-group btn-sm appointments-tabs">
-      <button
-        type="button"
-        className={`btn btn-outline-primary ${
-          tab === "all" ? "active" : ""
-        }`}
-        onClick={() => setTab("all")}
-      >
-        ALL
-      </button>
-      <button
-        type="button"
-        className={`btn btn-outline-primary ${
-          tab === "upcoming" ? "active" : ""
-        }`}
-        onClick={() => setTab("upcoming")}
-      >
-        UPCOMING
-      </button>
-      <button
-        type="button"
-        className={`btn btn-outline-primary ${
-          tab === "past" ? "active" : ""
-        }`}
-        onClick={() => setTab("past")}
-      >
-        PAST
-            </button>
-           </div>
-          <div />
-        </div>
+          <div className="d-flex justify-content-between align-items-center mb-3 appointments-header">
+            <div className="btn-group btn-sm appointments-tabs">
+              <button
+                type="button"
+                className={`btn btn-outline-primary ${tab === "all" ? "active" : ""
+                  }`}
+                onClick={() => setTab("all")}
+              >
+                ALL
+              </button>
+              <button
+                type="button"
+                className={`btn btn-outline-primary ${tab === "upcoming" ? "active" : ""
+                  }`}
+                onClick={() => setTab("upcoming")}
+              >
+                UPCOMING
+              </button>
+              <button
+                type="button"
+                className={`btn btn-outline-primary ${tab === "past" ? "active" : ""
+                  }`}
+                onClick={() => setTab("past")}
+              >
+                PAST
+              </button>
+            </div>
+            <div />
+          </div>
           {/* FILTER PANEL */}
           <div className={`filter-panel ${filtersOpen ? "open" : ""}`}>
             <div className="p-3">
@@ -598,7 +594,7 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
                       <option key={c._id} value={c.name}>
                         {c.name}
                       </option>
-                    ))} 
+                    ))}
                   </select>
                 </div>
 
@@ -678,9 +674,8 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
 
           {/* ADD / EDIT PANEL */}
           <div
-            className={`form-panel appointments-form ${
-              panelOpen ? "open" : ""
-            }`}
+            className={`form-panel appointments-form ${panelOpen ? "open" : ""
+              }`}
           >
             <div className="p-3">
               <form onSubmit={handleSave}>
@@ -806,7 +801,7 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
                               !patients.some(
                                 (p) =>
                                   `${p.firstName} ${p.lastName}` ===
-                                    form.patient || p._id === form.patient
+                                  form.patient || p._id === form.patient
                               ) && (
                                 <option value={form.patient}>
                                   {form.patient}
@@ -859,11 +854,10 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
                             <button
                               key={slot}
                               type="button"
-                              className={`btn btn-sm ${
-                                form.slot === slot
+                              className={`btn btn-sm ${form.slot === slot
                                   ? "btn-primary"
                                   : "btn-outline-primary"
-                              }`}
+                                }`}
                               onClick={() =>
                                 setForm((p) => ({ ...p, slot: slot }))
                               }
@@ -973,7 +967,13 @@ const Appointments = ({ sidebarCollapsed = false, toggleSidebar }) => {
                             <td>{a.patientName}</td>
                             <td>{a.services}</td>
                             <td>{a.doctorName}</td>
-                            <td>{a.date}</td>
+                            <td>
+                              {a.date ? new Date(a.date).toLocaleDateString("en-GB", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric"
+                              }) : "N/A"}
+                            </td>
                             <td>
                               <span
                                 className={`badge rounded-pill status-badge ${badgeClass}`}
