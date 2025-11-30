@@ -106,6 +106,7 @@ export default function DoctorDashboard() {
         totalPatients,
         totalAppointments,
         todayAppointments,
+        totalServices,
       } = res.data || {};
 
       if (mounted) {
@@ -113,7 +114,7 @@ export default function DoctorDashboard() {
           totalPatients: totalPatients || 0,
           totalAppointments: totalAppointments || 0,
           todayAppointments: todayAppointments || 0,
-          totalServices: 2, // still dummy for now
+          totalServices: totalServices || 0,
         });
       }
     } catch (err) {
