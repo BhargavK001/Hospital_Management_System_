@@ -23,6 +23,10 @@ export default function MedicalReport({ role }) {
   });
   const [loading, setLoading] = useState(true);
 
+  // Delete Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [reportToDelete, setReportToDelete] = useState(null);
+
   useEffect(() => {
     fetchEncounterDetails();
   }, [id, patientId]);
@@ -136,23 +140,32 @@ export default function MedicalReport({ role }) {
     setReportData({ name: "", date: new Date().toISOString().split('T')[0], file: null });
   };
 
-  const handleDeleteReport = async (report) => {
-    if (!window.confirm("Are you sure you want to delete this report?")) return;
-    
-    const targetEncounterId = report.encounterId || id;
+  const handleDeleteClick = (report) => {
+    setReportToDelete(report);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!reportToDelete) return;
+
+    const targetEncounterId = reportToDelete.encounterId || id;
     if (!targetEncounterId) {
         toast.error("Encounter ID missing");
+        setIsDeleteModalOpen(false);
         return;
     }
 
     try {
-      await axios.delete(`http://localhost:3001/encounters/${targetEncounterId}/reports/${report._id}`);
+      await axios.delete(`http://localhost:3001/encounters/${targetEncounterId}/reports/${reportToDelete._id}`);
       // Refresh data
       fetchEncounterDetails();
       toast.success("Report deleted");
     } catch (err) {
       console.error("Error deleting report:", err);
       toast.error("Failed to delete report");
+    } finally {
+      setIsDeleteModalOpen(false);
+      setReportToDelete(null);
     }
   };
 
@@ -292,7 +305,7 @@ export default function MedicalReport({ role }) {
                          </a>
                          <button 
                            className="btn btn-sm btn-outline-danger"
-                           onClick={() => handleDeleteReport(report)}
+                           onClick={() => handleDeleteClick(report)}
                            title="Delete"
                          >
                            <FaTrash />
@@ -306,6 +319,30 @@ export default function MedicalReport({ role }) {
            </table>
          </div>
        </div>
+
+       {/* Delete Confirmation Modal */}
+       {isDeleteModalOpen && (
+        <>
+          <div className="modal-backdrop fade show"></div>
+          <div className="modal fade show d-block" tabIndex="-1">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Confirm Delete</h5>
+                  <button type="button" className="btn-close" onClick={() => setIsDeleteModalOpen(false)}></button>
+                </div>
+                <div className="modal-body">
+                  <p>Are you sure you want to delete this report?</p>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={() => setIsDeleteModalOpen(false)}>Cancel</button>
+                  <button type="button" className="btn btn-danger" onClick={confirmDelete}>Delete</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

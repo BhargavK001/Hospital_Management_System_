@@ -38,6 +38,11 @@ const SharedListingSettings = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false); 
   const [itemToDelete, setItemToDelete] = useState(null);
 
+  // --- Import States ---
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importing, setImporting] = useState(false);
+
   // --- Pagination States ---
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
@@ -255,6 +260,88 @@ const SharedListingSettings = () => {
     }
   };
 
+  // --- Import Handlers ---
+  const handleImportClick = () => {
+    setShowImportModal(true);
+  };
+
+  const handleCloseImportModal = () => {
+    setShowImportModal(false);
+    setImportFile(null);
+  };
+
+  const handleFileChange = (e) => {
+    setImportFile(e.target.files[0]);
+  };
+
+  const handleImportSubmit = async () => {
+    if (!importFile) {
+      toast.error("Please select a file first");
+      return;
+    }
+
+    setImporting(true);
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(sheet);
+
+        if (jsonData.length === 0) {
+            toast.error("File is empty");
+            setImporting(false);
+            return;
+        }
+
+        // Validate headers (basic check based on first row)
+        const firstRow = jsonData[0];
+        if (!firstRow.hasOwnProperty("Name") && !firstRow.hasOwnProperty("name")) {
+             toast.error("Invalid CSV format. Required headers: Name, Type, Status");
+             setImporting(false);
+             return;
+        }
+
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const item of jsonData) {
+            try {
+                // Normalize keys
+                const payload = {
+                    name: item.Name || item.name,
+                    type: item.Type || item.type || "Specialization",
+                    status: item.Status || item.status || "Active"
+                };
+                
+                if(payload.name) {
+                    await axios.post(BASE_URL, payload);
+                    successCount++;
+                }
+            } catch (err) {
+                console.error("Import error for item:", item, err);
+                failCount++;
+            }
+        }
+
+        toast.success(`Imported ${successCount} items successfully.`);
+        if(failCount > 0) toast.error(`Failed to import ${failCount} items.`);
+        
+        fetchListings();
+        handleCloseImportModal();
+
+      } catch (error) {
+        console.error("File parsing error:", error);
+        toast.error("Failed to parse file");
+      } finally {
+        setImporting(false);
+      }
+    };
+    reader.readAsArrayBuffer(importFile);
+  };
+
   // --- Pagination Logic ---
   const indexOfLastRow = currentPage * rowsPerPage;
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
@@ -308,7 +395,7 @@ const SharedListingSettings = () => {
            <FaQuestionCircle className="text-secondary opacity-75" size={14} style={{ cursor: 'pointer' }} />
         </div>
         <div className="d-flex gap-2">
-            <button className="btn btn-primary d-flex align-items-center gap-2 px-3 fw-medium" style={{ fontSize: '0.9rem' }}>
+            <button className="btn btn-primary d-flex align-items-center gap-2 px-3 fw-medium" style={{ fontSize: '0.9rem' }} onClick={handleImportClick}>
               <FaFileImport size={12} /> Import data
             </button>
             <button className="btn btn-primary d-flex align-items-center gap-2 px-3 fw-medium" style={{ fontSize: '0.9rem' }} onClick={toggleForm}>
@@ -524,6 +611,54 @@ const SharedListingSettings = () => {
                        <button className="btn btn-danger btn-sm px-4 fw-bold" onClick={confirmDelete}>YES</button>
                        <button className="btn btn-light btn-sm px-3 fw-bold border" onClick={() => setShowDeleteConfirm(false)}>CANCEL</button>
                    </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* --- IMPORT MODAL --- */}
+      {showImportModal && (
+        <>
+          <div className="modal-backdrop fade show" style={{ zIndex: 1040 }}></div>
+          <div className="modal fade show d-block fade-in" tabIndex="-1" style={{ zIndex: 1050 }}>
+            <div className="modal-dialog modal-dialog-centered modal-lg">
+              <div className="modal-content shadow">
+                <div className="modal-header border-bottom-0 pb-0">
+                    <h5 className="modal-title fw-bold text-primary">Listing Import</h5>
+                    <button type="button" className="btn-close" onClick={handleCloseImportModal}></button>
+                </div>
+                <div className="modal-body p-4">
+                   <div className="row g-4">
+                       <div className="col-md-4">
+                           <label className="form-label small fw-bold text-secondary">Select Type</label>
+                           <select className="form-select">
+                               <option>CSV</option>
+                           </select>
+                       </div>
+                       <div className="col-md-8">
+                           <label className="form-label small fw-bold text-secondary">Upload CSV File</label>
+                           <div className="input-group">
+                               <input type="file" className="form-control" accept=".csv, .xlsx, .xls" onChange={handleFileChange} />
+                           </div>
+                       </div>
+                   </div>
+
+                   <div className="mt-4">
+                       <p className="fw-bold mb-2">CSV Required Fields:</p>
+                       <ul className="small text-secondary">
+                           <li>Name (Required)</li>
+                           <li>Type (Optional, default: Specialization)</li>
+                           <li>Status (Optional, default: Active)</li>
+                       </ul>
+                   </div>
+                </div>
+                <div className="modal-footer border-top-0 pt-0 pb-4 pe-4">
+                    <button type="button" className="btn btn-light border fw-bold px-4" onClick={handleCloseImportModal}>Cancel</button>
+                    <button type="button" className="btn btn-primary fw-bold px-4" onClick={handleImportSubmit} disabled={importing}>
+                        {importing ? "Importing..." : "Save"}
+                    </button>
                 </div>
               </div>
             </div>
