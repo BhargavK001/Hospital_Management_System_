@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { FaPrint, FaFileUpload, FaTimes, FaPlus, FaTrash, FaEdit, FaEye } from "react-icons/fa";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { read, utils } from "xlsx";
 import "../../admin-dashboard/styles/admin-shared.css"; 
 
 export default function SharedEncounterDetails({ role }) {
@@ -35,6 +36,10 @@ export default function SharedEncounterDetails({ role }) {
     duration: "",
     instruction: ""
   });
+
+  // Import Data Modal State
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const fileInputRef = useRef(null);
 
   const [patientEmail, setPatientEmail] = useState("");
   const [patientPhone, setPatientPhone] = useState("");
@@ -311,6 +316,84 @@ export default function SharedEncounterDetails({ role }) {
     const updatedPrescriptions = prescriptions.filter((_, i) => i !== index);
     setPrescriptions(updatedPrescriptions);
     updateEncounterData({ prescriptions: updatedPrescriptions });
+  };
+
+  // --- Import Data Logic ---
+  const handleImportData = () => {
+    setIsImportModalOpen(true);
+  };
+
+  const handleCloseImportModal = () => {
+    setIsImportModalOpen(false);
+  };
+
+  const handleFileImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target.result;
+        const wb = read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = utils.sheet_to_json(ws);
+
+        // Expected columns: Name, Frequency, Duration, Instruction
+        const newPrescriptionsToAdd = data.map(row => ({
+          _id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          name: row.Name || row.name || "Unknown Medicine",
+          frequency: row.Frequency || row.frequency || "1-0-1",
+          duration: row.Duration || row.duration || "5 days",
+          instruction: row.Instruction || row.instruction || ""
+        }));
+
+        const updatedPrescriptions = [...prescriptions, ...newPrescriptionsToAdd];
+        setPrescriptions(updatedPrescriptions);
+        updateEncounterData({ prescriptions: updatedPrescriptions });
+        
+        toast.success(`Imported ${newPrescriptionsToAdd.length} prescriptions`);
+        setIsImportModalOpen(false);
+      } catch (err) {
+        console.error("Error parsing file:", err);
+        toast.error("Failed to parse file. Ensure it's a valid Excel/CSV.");
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
+  // --- Email Logic ---
+  const handleEmailEncounter = async () => {
+    if (!patientEmail || patientEmail === "No email found") {
+      toast.error("Patient email not available");
+      return;
+    }
+
+    const toastId = toast.loading("Sending email...");
+
+    try {
+      const encounterDetails = {
+        patientName,
+        doctorName,
+        clinicName: encounter.clinic,
+        date: encounter.date,
+        problems,
+        observations,
+        notes,
+        prescriptions
+      };
+
+      await axios.post("http://localhost:3001/api/email/send-encounter-details", {
+        to: patientEmail,
+        encounterDetails
+      });
+
+      toast.success("Encounter details sent to patient", { id: toastId });
+    } catch (err) {
+      console.error("Error sending email:", err);
+      toast.error("Failed to send email", { id: toastId });
+    }
   };
 
   const handlePrint = () => {
@@ -969,10 +1052,16 @@ export default function SharedEncounterDetails({ role }) {
          <div className="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
            <h6 className="fw-bold text-muted mb-0">Prescription</h6>
            <div className="d-flex gap-2">
-             <button className="btn btn-primary btn-sm d-flex align-items-center gap-1">
+             <button 
+               className="btn btn-primary btn-sm d-flex align-items-center gap-1"
+               onClick={handleEmailEncounter}
+             >
                <FaFileUpload /> Email
              </button>
-             <button className="btn btn-primary btn-sm d-flex align-items-center gap-1">
+             <button 
+               className="btn btn-primary btn-sm d-flex align-items-center gap-1"
+               onClick={handleImportData}
+             >
                <FaFileUpload /> Import data
              </button>
              <button 
@@ -1130,6 +1219,49 @@ export default function SharedEncounterDetails({ role }) {
        )}
 
        {/* Medical Report Section Removed - Moved to separate page */}
+
+      {/* Import Data Modal */}
+      {isImportModalOpen && (
+        <>
+          <div className="modal-backdrop fade show"></div>
+          <div className="modal fade show d-block" tabIndex="-1">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header border-0 pb-0">
+                  <h5 className="modal-title fw-bold text-primary">Import Prescriptions</h5>
+                  <button type="button" className="btn-close" onClick={handleCloseImportModal}></button>
+                </div>
+                <div className="modal-body">
+                  <div className="alert alert-info small">
+                    <strong>Note:</strong> Upload an Excel or CSV file with the following columns:
+                    <br />
+                    <code>Name, Frequency, Duration, Instruction</code>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label small fw-bold">Select File</label>
+                    <input 
+                      type="file" 
+                      className="form-control" 
+                      accept=".xlsx, .xls, .csv"
+                      onChange={handleFileImport}
+                      ref={fileInputRef}
+                    />
+                  </div>
+                </div>
+                <div className="modal-footer border-0 pt-0">
+                  <button 
+                    type="button" 
+                    className="btn btn-outline-secondary btn-sm"
+                    onClick={handleCloseImportModal}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
