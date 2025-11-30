@@ -330,6 +330,7 @@ function App() {
           path="/patient/reports"
           element={<PatientReport sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />}
         />
+        
         {/* Others */}
 
         <Route path="/reception-dashboard" element={<ReptionistDashboard />} />

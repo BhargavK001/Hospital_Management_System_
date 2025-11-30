@@ -3,11 +3,18 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
-  Eye // View Icon
+  Eye,
+  X,
+  Calendar,
+  User,
+  MapPin,
+  Activity,
+  FileText,
+  AlertCircle,
+  Stethoscope,
+  Clipboard
 } from "lucide-react";
 import axios from "axios";
-import { toast } from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
 
 // --- 1. Import Layout ---
 import PatientLayout from "../layouts/PatientLayout"; 
@@ -28,28 +35,19 @@ api.interceptors.request.use(
 );
 
 /* -------------------------------------------------------------------------- */
-/* SMART HELPERS (FIXED DISPLAY LOGIC)                                        */
+/* SMART HELPERS                                                              */
 /* -------------------------------------------------------------------------- */
-
-// 1. Get Doctor Name: Handles Populated Objects vs Strings
 const getDoctorName = (row) => {
-  // Check if doctorId is populated (is an object with names)
   if (row.doctorId && typeof row.doctorId === 'object') {
     const { firstName, lastName, name } = row.doctorId;
     if (firstName || lastName) return `${firstName || ''} ${lastName || ''}`.trim();
     if (name) return name;
   }
-  
-  // Check explicit doctorName field
   if (row.doctorName) return row.doctorName;
-  
-  // Legacy/Simple String Check
   if (row.doctor && typeof row.doctor === 'string') return row.doctor;
-  
   return "N/A";
 };
 
-// 2. Get Clinic Name
 const getClinicName = (row) => {
   if (row.clinicName) return row.clinicName;
   if (row.clinic && typeof row.clinic === 'object') return row.clinic.name || "N/A";
@@ -81,8 +79,8 @@ const dateVariants = (value) => {
 const buildHaystack = (r) => {
   const parts = [
     r.encounterId,
-    getDoctorName(r), // Use smart helper for search
-    getClinicName(r), // Use smart helper for search
+    getDoctorName(r),
+    getClinicName(r),
     r.status,
   ];
   dateVariants(r.date).forEach((dv) => parts.push(dv));
@@ -93,14 +91,14 @@ const buildHaystack = (r) => {
 /* COMPONENT                                                                  */
 /* -------------------------------------------------------------------------- */
 export default function Encounters({ sidebarCollapsed, toggleSidebar }) {
-  const navigate = useNavigate(); 
-
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+
+  const [selectedEncounter, setSelectedEncounter] = useState(null);
 
   const [filters, setFilters] = useState({ encounterId: "", doctorName: "", clinicName: "", date: "", status: "" });
 
@@ -116,21 +114,18 @@ export default function Encounters({ sidebarCollapsed, toggleSidebar }) {
     const loadData = async () => {
       setLoading(true);
       try {
-        // 1. Get Logged in Patient ID
         const patientId = localStorage.getItem("patientId") || localStorage.getItem("userId");
         if (!patientId) {
              setLoading(false);
              return;
         }
 
-        // 2. Fetch ALL Encounters
         const { data } = await api.get("/encounters");
         
         let allEncounters = [];
         if (Array.isArray(data)) allEncounters = data;
         else if (data && (data.rows || data.encounters)) allEncounters = data.rows || data.encounters;
 
-        // 3. Filter for THIS Patient
         const myEncounters = allEncounters.filter(e => {
             const pId = e.patientId?._id || e.patientId || e.patient?._id || e.patient;
             return pId?.toString() === patientId.toString();
@@ -151,7 +146,6 @@ export default function Encounters({ sidebarCollapsed, toggleSidebar }) {
     loadData();
   }, []);
 
-  // Search logic
   const clientFiltered = useMemo(() => {
     const tokens = (search || "").trim().toLowerCase().split(/\s+/).filter(Boolean);
     return rows.filter((r) => {
@@ -179,6 +173,29 @@ export default function Encounters({ sidebarCollapsed, toggleSidebar }) {
   }, [clientFiltered, page, limit]);
 
   const effectiveTotal = clientFiltered.length || total;
+
+  /* --- HELPER TO RENDER LISTS (Problems/Observations/Notes) --- */
+  const renderList = (data) => {
+    if (!data) return <p className="text-muted small">None recorded</p>;
+    
+    // If it's an array (e.g. ["Fever", "Cough"])
+    if (Array.isArray(data) && data.length > 0) {
+      return (
+        <ul className="ps-3 mb-0">
+          {data.map((item, idx) => (
+             <li key={idx} className="small mb-1">{typeof item === 'object' ? item.name || JSON.stringify(item) : item}</li>
+          ))}
+        </ul>
+      );
+    }
+    
+    // If it's just a string
+    if (typeof data === 'string' && data.trim() !== "") {
+        return <p className="small mb-0">{data}</p>;
+    }
+
+    return <p className="text-muted small">None recorded</p>;
+  };
 
   return (
     <PatientLayout sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar}>
@@ -245,33 +262,31 @@ export default function Encounters({ sidebarCollapsed, toggleSidebar }) {
                   paged.map((row, index) => (
                     <tr key={row._id || row.id}>
                       <td className="ps-3"><input type="checkbox" className="form-check-input" /></td>
-                      
-                      {/* Sequential ID */}
                       <td className="fw-bold text-secondary">{(page - 1) * limit + index + 1}</td>
-
-                      {/* Database Custom ID */}
                       <td className="fw-bold text-primary" style={{fontFamily:'monospace'}}>
                           {row.encounterId || "Pending..."}
                       </td>
-
-                      {/* FIXED: Uses Smart Helper for Doctor Name */}
                       <td>{getDoctorName(row)}</td>
-                      
-                      {/* FIXED: Uses Smart Helper for Clinic Name */}
                       <td>{getClinicName(row)}</td>
-                      
                       <td>{formatDate(row.date)}</td>
                       <td><span className={`badge rounded-pill ${row.status === "active" ? "bg-success bg-opacity-10 text-success" : "bg-secondary bg-opacity-10 text-secondary"}`}>{row.status || "Unknown"}</span></td>
                       <td className="text-end pe-3">
                         <div className="d-flex justify-content-end gap-2">
-                          <button 
-                              className="btn btn-sm p-0" 
-                              style={{ width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "6px", border: "1px solid #cfe2ff", background: "#e7f1ff" }}
-                              onClick={() => navigate(`/patient/encounters/${row._id}`)}
-                              title="View Details"
-                          >
-                              <Eye size={13} className="text-primary"/>
-                          </button>
+                           <button 
+                                type="button"
+                                className="btn btn-sm p-0 d-flex align-items-center justify-content-center" 
+                                style={{ 
+                                  width: "28px", height: "28px", borderRadius: "6px", 
+                                  border: "1px solid #cfe2ff", background: "#e7f1ff",
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedEncounter(row); 
+                                }}
+                                title="View Details"
+                            >
+                                <Eye size={13} className="text-primary"/>
+                            </button>
                         </div>
                       </td>
                     </tr>
@@ -281,7 +296,6 @@ export default function Encounters({ sidebarCollapsed, toggleSidebar }) {
             </table>
           </div>
 
-          {/* Pagination */}
           <div className="encounters-footer">
             <div className="d-flex align-items-center gap-2">
               <small className="text-muted">Rows:</small>
@@ -293,9 +307,145 @@ export default function Encounters({ sidebarCollapsed, toggleSidebar }) {
               <button type="button" className="btn btn-sm btn-outline-secondary" disabled={page * limit >= effectiveTotal} onClick={() => setPage((p) => p + 1)}><ChevronRight size={14} /></button>
             </div>
           </div>
-
         </div>
       </div>
+
+      {/* --- ✅ UPDATED POPUP MODAL --- */}
+      {selectedEncounter && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex',
+          justifyContent: 'center', alignItems: 'center', zIndex: 1050
+        }}>
+          <div className="bg-white rounded-3 shadow-lg" style={{ width: '90%', maxWidth: '750px', maxHeight: '90vh', display:'flex', flexDirection:'column' }}>
+            
+            {/* 1. Modal Header */}
+            <div className="d-flex justify-content-between align-items-center p-3 border-bottom">
+              <div>
+                <h5 className="mb-0 fw-bold">Encounter Details</h5>
+                <small className="text-muted">ID: {selectedEncounter.encounterId || selectedEncounter._id}</small>
+              </div>
+              <button className="btn btn-sm btn-light border-0" onClick={() => setSelectedEncounter(null)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* 2. Modal Body (Scrollable) */}
+            <div className="p-4" style={{ overflowY: 'auto' }}>
+              
+              {/* --- Clinical Summary Section --- */}
+              <div className="mb-4">
+                  <h6 className="fw-bold text-primary mb-3 d-flex align-items-center gap-2">
+                     <FileText size={18}/> Clinical Summary
+                  </h6>
+                  <div className="bg-light p-3 rounded border">
+                    <label className="text-muted small fw-bold text-uppercase d-block mb-1">Description / Chief Complaint</label>
+                    <p className="mb-0 text-dark">
+                        {selectedEncounter.description || selectedEncounter.chiefComplaint || "No description provided."}
+                    </p>
+                  </div>
+              </div>
+
+              {/* --- Problems / Observations / Notes (3 Column Grid) --- */}
+              <div className="row g-3 mb-4">
+                 {/* Column 1: Problems */}
+                 <div className="col-md-4">
+                    <div className="p-3 border rounded h-100 bg-white">
+                      <label className="text-muted small fw-bold text-uppercase d-flex align-items-center gap-2 mb-2">
+                        <AlertCircle size={14} className="text-danger"/> Problems
+                      </label>
+                      <div style={{maxHeight:'150px', overflowY:'auto'}}>
+                         {renderList(selectedEncounter.problems)}
+                      </div>
+                    </div>
+                 </div>
+
+                 {/* Column 2: Observations */}
+                 <div className="col-md-4">
+                    <div className="p-3 border rounded h-100 bg-white">
+                      <label className="text-muted small fw-bold text-uppercase d-flex align-items-center gap-2 mb-2">
+                        <Stethoscope size={14} className="text-info"/> Observations
+                      </label>
+                      <div style={{maxHeight:'150px', overflowY:'auto'}}>
+                         {renderList(selectedEncounter.observations)}
+                      </div>
+                    </div>
+                 </div>
+
+                 {/* Column 3: Notes */}
+                 <div className="col-md-4">
+                    <div className="p-3 border rounded h-100 bg-white">
+                      <label className="text-muted small fw-bold text-uppercase d-flex align-items-center gap-2 mb-2">
+                        <Clipboard size={14} className="text-warning"/> Notes
+                      </label>
+                      <div style={{maxHeight:'150px', overflowY:'auto'}}>
+                         {renderList(selectedEncounter.notes)}
+                      </div>
+                    </div>
+                 </div>
+              </div>
+
+              {/* --- Visit Information --- */}
+              <div className="card border rounded-3 bg-white">
+                <div className="card-body">
+                   <h6 className="fw-bold mb-3 border-bottom pb-2">Visit Information</h6>
+                   
+                   <div className="row g-2">
+                     <div className="col-6">
+                       <div className="d-flex align-items-start mb-2">
+                          <Calendar className="text-muted me-2 mt-1" size={16} />
+                          <div>
+                              <small className="text-muted d-block" style={{fontSize:'0.8rem'}}>Date</small>
+                              <strong>{formatDate(selectedEncounter.date)}</strong>
+                          </div>
+                       </div>
+                     </div>
+                     <div className="col-6">
+                        <div className="d-flex align-items-start mb-2">
+                            <Activity className="text-muted me-2 mt-1" size={16} />
+                            <div>
+                                <small className="text-muted d-block" style={{fontSize:'0.8rem'}}>Status</small>
+                                <span className={`badge ${selectedEncounter.status === 'active' ? 'bg-success' : 'bg-secondary'}`}>
+                                  {selectedEncounter.status || "Unknown"}
+                                </span>
+                            </div>
+                        </div>
+                     </div>
+                     <div className="col-12">
+                        <div className="d-flex align-items-start mb-2">
+                            <User className="text-muted me-2 mt-1" size={16} />
+                            <div>
+                                <small className="text-muted d-block" style={{fontSize:'0.8rem'}}>Doctor</small>
+                                <strong>{getDoctorName(selectedEncounter)}</strong>
+                            </div>
+                        </div>
+                     </div>
+                     <div className="col-12">
+                        <div className="d-flex align-items-start">
+                            <MapPin className="text-muted me-2 mt-1" size={16} />
+                            <div>
+                                <small className="text-muted d-block" style={{fontSize:'0.8rem'}}>Clinic</small>
+                                <strong>{getClinicName(selectedEncounter)}</strong>
+                            </div>
+                        </div>
+                     </div>
+                   </div>
+
+                </div>
+              </div>
+
+            </div>
+
+            {/* 3. Modal Footer */}
+            <div className="p-3 border-top bg-light d-flex justify-content-end">
+              <button className="btn btn-secondary px-4" onClick={() => setSelectedEncounter(null)}>Close</button>
+            </div>
+
+          </div>
+        </div>
+      )}
+      {/* --- POPUP MODAL END --- */}
+
     </PatientLayout>
   );
 }
