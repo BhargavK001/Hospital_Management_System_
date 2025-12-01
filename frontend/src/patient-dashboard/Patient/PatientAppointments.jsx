@@ -318,12 +318,12 @@ export default function PatientAppointments({ sidebarCollapsed, toggleSidebar })
             >
               <FaPlus /> Add appointment
             </button>
-            <button
+            {/* <button
               className="btn btn-sm btn-outline-dark"
               onClick={() => handlePdf(a._id)}
             >
               PDF
-            </button>
+            </button> */}
           </div>
         </div>
 
