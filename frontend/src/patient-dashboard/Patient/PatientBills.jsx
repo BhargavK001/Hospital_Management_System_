@@ -156,7 +156,6 @@ export default function PatientBills({ sidebarCollapsed, toggleSidebar }) {
                    <th>Clinic</th>
                    <th>Patient</th>
                    <th>Services</th>
-                   {/* Added Tax Column Header */}
                    <th>Tax</th>
                    <th>Total</th>
                    <th>Disc</th>
@@ -169,16 +168,16 @@ export default function PatientBills({ sidebarCollapsed, toggleSidebar }) {
                    <td className="p-2"></td>
                    <td className="p-2"><input className="filter-input" placeholder="Enc ID" onChange={e=>handleFilter('encounterId', e.target.value)}/></td>
                    <td className="p-2"><input className="filter-input" placeholder="Doctor" onChange={e=>handleFilter('doctor', e.target.value)}/></td>
-                   <td className="p-2"></td> {/* Clinic */}
-                   <td className="p-2"></td> {/* Patient */}
-                   <td className="p-2"></td> {/* Services */}
-                   <td className="p-2"></td> {/* Tax placeholder */}
-                   <td className="p-2"></td> {/* Total */}
-                   <td className="p-2"></td> {/* Disc */}
-                   <td className="p-2"></td> {/* Due */}
-                   <td className="p-2"></td> {/* Date */}
-                   <td className="p-2"></td> {/* Status */}
-                   <td className="p-2"></td> {/* Action */}
+                   <td className="p-2"></td>
+                   <td className="p-2"></td>
+                   <td className="p-2"></td>
+                   <td className="p-2"></td>
+                   <td className="p-2"></td>
+                   <td className="p-2"></td>
+                   <td className="p-2"></td>
+                   <td className="p-2"></td>
+                   <td className="p-2"></td>
+                   <td className="p-2"></td>
                 </tr>
               </thead>
               <tbody>
@@ -192,10 +191,7 @@ export default function PatientBills({ sidebarCollapsed, toggleSidebar }) {
                         <td>{row.clinicName}</td>
                         <td>{row.patientName}</td>
                         <td>{Array.isArray(row.services) ? row.services.join(", ") : row.services}</td>
-                        
-                        {/* Display Tax: Checks for taxAmount, tax, or defaults to 0 */}
                         <td>{row.taxAmount || row.tax || 0}</td>
-                        
                         <td>{row.totalAmount}</td>
                         <td>{row.discount}</td>
                         <td>{row.amountDue}</td>
