@@ -105,7 +105,7 @@
 //     for (let i = 6; i >= 0; i--) {
 //       const d = new Date(today);
 //       d.setDate(today.getDate() - i);
-      
+
 //       // Create start and end for that specific day
 //       const startOfDay = new Date(d); startOfDay.setHours(0,0,0,0);
 //       const endOfDay = new Date(d); endOfDay.setHours(23,59,59,999);
@@ -113,7 +113,7 @@
 //       const count = await AppointmentModel.countDocuments({ 
 //           date: { $gte: startOfDay, $lte: endOfDay } 
 //       });
-      
+
 //       const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
 //       stats.push({ label: dayName, count });
 //     }
@@ -135,11 +135,11 @@
 
 //         const end = new Date(start);
 //         end.setDate(start.getDate() + 7); // End of range (7 days later)
-        
+
 //         const count = await AppointmentModel.countDocuments({ 
 //             date: { $gte: start, $lt: end }
 //         });
-        
+
 //         stats.push({ label: `Week ${4-i}`, count });
 //     }
 //     res.json(stats);
@@ -309,7 +309,7 @@
 //     const clinicName = appt.clinic || doctor?.clinic || "OneCare Medical Center";
 //     const clinicEmail = doctor?.email || "support@onecare.com";
 //     const clinicPhone = doctor?.phone || "+91 12345 67890";
-    
+
 //     const todayFormatted = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 //     const apptDateFormatted = appt.date ? new Date(appt.date).toLocaleDateString("en-US", { weekday: 'short', year: "numeric", month: "long", day: "numeric" }) : "N/A";
 //     const apptId = String(appt._id).substring(0, 8).toUpperCase(); 
@@ -365,7 +365,7 @@
 
 //     page.drawText("DOCTOR DETAILS", { x: col2, y: cursorY+15, size: 10, font: fontBold, color: gray });
 //     page.drawText(`Dr. ${appt.doctorName || "Unknown"}`, { x: col2, y: cursorY, size: 14, font: fontBold, color: black });
-    
+
 //     cursorY -= 40;
 //     page.drawLine({ start: { x: margin, y: cursorY }, end: { x: width - margin, y: cursorY }, thickness: 1, color: lightGray });
 //     cursorY -= 30;
@@ -380,7 +380,7 @@
 
 //     drawDetailRow("Date", apptDateFormatted, margin, cursorY);
 //     drawDetailRow("Time", appt.time || "N/A", margin + 180, cursorY);
-    
+
 //     let statusColor = black;
 //     if((appt.status || "").toUpperCase() === 'BOOKED') statusColor = rgb(0, 0.6, 0);
 //     page.drawText("Status", { x: width - margin - 80, y: cursorY, size: 9, font: fontRegular, color: gray });
@@ -409,7 +409,7 @@
 //     cursorY -= 30;
 //     page.drawText("Total Amount:", { x: width - margin - 150, y: cursorY, size: 12, font: fontBold, color: black });
 //     page.drawText(totalBillText, { x: width - margin - 70, y: cursorY, size: 12, font: fontBold, color: primaryColor });
-    
+
 //     cursorY -= 15;
 //     page.drawText(`Payment Mode: ${appt.paymentMode || "Manual"}`, { x: width - margin - 150, y: cursorY, size: 9, font: fontRegular, color: gray });
 
@@ -501,7 +501,7 @@ const mongoose = require("mongoose");
 const AppointmentModel = require("../models/Appointment");
 const PatientModel = require("../models/Patient");
 const DoctorModel = require("../models/Doctor");
-const HolidayModel = require("../models/Holiday"); 
+const HolidayModel = require("../models/Holiday");
 const { sendEmail } = require("../utils/emailService");
 const { appointmentBookedTemplate } = require("../utils/emailTemplates");
 const { sendWhatsAppMessage } = require("../utils/whatsappService");
@@ -534,8 +534,8 @@ router.get("/slots", async (req, res) => {
 
     // 1. CHECK IF DOCTOR IS ON HOLIDAY
     // We convert the requested date to a Date object
-    const requestDate = new Date(date); 
-    
+    const requestDate = new Date(date);
+
     // Check if the requested date falls within any holiday range for this doctor
     const holiday = await HolidayModel.findOne({
       doctorId: doctorId,
@@ -545,10 +545,10 @@ router.get("/slots", async (req, res) => {
 
     if (holiday) {
       // If on holiday, return empty array immediately
-      return res.json({ 
-        message: "Doctor is on holiday", 
-        slots: [], 
-        isHoliday: true 
+      return res.json({
+        message: "Doctor is on holiday",
+        slots: [],
+        isHoliday: true
       });
     }
 
@@ -587,20 +587,20 @@ router.post("/", async (req, res) => {
   try {
     // --- STEP 1: HOLIDAY VALIDATION ---
     if (req.body.doctorId && req.body.date) {
-        const apptDate = new Date(req.body.date);
-        
-        // Check if date falls in a holiday range
-        const onHoliday = await HolidayModel.findOne({
-            doctorId: req.body.doctorId,
-            fromDate: { $lte: apptDate },
-            toDate: { $gte: apptDate }
-        });
+      const apptDate = new Date(req.body.date);
 
-        if (onHoliday) {
-            return res.status(400).json({ 
-                message: `Doctor is on holiday from ${new Date(onHoliday.fromDate).toLocaleDateString()} to ${new Date(onHoliday.toDate).toLocaleDateString()}. Please choose another date.` 
-            });
-        }
+      // Check if date falls in a holiday range
+      const onHoliday = await HolidayModel.findOne({
+        doctorId: req.body.doctorId,
+        fromDate: { $lte: apptDate },
+        toDate: { $gte: apptDate }
+      });
+
+      if (onHoliday) {
+        return res.status(400).json({
+          message: `Doctor is on holiday from ${new Date(onHoliday.fromDate).toLocaleDateString()} to ${new Date(onHoliday.toDate).toLocaleDateString()}. Please choose another date.`
+        });
+      }
     }
     // ----------------------------------
 
@@ -645,8 +645,8 @@ router.post("/", async (req, res) => {
     // Notifications
     let formattedDate = payload.date;
     try {
-        if (payload.date) formattedDate = new Date(payload.date).toLocaleDateString("en-GB");
-    } catch (e) {}
+      if (payload.date) formattedDate = new Date(payload.date).toLocaleDateString("en-GB");
+    } catch (e) { }
 
     if (targetEmail) {
       sendEmail({
@@ -700,7 +700,7 @@ router.get("/", async (req, res) => {
 
     // Filter by doctorId
     if (req.query.doctorId && mongoose.Types.ObjectId.isValid(req.query.doctorId)) {
-        q.doctorId = req.query.doctorId;
+      q.doctorId = req.query.doctorId;
     }
 
     const list = await AppointmentModel.find(q)
@@ -709,11 +709,11 @@ router.get("/", async (req, res) => {
       .populate({
         path: "patientId",
         select: "firstName lastName email phone",
-        model: "Patient" 
+        model: "Patient"
       })
       .populate({
         path: "doctorId",
-        select: "name clinic firstName lastName", 
+        select: "name clinic firstName lastName",
         model: "Doctor"
       })
       .lean();
@@ -751,12 +751,12 @@ router.get("/all", async (req, res) => {
       .populate({
         path: "patientId",
         select: "firstName lastName email phone",
-        model: "Patient", 
+        model: "Patient",
       })
       .populate({
         path: "doctorId",
         select: "name clinic firstName lastName",
-        model: "Doctor", 
+        model: "Doctor",
       })
       .lean();
     res.json(list);
@@ -767,27 +767,53 @@ router.get("/all", async (req, res) => {
 });
 
 // GET /appointments/today
+// router.get("/today", async (req, res) => {
+//   try {
+//     const today = new Date();
+//     const yyyy = today.getFullYear();
+//     const mm = String(today.getMonth() + 1).padStart(2, "0");
+//     const dd = String(today.getDate()).padStart(2, "0");
+//     const todayStr = `${yyyy}-${mm}-${dd}`;
+
+//     const list = await AppointmentModel.find({ date: todayStr })
+//       .sort({ createdAt: -1 })
+//       .populate({
+//         path: "patientId",
+//         select: "firstName lastName email phone",
+//         model: "Patient",
+//       })
+//       .populate({
+//         path: "doctorId",
+//         select: "name clinic firstName lastName",
+//         model: "Doctor", 
+//       })
+//       .lean();
+//     res.json(list);
+//   } catch (err) {
+//     console.error("Error fetching today's appointments:", err);
+//     res.status(500).json({ message: "Server error", error: err.message });
+//   }
+// });
+
+// GET /appointments/today
 router.get("/today", async (req, res) => {
   try {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, "0");
-    const dd = String(today.getDate()).padStart(2, "0");
-    const todayStr = `${yyyy}-${mm}-${dd}`;
+    // Create Start and End of today
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
 
-    const list = await AppointmentModel.find({ date: todayStr })
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Use $gte (Greater Than or Equal) and $lte (Less Than or Equal)
+    const list = await AppointmentModel.find({
+      date: { $gte: startOfDay, $lte: endOfDay }
+    })
       .sort({ createdAt: -1 })
-      .populate({
-        path: "patientId",
-        select: "firstName lastName email phone",
-        model: "Patient",
-      })
-      .populate({
-        path: "doctorId",
-        select: "name clinic firstName lastName",
-        model: "Doctor", 
-      })
+      .populate({ path: "patientId", select: "firstName lastName email phone", model: "Patient" })
+      .populate({ path: "doctorId", select: "name clinic firstName lastName", model: "Doctor" })
       .lean();
+
     res.json(list);
   } catch (err) {
     console.error("Error fetching today's appointments:", err);
@@ -796,18 +822,67 @@ router.get("/today", async (req, res) => {
 });
 
 // GET /appointments/weekly
+// router.get("/weekly", async (req, res) => {
+//   try {
+//     const stats = [];
+//     const today = new Date();
+//     // for (let i = 6; i >= 0; i--) {
+//     //   const d = new Date(today);
+//     //   d.setDate(today.getDate() - i);
+//     //   const yyyy = d.getFullYear();
+//     //   const mm = String(d.getMonth() + 1).padStart(2, "0");
+//     //   const dd = String(d.getDate()).padStart(2, "0");
+//     //   const dateStr = `${yyyy}-${mm}-${dd}`;
+//     //   const count = await AppointmentModel.countDocuments({ date: dateStr });
+//     //   const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+//     //   stats.push({ label: dayName, count });
+//     // }
+//     // ... inside the for loop ...
+//     for (let i = 6; i >= 0; i--) {
+//       const d = new Date(today);
+//       d.setDate(today.getDate() - i);
+
+//       const startOfDay = new Date(d.setHours(0, 0, 0, 0));
+//       const endOfDay = new Date(d.setHours(23, 59, 59, 999));
+
+//       const count = await AppointmentModel.countDocuments({
+//         date: { $gte: startOfDay, $lte: endOfDay }
+//       });
+
+//       const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+//       stats.push({ label: dayName, count });
+//     }
+//     res.json(stats);
+//   } catch (err) {
+//     res.status(500).json({ message: "Server error", error: err.message });
+//   }
+// });
+
+// GET /appointments/weekly
 router.get("/weekly", async (req, res) => {
   try {
     const stats = [];
     const today = new Date();
+    
+    // Loop from 6 days ago up to today (i=0)
     for (let i = 6; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const dd = String(d.getDate()).padStart(2, "0");
-      const dateStr = `${yyyy}-${mm}-${dd}`;
-      const count = await AppointmentModel.countDocuments({ date: dateStr });
+
+      // Define Start and End of that specific day
+      const startOfDay = new Date(d); startOfDay.setHours(0,0,0,0);
+      const endOfDay = new Date(d); endOfDay.setHours(23,59,59,999);
+
+      // Query using $expr to match BOTH Strings and Date Objects
+      const count = await AppointmentModel.countDocuments({
+        $expr: {
+          $and: [
+            { $gte: [{ $toDate: "$date" }, startOfDay] },
+            { $lte: [{ $toDate: "$date" }, endOfDay] }
+          ]
+        }
+      });
+
       const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
       stats.push({ label: dayName, count });
     }
@@ -818,23 +893,61 @@ router.get("/weekly", async (req, res) => {
 });
 
 // GET /appointments/monthly
+// router.get("/monthly", async (req, res) => {
+//   try {
+//     const stats = [];
+//     const today = new Date();
+//     for (let i = 3; i >= 0; i--) {
+//       const start = new Date(today);
+//       start.setDate(today.getDate() - (i * 7) - 6);
+//       let count = 0;
+//       for (let j = 0; j < 7; j++) {
+//         const d = new Date(start);
+//         d.setDate(start.getDate() + j);
+//         const yyyy = d.getFullYear();
+//         const mm = String(d.getMonth() + 1).padStart(2, "0");
+//         const dd = String(d.getDate()).padStart(2, "0");
+//         const dateStr = `${yyyy}-${mm}-${dd}`;
+//         count += await AppointmentModel.countDocuments({ date: dateStr });
+//       }
+//       stats.push({ label: `Week ${4 - i}`, count });
+//     }
+//     res.json(stats);
+//   } catch (err) {
+//     res.status(500).json({ message: "Server error", error: err.message });
+//   }
+// });
+
+// GET /appointments/monthly
 router.get("/monthly", async (req, res) => {
   try {
     const stats = [];
     const today = new Date();
+    
+    // Loop back 4 weeks
+    // i=3 is the oldest week, i=0 is the current week
     for (let i = 3; i >= 0; i--) {
         const start = new Date(today);
         start.setDate(today.getDate() - (i * 7) - 6);
-        let count = 0;
-        for (let j=0; j<7; j++) {
-            const d = new Date(start);
-            d.setDate(start.getDate() + j);
-            const yyyy = d.getFullYear();
-            const mm = String(d.getMonth() + 1).padStart(2, "0");
-            const dd = String(d.getDate()).padStart(2, "0");
-            const dateStr = `${yyyy}-${mm}-${dd}`;
-            count += await AppointmentModel.countDocuments({ date: dateStr });
-        }
+        start.setHours(0,0,0,0);
+
+        const end = new Date(start);
+        end.setDate(start.getDate() + 7);
+        end.setHours(23,59,59,999);
+        
+        // Count documents (Works for both String and Date formats)
+        const count = await AppointmentModel.countDocuments({ 
+            $expr: {
+              $and: [
+                { $gte: [{ $toDate: "$date" }, start] },
+                { $lt:  [{ $toDate: "$date" }, end] }
+              ]
+            }
+        });
+        
+        // Label them Week 1 to Week 4
+        // When i=3 (oldest), label is "Week 1"
+        // When i=0 (current), label is "Week 4"
         stats.push({ label: `Week ${4-i}`, count });
     }
     res.json(stats);
@@ -898,14 +1011,14 @@ router.get("/:id/pdf", async (req, res) => {
     const rawAddress = doctor?.address || "123 Health Street\nMedical District, City, 000000";
     const addressLines = String(rawAddress).split(/\r?\n/).slice(0, 2);
     const patientName = appt.patientName || "N/A";
-    
+
     // Dates
     const todayFormatted = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
     const apptDateObj = appt.date ? new Date(appt.date) : null;
     const apptDateFormatted = apptDateObj ? apptDateObj.toLocaleDateString("en-US", { weekday: 'short', year: "numeric", month: "long", day: "numeric" }) : "N/A";
-    const generatedDate = new Date().toLocaleString("en-US", { day: "2-digit", month: "short", year: "numeric", hour: '2-digit', minute:'2-digit' });
+    const generatedDate = new Date().toLocaleString("en-US", { day: "2-digit", month: "short", year: "numeric", hour: '2-digit', minute: '2-digit' });
 
-    const apptId = String(appt._id).substring(0, 8).toUpperCase(); 
+    const apptId = String(appt._id).substring(0, 8).toUpperCase();
     const apptTime = appt.slot || appt.time || "N/A";
     const apptStatus = (appt.status || "Booked").toUpperCase();
     const paymentMode = appt.paymentMode || "Manual";
@@ -918,7 +1031,7 @@ router.get("/:id/pdf", async (req, res) => {
     const { width, height } = page.getSize();
     const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    
+
     const primaryColor = rgb(0, 0.53, 0.71);
     const black = rgb(0, 0, 0);
     const gray = rgb(0.4, 0.4, 0.4);
@@ -933,14 +1046,14 @@ router.get("/:id/pdf", async (req, res) => {
       if (fs.existsSync(logoPath)) {
         const logoBytes = fs.readFileSync(logoPath);
         const logoImg = await pdfDoc.embedPng(logoBytes);
-        const logoDims = logoImg.scale(0.25); 
+        const logoDims = logoImg.scale(0.25);
         page.drawImage(logoImg, { x: margin, y: cursorY - logoDims.height + 10, width: logoDims.width, height: logoDims.height });
       }
-    } catch (e) {}
+    } catch (e) { }
 
-    const textStartX = 180; 
+    const textStartX = 180;
     page.drawText(clinicName.toUpperCase(), { x: textStartX, y: cursorY, size: 18, font: fontBold, color: primaryColor });
-    
+
     page.drawText(`Date: ${todayFormatted}`, { x: width - margin - 130, y: cursorY, size: 10, font: fontRegular, color: black });
     page.drawText(`Booking ID: #${apptId}`, { x: width - margin - 130, y: cursorY - 15, size: 10, font: fontBold, color: black });
 
@@ -952,22 +1065,22 @@ router.get("/:id/pdf", async (req, res) => {
     page.drawText(`Email: ${clinicEmail}`, { x: textStartX, y: detailsY, size: 10, font: fontRegular, color: gray });
 
     cursorY -= 80;
-    page.drawRectangle({ x: 0, y: cursorY - 10 , width: width, height: 30, color: primaryColor });
+    page.drawRectangle({ x: 0, y: cursorY - 10, width: width, height: 30, color: primaryColor });
     const titleText = "APPOINTMENT CONFIRMATION";
     const titleWidth = fontBold.widthOfTextAtSize(titleText, 14);
-    page.drawText(titleText, { x: (width - titleWidth) / 2, y: cursorY, size: 14, font: fontBold, color: rgb(1,1,1) });
+    page.drawText(titleText, { x: (width - titleWidth) / 2, y: cursorY, size: 14, font: fontBold, color: rgb(1, 1, 1) });
 
     cursorY -= 50;
     const col1 = margin;
     const col2 = 320;
 
-    page.drawText("PATIENT DETAILS", { x: col1, y: cursorY+15, size: 10, font: fontBold, color: gray });
+    page.drawText("PATIENT DETAILS", { x: col1, y: cursorY + 15, size: 10, font: fontBold, color: gray });
     cursorY -= 15;
-    page.drawText(patientName, { x: col1, y: cursorY+15, size: 14, font: fontBold, color: black });
+    page.drawText(patientName, { x: col1, y: cursorY + 15, size: 14, font: fontBold, color: black });
     // cursorY -= 15;
     // page.drawText("Patient ID: --", { x: col1, y: cursorY, size: 10, font: fontRegular, color: black });
 
-    const sectionTopY = cursorY + 30; 
+    const sectionTopY = cursorY + 30;
     page.drawText("DOCTOR DETAILS", { x: col2, y: sectionTopY, size: 10, font: fontBold, color: gray });
     page.drawText(`Dr. ${appt.doctorName}`, { x: col2, y: sectionTopY - 15, size: 14, font: fontBold, color: black });
     page.drawText("General Physician", { x: col2, y: sectionTopY - 30, size: 10, font: fontRegular, color: black });
@@ -980,21 +1093,21 @@ router.get("/:id/pdf", async (req, res) => {
     cursorY -= 20;
 
     const drawDetailRow = (label, value, xPos, yPos) => {
-       page.drawText(label, { x: xPos, y: yPos, size: 9, font: fontRegular, color: gray });
-       page.drawText(value, { x: xPos, y: yPos - 12, size: 11, font: fontBold, color: black });
+      page.drawText(label, { x: xPos, y: yPos, size: 9, font: fontRegular, color: gray });
+      page.drawText(value, { x: xPos, y: yPos - 12, size: 11, font: fontBold, color: black });
     };
 
     drawDetailRow("Date", apptDateFormatted, margin, cursorY);
     drawDetailRow("Time", apptTime, margin + 180, cursorY);
-    
+
     let statusColor = black;
-    if(apptStatus === 'BOOKED' || apptStatus === 'CONFIRMED') statusColor = rgb(0, 0.6, 0);
-    if(apptStatus === 'CANCELLED') statusColor = rgb(0.8, 0, 0);
+    if (apptStatus === 'BOOKED' || apptStatus === 'CONFIRMED') statusColor = rgb(0, 0.6, 0);
+    if (apptStatus === 'CANCELLED') statusColor = rgb(0.8, 0, 0);
     page.drawText("Status", { x: width - margin - 80, y: cursorY, size: 9, font: fontRegular, color: gray });
     page.drawText(apptStatus, { x: width - margin - 80, y: cursorY - 12, size: 11, font: fontBold, color: statusColor });
 
     cursorY -= 50;
-    page.drawRectangle({ x: margin, y: cursorY, width: width - (margin*2), height: 25, color: lightGray });
+    page.drawRectangle({ x: margin, y: cursorY, width: width - (margin * 2), height: 25, color: lightGray });
     page.drawText("Service / Description", { x: margin + 10, y: cursorY + 7, size: 10, font: fontBold, color: black });
     page.drawText("Amount", { x: width - margin - 70, y: cursorY + 7, size: 10, font: fontBold, color: black });
 
@@ -1006,7 +1119,7 @@ router.get("/:id/pdf", async (req, res) => {
     cursorY -= 35;
     page.drawText("Total Amount:", { x: width - margin - 150, y: cursorY, size: 12, font: fontBold, color: black });
     page.drawText(totalBill, { x: width - margin - 70, y: cursorY, size: 12, font: fontBold, color: primaryColor });
-    
+
     cursorY -= 15;
     page.drawText(`Payment Mode: ${paymentMode}`, { x: width - margin - 150, y: cursorY, size: 9, font: fontRegular, color: gray });
 

@@ -34,7 +34,8 @@ const AdminDashboard = ({ sidebarCollapsed = false, toggleSidebar }) => {
   // right side: weekly / monthly summary
   const [weeklyStats, setWeeklyStats] = useState([]);
   const [activeTab, setActiveTab] = useState("weekly");
-
+  // Add this near your other useState hooks
+  const [filterType, setFilterType] = useState("today"); // Options: 'today', 'upcoming', 'past', 'all'
   const fetchDashboardStats = async () => {
     try {
       const res = await axios.get(`${API_BASE}/dashboard-stats`);
@@ -44,17 +45,50 @@ const AdminDashboard = ({ sidebarCollapsed = false, toggleSidebar }) => {
     }
   };
 
+  // const fetchAppointments = async (type = "today") => {
+  //   setLoadingAppointments(true);
+
+  //   const url =
+  //     type === "all"
+  //       ? `${API_BASE}/appointments/all`
+  //       : `${API_BASE}/appointments/today`;
+
+  //   try {
+  //     const res = await axios.get(url);
+  //     setAppointments(Array.isArray(res.data) ? res.data : []);
+  //   } catch (err) {
+  //     console.error("Error loading appointments:", err);
+  //     setAppointments([]);
+  //   } finally {
+  //     setLoadingAppointments(false);
+  //   }
+  // };
   const fetchAppointments = async (type = "today") => {
     setLoadingAppointments(true);
-
-    const url =
-      type === "all"
-        ? `${API_BASE}/appointments/all`
-        : `${API_BASE}/appointments/today`;
+    setFilterType(type); // Update the active button state
 
     try {
+      let url = `${API_BASE}/appointments/all`;
+      if (type === "today") {
+        url = `${API_BASE}/appointments/today`;
+      }
+
       const res = await axios.get(url);
-      setAppointments(Array.isArray(res.data) ? res.data : []);
+      let data = Array.isArray(res.data) ? res.data : [];
+
+      // Client-side filtering for specific tabs
+      const now = new Date();
+      // Reset time to midnight for accurate day comparison
+      const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+
+      if (type === "upcoming") {
+        data = data.filter(appt => new Date(appt.date) >= todayStart && appt.status !== 'cancelled');
+      } else if (type === "past") {
+        data = data.filter(appt => new Date(appt.date) < todayStart);
+      }
+      // "today" and "all" are handled by the URL or return raw data
+
+      setAppointments(data);
     } catch (err) {
       console.error("Error loading appointments:", err);
       setAppointments([]);
@@ -62,7 +96,6 @@ const AdminDashboard = ({ sidebarCollapsed = false, toggleSidebar }) => {
       setLoadingAppointments(false);
     }
   };
-
   const fetchWeeklyStats = async (mode = "weekly") => {
     setActiveTab(mode);
     try {
@@ -191,7 +224,7 @@ const AdminDashboard = ({ sidebarCollapsed = false, toggleSidebar }) => {
             {/* Left: Today's / upcoming appointments */}
             <div className="col-md-8 mb-4">
               <div className="card shadow-sm p-3 h-100">
-                <div className="d-flex justify-content-between align-items-center mb-3">
+                {/* <div className="d-flex justify-content-between align-items-center mb-3">
                   <h5 className="fw-bold mb-0">Todays Appointment List</h5>
 
                   <div className="d-flex gap-2">
@@ -207,96 +240,130 @@ const AdminDashboard = ({ sidebarCollapsed = false, toggleSidebar }) => {
                     >
                       Reload
                     </button>
-                  </div>
-                </div>
+                  </div> */}
 
-                {loadingAppointments ? (
-                  <p className="text-center mb-0">Loading...</p>
-                ) : appointments.length === 0 ? (
-                  <p className="text-center text-muted mb-0">
-                    No Appointments Found.
-                  </p>
-                ) : (
-                  <ul className="list-group">
-                    {appointments.map((appt, index) => (
-                      <li
-                        key={index}
-                        className="list-group-item d-flex justify-content-between align-items-center"
-                      >
-                        <div>
-                          <div className="fw-semibold">
-                            {appt.patientName || "Unknown Patient"}
-                          </div>
-                          <small className="text-muted">
-                            {appt.doctorName
-                              ? `Dr. ${appt.doctorName}`
-                              : "Doctor not set"}
-                          </small>
-                        </div>
-                        <span className="badge bg-primary rounded-pill">
-                          {appt.time || "—"}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </div>
-
-            {/* Right: Weekly / monthly totals */}
-            <div className="col-md-4 mb-4">
-              <div className="card shadow-sm p-3 h-100">
                 <div className="d-flex justify-content-between align-items-center mb-3">
-                  <h5 className="fw-bold mb-0">Weekly Total Appointments</h5>
-                  <div className="btn-group btn-group-sm" role="group">
+                  {/* Dynamic Title based on selection */}
+                  <h5 className="fw-bold mb-0">
+                    {filterType === 'today' ? "Today's Appointment List" :
+                      filterType === 'upcoming' ? "Upcoming Appointments" :
+                        filterType === 'past' ? "Past Appointments" : "All Appointments"}
+                  </h5>
+
+                  {/* New Buttons Group */}
+                  <div className="btn-group" role="group">
                     <button
-                      type="button"
-                      className={`btn ${
-                        activeTab === "weekly"
-                          ? "btn-primary"
-                          : "btn-outline-primary"
-                      }`}
-                      onClick={() => fetchWeeklyStats("weekly")}
+                      className={`btn btn-sm ${filterType === 'today' ? 'btn-primary' : 'btn-outline-primary'}`}
+                      onClick={() => fetchAppointments("today")}
                     >
-                      Weekly
+                      Today
                     </button>
                     <button
-                      type="button"
-                      className={`btn ${
-                        activeTab === "monthly"
-                          ? "btn-primary"
-                          : "btn-outline-primary"
-                      }`}
-                      onClick={() => fetchWeeklyStats("monthly")}
+                      className={`btn btn-sm ${filterType === 'upcoming' ? 'btn-primary' : 'btn-outline-primary'}`}
+                      onClick={() => fetchAppointments("upcoming")}
                     >
-                      Monthly
+                      Upcoming
+                    </button>
+                    <button
+                      className={`btn btn-sm ${filterType === 'past' ? 'btn-primary' : 'btn-outline-primary'}`}
+                      onClick={() => fetchAppointments("past")}
+                    >
+                      Past
+                    </button>
+                    <button
+                      className={`btn btn-sm ${filterType === 'all' ? 'btn-primary' : 'btn-outline-primary'}`}
+                      onClick={() => fetchAppointments("all")}
+                    >
+                      All
                     </button>
                   </div>
                 </div>
 
-                {weeklyStats.length === 0 ? (
-                  <p className="text-center text-muted mb-0">
-                    No Appointments Found
-                  </p>
-                ) : (
-                  <div>
-                    {weeklyStats.map((item, index) => (
-                      <div
-                        key={index}
-                        className="d-flex justify-content-between align-items-center mb-2"
-                      >
-                        <span>{item.label}</span>
-                        <span className="fw-semibold">{item.count}</span>
+              {loadingAppointments ? (
+                <p className="text-center mb-0">Loading...</p>
+              ) : appointments.length === 0 ? (
+                <p className="text-center text-muted mb-0">
+                  No Appointments Found.
+                </p>
+              ) : (
+                <ul className="list-group">
+                  {appointments.map((appt, index) => (
+                    <li
+                      key={index}
+                      className="list-group-item d-flex justify-content-between align-items-center"
+                    >
+                      <div>
+                        <div className="fw-semibold">
+                          {appt.patientName || "Unknown Patient"}
+                        </div>
+                        <small className="text-muted">
+                          {appt.doctorName
+                            ? `Dr. ${appt.doctorName}`
+                            : "Doctor not set"}
+                        </small>
                       </div>
-                    ))}
-                  </div>
-                )}
+                      <span className="badge bg-primary rounded-pill">
+                        {appt.time || "—"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+
+          {/* Right: Weekly / monthly totals */}
+          <div className="col-md-4 mb-4">
+            <div className="card shadow-sm p-3 h-100">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h5 className="fw-bold mb-0">Weekly Total Appointments</h5>
+                <div className="btn-group btn-group-sm" role="group">
+                  <button
+                    type="button"
+                    className={`btn ${activeTab === "weekly"
+                        ? "btn-primary"
+                        : "btn-outline-primary"
+                      }`}
+                    onClick={() => fetchWeeklyStats("weekly")}
+                  >
+                    Weekly
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn ${activeTab === "monthly"
+                        ? "btn-primary"
+                        : "btn-outline-primary"
+                      }`}
+                    onClick={() => fetchWeeklyStats("monthly")}
+                  >
+                    Monthly
+                  </button>
+                </div>
               </div>
+
+              {weeklyStats.length === 0 ? (
+                <p className="text-center text-muted mb-0">
+                  No Appointments Found
+                </p>
+              ) : (
+                <div>
+                  {weeklyStats.map((item, index) => (
+                    <div
+                      key={index}
+                      className="d-flex justify-content-between align-items-center mb-2"
+                    >
+                      <span>{item.label}</span>
+                      <span className="fw-semibold">{item.count}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
     </div>
+    </div >
   );
 };
 
