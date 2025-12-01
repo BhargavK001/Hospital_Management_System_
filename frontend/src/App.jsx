@@ -75,6 +75,8 @@ import DoctorMedicalReportPage from "./doctor-dashboard/doctor/DoctorMedicalRepo
 import DoctorBillingRecords from "./doctor-dashboard/doctor/DoctorBillingRecords.jsx";
 import DoctorEditBill from "./doctor-dashboard/doctor/DoctorEditBill.jsx";
 import DoctorAddBill from "./doctor-dashboard/doctor/DoctorAddBill.jsx";
+import DoctorAddPatient from "./doctor-dashboard/doctor/DoctorAddPatient.jsx";
+import DoctorEditPatient from "./doctor-dashboard/doctor/DoctorEditPatient.jsx";
 
 /* --- NEW SETTINGS IMPORTS --- */
 import SettingLayout from "./doctor-dashboard/doctor/Settings/SettingLayout";
@@ -291,6 +293,12 @@ function App() {
         } />
         <Route path="/doctor/edit-bill/:id" element={
           <DoctorEditBill sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
+        } />
+        <Route path="/doctor/AddPatient" element={
+          <DoctorAddPatient sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
+        } />
+        <Route path="/doctor/EditPatient/:id" element={
+          <DoctorEditPatient sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
         } />
 
         {/* NEW: Settings Routes (Nested) */}

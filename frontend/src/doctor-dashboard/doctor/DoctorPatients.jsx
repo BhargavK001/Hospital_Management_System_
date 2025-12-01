@@ -202,7 +202,7 @@ export default function DoctorPatients() {
             <button className="btn btn-outline-primary me-2" onClick={() => navigate("/doctor/patients/import")}>
               <i className="fa fa-file-import me-1" /> Import data
             </button>
-            <button className="btn btn-primary" onClick={() => navigate("/doctor/patients/add")}>
+            <button className="btn btn-primary" onClick={() => navigate("/doctor/AddPatient")}>
               <i className="fa fa-plus me-1" /> Add patient
             </button>
           </div>
@@ -289,7 +289,7 @@ export default function DoctorPatients() {
                               <button
                                 title="Edit"
                                 className="btn btn-sm btn-outline-primary"
-                                onClick={() => navigate(`/doctor/patients/edit/${id}`)}
+                                onClick={() => navigate(`/doctor/EditPatient/${id}`)}
                               >
                                 <i className="fa fa-pen" />
                               </button>
