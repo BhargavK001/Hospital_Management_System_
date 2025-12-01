@@ -4,7 +4,12 @@ import { FaFilePdf, FaEye } from "react-icons/fa";
 import PatientLayout from "../layouts/PatientLayout"; 
 import API_BASE from "../../config";
 
-const BASE = API_BASE;
+// 1. Create the axios instance
+const api = axios.create({
+  baseURL: API_BASE,
+});
+
+// 2. Add the interceptor to the instance
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -31,8 +36,6 @@ export default function MedicalReport({ sidebarCollapsed, toggleSidebar }) {
       try {
         // 1. Get ID (Try patientId first, fallback to userId)
         const patientId = localStorage.getItem("patientId") || localStorage.getItem("userId");
-        
-
 
         if (!patientId) {
             console.warn("❌ No Patient ID found in localStorage");
@@ -41,11 +44,7 @@ export default function MedicalReport({ sidebarCollapsed, toggleSidebar }) {
         }
         
         // 2. Fetch Encounters via Query Param (Server-Side Filtering)
-        // We pass ?patientId=... so the backend does the filtering for us.
-        // This avoids the Object vs String mismatch issues in frontend.
         const { data } = await api.get(`/encounters?patientId=${patientId}`);
-        
-
 
         // 3. Extract Reports
         const aggregatedReports = data.flatMap(encounter => 
@@ -55,7 +54,6 @@ export default function MedicalReport({ sidebarCollapsed, toggleSidebar }) {
                 encounterDate: encounter.date 
             }))
         );
-
 
         setReports(aggregatedReports);
 
@@ -109,10 +107,11 @@ export default function MedicalReport({ sidebarCollapsed, toggleSidebar }) {
                    {/* 2. Report Name & Link */}
                    <div style={{ flex: 1 }}>
                      <a 
-                        href={`${API_BASE}${r.file}`} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="report-link"
+                       // ✅ THIS IS THE FIX: Using API_BASE dynamically
+                       href={`${API_BASE}${r.file}`} 
+                       target="_blank" 
+                       rel="noopener noreferrer"
+                       className="report-link"
                      >
                         <FaFilePdf className="text-danger"/> {r.name || r.originalName || "Unnamed Report"} <FaEye size={12} className="text-muted ms-2"/>
                      </a>
