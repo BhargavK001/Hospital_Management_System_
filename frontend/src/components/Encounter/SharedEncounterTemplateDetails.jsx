@@ -18,6 +18,11 @@ export default function SharedEncounterTemplateDetails() {
   const [notes, setNotes] = useState([]);
   const [prescriptions, setPrescriptions] = useState([]);
 
+  // Listing Options State
+  const [problemOptions, setProblemOptions] = useState([]);
+  const [observationOptions, setObservationOptions] = useState([]);
+  const [prescriptionOptions, setPrescriptionOptions] = useState([]);
+
   // Inputs for adding new items
   const [newNote, setNewNote] = useState("");
   
@@ -33,7 +38,20 @@ export default function SharedEncounterTemplateDetails() {
 
   useEffect(() => {
     fetchTemplateDetails();
+    fetchListings();
   }, [id]);
+
+  const fetchListings = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/listings`);
+      const data = res.data;
+      setProblemOptions(data.filter(item => item.type === 'Problems' && item.status === 'Active'));
+      setObservationOptions(data.filter(item => item.type === 'Observations' && item.status === 'Active'));
+      setPrescriptionOptions(data.filter(item => item.type === 'Prescription' && item.status === 'Active'));
+    } catch (err) {
+      console.error("Error fetching listings:", err);
+    }
+  };
 
   const fetchTemplateDetails = async () => {
     try {
@@ -233,10 +251,9 @@ export default function SharedEncounterTemplateDetails() {
               defaultValue="Select Problem"
             >
               <option disabled>Select Problem</option>
-              <option value="Fever">Fever</option>
-              <option value="Headache">Headache</option>
-              <option value="Cough">Cough</option>
-              <option value="Fatigue">Fatigue</option>
+              {problemOptions.map(opt => (
+                  <option key={opt._id} value={opt.name}>{opt.name}</option>
+              ))}
             </select>
             <small className="text-primary d-block mt-1" style={{fontSize: '0.75rem'}}>Note: Type and press enter to create new problem</small>
           </div>
@@ -268,9 +285,9 @@ export default function SharedEncounterTemplateDetails() {
               defaultValue="Select Observation"
             >
               <option disabled>Select Observation</option>
-              <option value="Stable">Stable</option>
-              <option value="Critical">Critical</option>
-              <option value="Improving">Improving</option>
+              {observationOptions.map(opt => (
+                  <option key={opt._id} value={opt.name}>{opt.name}</option>
+              ))}
             </select>
             <small className="text-primary d-block mt-1" style={{fontSize: '0.75rem'}}>Note: Type and press enter to create new observation</small>
           </div>
@@ -409,7 +426,13 @@ export default function SharedEncounterTemplateDetails() {
                           value={newPrescription.name}
                           onChange={handlePrescriptionChange}
                           required
+                          list="prescription-options"
                         />
+                        <datalist id="prescription-options">
+                            {prescriptionOptions.map(opt => (
+                                <option key={opt._id} value={opt.name} />
+                            ))}
+                        </datalist>
                       </div>
                       <div className="col-md-6">
                         <label className="form-label fw-bold small">Frequency <span className="text-danger">*</span></label>
