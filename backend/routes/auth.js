@@ -109,6 +109,7 @@ router.post("/login", async (req, res) => {
         email: user.email,
         role: user.role,
         name: user.name,
+        phone: user.phone,
         profileCompleted: user.profileCompleted,
         mustChangePassword:
           typeof user.mustChangePassword === "boolean"
@@ -128,7 +129,7 @@ router.post("/login", async (req, res) => {
 // Signup for normal patient user
 router.post("/signup", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, phone } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
@@ -146,6 +147,7 @@ router.post("/signup", async (req, res) => {
       password: hashedPassword,
       role: "patient",
       name,
+      phone,
       profileCompleted: false,
     });
 
@@ -154,6 +156,7 @@ router.post("/signup", async (req, res) => {
       userId: newUser._id,
       firstName: name,
       email,
+      phone,
     });
 
     res.status(201).json({
@@ -161,6 +164,7 @@ router.post("/signup", async (req, res) => {
       email: newUser.email,
       role: newUser.role,
       name: newUser.name,
+      phone: newUser.phone,
       profileCompleted: newUser.profileCompleted,
     });
   } catch (err) {

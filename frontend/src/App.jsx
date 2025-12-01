@@ -34,6 +34,18 @@ import EncounterDetails from "./admin-dashboard/admin/EncounterDetails";
 import EncounterTemplateDetails from "./admin-dashboard/admin/EncounterTemplateDetails";
 import MedicalReportPage from "./admin-dashboard/admin/MedicalReportPage";
 
+/* Settings */
+import SettingsLayout from "./admin-dashboard/admin/settings/SettingsLayout";
+import HolidaySettings from "./admin-dashboard/admin/settings/pages/HolidaySettings";
+import EmailTemplates from "./admin-dashboard/admin/settings/pages/EmailTemplates";
+import SmsWhatsappTemplates from "./admin-dashboard/admin/settings/pages/SmsWhatsappTemplates";
+import GoogleMeetSettings from "./admin-dashboard/admin/settings/pages/GoogleMeetSettings";
+import ZoomTelemedSettings from "./admin-dashboard/admin/settings/pages/ZoomTelemedSettings";
+import ListingSettings from "./admin-dashboard/admin/settings/pages/ListingSettings";
+import ProSettings from "./admin-dashboard/admin/settings/pages/ProSettings";
+import PaymentSettings from "./admin-dashboard/admin/settings/pages/PaymentSettings";
+import AppointmentSettings from "./admin-dashboard/admin/settings/pages/AppointmentSettings";
+
 /* Patient */
 import PatientDashboard from "./patient-dashboard/Patient/PatientDashboard";
 import PatientAppointments from "./patient-dashboard/Patient/PatientAppointments";
@@ -41,7 +53,10 @@ import PatientBookAppointment from "./patient-dashboard/Patient/PatientBookAppoi
 import PatientProfileSetup from "./patient-dashboard/Patient/PatientProfileSetup";
 import PatientProfile from "./patient-dashboard/Patient/PatientProfile.jsx";
 import PatientChangePassword from "./patient-dashboard/Patient/PatientChangePassword";
-
+import Encounters from "./patient-dashboard/Patient/Encounters";
+import PatientBilling from "./patient-dashboard/Patient/PatientBills";
+import PatientReport from "./patient-dashboard/Patient/MedicalReport";
+import AppointmentDetails from "./patient-dashboard/Patient/PatientAppointmentDetails.jsx";
 
 /* Doctor */
 import DoctorDashboard from "./doctor-dashboard/doctor/DoctorDashboard";
@@ -57,7 +72,18 @@ import DoctorEncounterDetails from "./doctor-dashboard/doctor/DoctorEncounterDet
 import DoctorEncounterTemplateList from "./doctor-dashboard/doctor/DoctorEncounterTemplateList";
 import DoctorEncounterTemplateDetails from "./doctor-dashboard/doctor/DoctorEncounterTemplateDetails";
 import DoctorMedicalReportPage from "./doctor-dashboard/doctor/DoctorMedicalReportPage";
+import DoctorBillingRecords from "./doctor-dashboard/doctor/DoctorBillingRecords.jsx";
+import DoctorEditBill from "./doctor-dashboard/doctor/DoctorEditBill.jsx";
+import DoctorAddBill from "./doctor-dashboard/doctor/DoctorAddBill.jsx";
+import DoctorAddPatient from "./doctor-dashboard/doctor/DoctorAddPatient.jsx";
+import DoctorEditPatient from "./doctor-dashboard/doctor/DoctorEditPatient.jsx";
 
+/* --- NEW SETTINGS IMPORTS --- */
+import SettingLayout from "./doctor-dashboard/doctor/Settings/SettingLayout";
+import Holidays from "./doctor-dashboard/doctor/Settings/Holidays";
+import DoctorSessions from "./doctor-dashboard/doctor/Settings/DoctorSessions";
+import Listings from "./doctor-dashboard/doctor/Settings/Listings";
+import GoogleMeetIntegration from "./doctor-dashboard/doctor/Settings/GoogleMeetIntegration";
 
 // Receptionist
 import AddReceptionist from "./admin-dashboard/admin/AddReceptionist.jsx";
@@ -92,7 +118,7 @@ function App() {
     } else if (path.startsWith("/patient-dashboard")) {
       title = "OneCare Patient Portal";
       icon = "/patient.ico";
-    }else if (path.startsWith("/reception-dashboard")) {
+    } else if (path.startsWith("/reception-dashboard")) {
       title = "OneCare Receptionist Portal";
       icon = "/receptionist.ico";
     }
@@ -215,6 +241,20 @@ function App() {
           <MedicalReportPage sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
         } />
 
+        {/* Settings Section */}
+        <Route path="/settings" element={<SettingsLayout sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />}>
+          <Route index element={<HolidaySettings />} />
+          <Route path="holidays" element={<HolidaySettings />} />
+          <Route path="email-templates" element={<EmailTemplates />} />
+          <Route path="sms-whatsapp-templates" element={<SmsWhatsappTemplates />} />
+          <Route path="google-meet" element={<GoogleMeetSettings />} />
+          <Route path="zoom-telemed" element={<ZoomTelemedSettings />} />
+          <Route path="listings" element={<ListingSettings />} />
+          <Route path="pro-settings" element={<ProSettings />} />
+          <Route path="payments" element={<PaymentSettings />} />
+          <Route path="appointment-settings" element={<AppointmentSettings />} />
+        </Route>
+
         {/* Doctor Section */}
 
         <Route path="/doctor-dashboard" element={
@@ -240,12 +280,41 @@ function App() {
         <Route path="/doctor/encounter-templates" element={<DoctorEncounterTemplateList />} />
         <Route path="/doctor/encounter-template-details/:id" element={<DoctorEncounterTemplateDetails />} />
         <Route path="/doctor/encounters/:id/reports" element={<DoctorMedicalReportPage />} />
+        <Route
+          path="/doctor/patients/view/:patientId"
+          element={<DoctorEncounterList />}  // Re-use Encounter List to show history
+        />
+        <Route path="/doctor/billing" element={
+          <DoctorBillingRecords sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
+        } />
+
+        <Route path="/doctor/add-bill" element={
+          <DoctorAddBill sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
+        } />
+        <Route path="/doctor/edit-bill/:id" element={
+          <DoctorEditBill sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
+        } />
+        <Route path="/doctor/AddPatient" element={
+          <DoctorAddPatient sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
+        } />
+        <Route path="/doctor/EditPatient/:id" element={
+          <DoctorEditPatient sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
+        } />
+
+        {/* NEW: Settings Routes (Nested) */}
+        <Route path="/doctor/settings" element={<SettingLayout />}>
+          <Route index element={<Holidays />} /> {/* Default to Holidays */}
+          <Route path="holidays" element={<Holidays />} />
+          <Route path="sessions" element={<DoctorSessions />} />
+          <Route path="listings" element={<Listings />} />
+          <Route path="integration" element={<GoogleMeetIntegration />} />
+        </Route>
 
         {/* Patient Section */}
 
         <Route path="/patient" element={
-          <PatientDashboard sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar}/>
-        }/>
+          <PatientDashboard sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
+        } />
         <Route path="/patient-dashboard" element={
           <PatientDashboard sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
         } />
@@ -258,12 +327,25 @@ function App() {
         <Route path="/patient/profile-setup" element={<PatientProfileSetup />} />
         <Route path="/patient/profile" element={<PatientProfile sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />} />
         <Route path="/patient/change-password" element={<PatientChangePassword sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />} />
+        <Route
+          path="/patient/encounters"
+          element={<Encounters sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />}
+        />
+        <Route
+          path="/patient/billing"
+          element={<PatientBilling sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />}
+        />
+        <Route
+          path="/patient/reports"
+          element={<PatientReport sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />}
+        />
+        <Route path="/patient/appointments/:id" element={<AppointmentDetails />} />
 
         {/* Others */}
 
         <Route path="/reception-dashboard" element={<ReptionistDashboard />} />
         <Route path="/pdf-editor" element={<PdfEditor />} />
-        
+
         {/* Receptionist Section */}
 
         <Route path="/receptionists" element={
@@ -275,7 +357,7 @@ function App() {
         <Route path="/receptionist/change-password" element={<ReceptionistChangePassword />} />
         <Route path="/reception/change-password" element={<ReceptionistChangePasswordPage />} />
         <Route path="/receptionist/profile" element={
-        <ReceptionistProfile sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
+          <ReceptionistProfile sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
         } />
 
         {/* Auth */}

@@ -17,9 +17,7 @@ import {
   FaCalendarCheck,
   FaListAlt,
 } from "react-icons/fa";
-
-// ✅ Simple base URL for backend
-const API_BASE = "http://localhost:3001";
+import API_BASE from "../../config";
 
 export default function DoctorDashboard() {
   const navigate = useNavigate();
@@ -106,6 +104,7 @@ export default function DoctorDashboard() {
         totalPatients,
         totalAppointments,
         todayAppointments,
+        totalServices,
       } = res.data || {};
 
       if (mounted) {
@@ -113,7 +112,7 @@ export default function DoctorDashboard() {
           totalPatients: totalPatients || 0,
           totalAppointments: totalAppointments || 0,
           todayAppointments: todayAppointments || 0,
-          totalServices: 2, // still dummy for now
+          totalServices: totalServices || 0,
         });
       }
     } catch (err) {

@@ -4,6 +4,8 @@ const PatientModel = require("../models/Patient");
 const DoctorModel = require("../models/Doctor");
 const AppointmentModel = require("../models/Appointment");
 
+const ServiceModel = require("../models/Service");
+
 router.get("/", async (req, res) => {
   try {
     // 1) Format today's date: YYYY-MM-DD
@@ -19,11 +21,13 @@ router.get("/", async (req, res) => {
       totalDoctors,
       totalAppointments,
       todayAppointments,
+      totalServices,
     ] = await Promise.all([
       PatientModel.countDocuments(),
       DoctorModel.countDocuments(),
       AppointmentModel.countDocuments(),
       AppointmentModel.countDocuments({ date: todayStr }),
+      ServiceModel.countDocuments(),
     ]);
 
     // 3) Send response only once
@@ -32,6 +36,7 @@ router.get("/", async (req, res) => {
       totalDoctors,
       totalAppointments,
       todayAppointments,
+      totalServices,
     });
   } catch (err) {
     console.error("dashboard-stats error:", err);

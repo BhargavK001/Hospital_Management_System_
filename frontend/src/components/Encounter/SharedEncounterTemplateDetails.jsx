@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FaTimes, FaPlus, FaTrash, FaEdit } from "react-icons/fa";
 import axios from "axios";
+import { FaPlus, FaTimes, FaTrash, FaEdit } from "react-icons/fa";
 import toast from "react-hot-toast";
-import "../../admin-dashboard/styles/services.css";
+import "../../admin-dashboard/styles/admin-shared.css";
+import API_BASE from "../../config";
 
-export default function SharedEncounterTemplateDetails({ role }) {
+export default function SharedEncounterTemplateDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [template, setTemplate] = useState(null);
@@ -16,6 +17,11 @@ export default function SharedEncounterTemplateDetails({ role }) {
   const [observations, setObservations] = useState([]);
   const [notes, setNotes] = useState([]);
   const [prescriptions, setPrescriptions] = useState([]);
+
+  // Listing Options State
+  const [problemOptions, setProblemOptions] = useState([]);
+  const [observationOptions, setObservationOptions] = useState([]);
+  const [prescriptionOptions, setPrescriptionOptions] = useState([]);
 
   // Inputs for adding new items
   const [newNote, setNewNote] = useState("");
@@ -32,11 +38,24 @@ export default function SharedEncounterTemplateDetails({ role }) {
 
   useEffect(() => {
     fetchTemplateDetails();
+    fetchListings();
   }, [id]);
+
+  const fetchListings = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/listings`);
+      const data = res.data;
+      setProblemOptions(data.filter(item => item.type === 'Problems' && item.status === 'Active'));
+      setObservationOptions(data.filter(item => item.type === 'Observations' && item.status === 'Active'));
+      setPrescriptionOptions(data.filter(item => item.type === 'Prescription' && item.status === 'Active'));
+    } catch (err) {
+      console.error("Error fetching listings:", err);
+    }
+  };
 
   const fetchTemplateDetails = async () => {
     try {
-      const res = await axios.get(`http://localhost:3001/encounter-templates/${id}`);
+      const res = await axios.get(`${API_BASE}/encounter-templates/${id}`);
       setTemplate(res.data);
       setProblems(res.data.problems || []);
       setObservations(res.data.observations || []);
@@ -66,7 +85,7 @@ export default function SharedEncounterTemplateDetails({ role }) {
         });
       }
 
-      await axios.put(`http://localhost:3001/encounter-templates/${id}`, payload);
+      await axios.put(`${API_BASE}/encounter-templates/${id}`, payload);
     } catch (err) {
       console.error("Error updating template:", err);
       toast.error("Failed to save changes");
@@ -232,10 +251,9 @@ export default function SharedEncounterTemplateDetails({ role }) {
               defaultValue="Select Problem"
             >
               <option disabled>Select Problem</option>
-              <option value="Fever">Fever</option>
-              <option value="Headache">Headache</option>
-              <option value="Cough">Cough</option>
-              <option value="Fatigue">Fatigue</option>
+              {problemOptions.map(opt => (
+                  <option key={opt._id} value={opt.name}>{opt.name}</option>
+              ))}
             </select>
             <small className="text-primary d-block mt-1" style={{fontSize: '0.75rem'}}>Note: Type and press enter to create new problem</small>
           </div>
@@ -267,9 +285,9 @@ export default function SharedEncounterTemplateDetails({ role }) {
               defaultValue="Select Observation"
             >
               <option disabled>Select Observation</option>
-              <option value="Stable">Stable</option>
-              <option value="Critical">Critical</option>
-              <option value="Improving">Improving</option>
+              {observationOptions.map(opt => (
+                  <option key={opt._id} value={opt.name}>{opt.name}</option>
+              ))}
             </select>
             <small className="text-primary d-block mt-1" style={{fontSize: '0.75rem'}}>Note: Type and press enter to create new observation</small>
           </div>
@@ -408,7 +426,13 @@ export default function SharedEncounterTemplateDetails({ role }) {
                           value={newPrescription.name}
                           onChange={handlePrescriptionChange}
                           required
+                          list="prescription-options"
                         />
+                        <datalist id="prescription-options">
+                            {prescriptionOptions.map(opt => (
+                                <option key={opt._id} value={opt.name} />
+                            ))}
+                        </datalist>
                       </div>
                       <div className="col-md-6">
                         <label className="form-label fw-bold small">Frequency <span className="text-danger">*</span></label>

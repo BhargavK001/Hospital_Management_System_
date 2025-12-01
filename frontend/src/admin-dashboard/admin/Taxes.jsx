@@ -2,10 +2,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import "../styles/services.css"; // reuse same styles as Services page
+import "../styles/admin-shared.css"; 
 import { FaEdit, FaTrash, FaUpload, FaPlus } from "react-icons/fa";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
+import API_BASE from "../../config";
 
 const fadeInKeyframes = `
 @keyframes fadeIn {
@@ -51,11 +52,42 @@ function Taxes({ sidebarCollapsed = false, toggleSidebar }) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [taxToDelete, setTaxToDelete] = useState(null);
 
+  // --- NEW: Dropdown Data States ---
+  const [clinics, setClinics] = useState([]);
+  const [doctors, setDoctors] = useState([]);
+  const [services, setServices] = useState([]);
+
+  // --- FETCH DROPDOWN DATA ---
+  const fetchDropdownData = async () => {
+    try {
+      const [clinicRes, doctorRes, serviceRes] = await Promise.all([
+        axios.get(`${API_BASE}/api/clinics`),
+        axios.get(`${API_BASE}/doctors`),
+        axios.get(`${API_BASE}/services?limit=1000`) // Fetch enough services
+      ]);
+
+      if (clinicRes.data?.success) {
+        setClinics(clinicRes.data.clinics || []);
+      }
+
+      setDoctors(doctorRes.data || []);
+      setServices(serviceRes.data?.rows || []);
+
+    } catch (err) {
+      console.error("Error fetching dropdown data:", err);
+      // toast.error("Failed to load some dropdown data");
+    }
+  };
+
+  useEffect(() => {
+    fetchDropdownData();
+  }, []);
+
   // ---------- FETCH TAXES ----------
   const fetchTaxes = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:3001/taxes");
+      const res = await axios.get(`${API_BASE}/taxes`);
       setTaxes(res.data || []);
     } catch (err) {
       console.error("Error fetching taxes:", err);
@@ -164,14 +196,14 @@ function Taxes({ sidebarCollapsed = false, toggleSidebar }) {
     try {
       if (editingTax) {
         const res = await axios.put(
-          `http://localhost:3001/taxes/${editingTax._id}`,
+          `${API_BASE}/taxes/${editingTax._id}`,
           payload
         );
         if (res.data?.message) {
           toast.success("Tax updated successfully");
         }
       } else {
-        const res = await axios.post("http://localhost:3001/taxes", payload);
+        const res = await axios.post(`${API_BASE}/taxes`, payload);
         if (res.data?.message) {
           toast.success("Tax created successfully");
         }
@@ -199,7 +231,7 @@ function Taxes({ sidebarCollapsed = false, toggleSidebar }) {
     if (!taxToDelete) return;
     try {
       const res = await axios.delete(
-        `http://localhost:3001/taxes/${taxToDelete._id}`
+        `${API_BASE}/taxes/${taxToDelete._id}`
       );
       if (res.data?.message) {
         toast.success("Tax deleted successfully");
@@ -216,7 +248,7 @@ function Taxes({ sidebarCollapsed = false, toggleSidebar }) {
   const handleToggleActive = async (tax) => {
     try {
       const res = await axios.put(
-        `http://localhost:3001/taxes/${tax._id}`,
+        `${API_BASE}/taxes/${tax._id}`,
         { active: !tax.active }
       );
       const updated = res.data?.data;
@@ -253,7 +285,7 @@ function Taxes({ sidebarCollapsed = false, toggleSidebar }) {
       formData.append("file", importFile);
 
       const res = await axios.post(
-        "http://localhost:3001/taxes/import",
+        `${API_BASE}/taxes/import`,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
@@ -675,31 +707,55 @@ function Taxes({ sidebarCollapsed = false, toggleSidebar }) {
 
                       <div className="col-md-6">
                         <label className="form-label">Clinic Name</label>
-                        <input
-                          className="form-control"
+                        <select
+                          className="form-select"
                           name="clinicName"
                           value={form.clinicName}
                           onChange={handleFormChange}
-                        />
+                        >
+                          <option value="">Select Clinic</option>
+                          {clinics.map((c) => (
+                            <option key={c._id} value={c.name || c.clinicName}>
+                              {c.name || c.clinicName}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                       <div className="col-md-6">
                         <label className="form-label">Doctor</label>
-                        <input
-                          className="form-control"
+                        <select
+                          className="form-select"
                           name="doctor"
                           value={form.doctor}
                           onChange={handleFormChange}
-                        />
+                        >
+                          <option value="">Select Doctor</option>
+                          {doctors.map((d) => {
+                            const fullName = `${d.firstName} ${d.lastName}`;
+                            return (
+                              <option key={d._id} value={fullName}>
+                                {fullName}
+                              </option>
+                            );
+                          })}
+                        </select>
                       </div>
 
                       <div className="col-md-12">
                         <label className="form-label">Service Name</label>
-                        <input
-                          className="form-control"
+                        <select
+                          className="form-select"
                           name="serviceName"
                           value={form.serviceName}
                           onChange={handleFormChange}
-                        />
+                        >
+                          <option value="">Select Service</option>
+                          {services.map((s) => (
+                            <option key={s._id} value={s.name}>
+                              {s.name}
+                            </option>
+                          ))}
+                        </select>
                       </div>
 
                       <div className="col-md-12">

@@ -5,18 +5,9 @@ import { FaArrowLeft, FaEdit } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
-import "../styles/AddClinic.css";
+import "../styles/AddClinic.css"; // Ensure you have this or remove if using inline styles
 
-const API_BASE_URL = "http://localhost:3001";
-
-const SPECIALIZATION_OPTIONS = [
-  "General Physician",
-  "Cardiology",
-  "Dermatology",
-  "Orthopedics",
-  "Pediatrics",
-  "Gynecology"
-];
+import API_BASE from "../../config";
 
 export default function AddClinic() {
   const navigate = useNavigate();
@@ -34,6 +25,9 @@ export default function AddClinic() {
 
   // ---- Specialization (single select) ----
   const [specialization, setSpecialization] = useState("");
+  
+  // ✅ NEW: State for dynamic specialization options
+  const [specializationOptions, setSpecializationOptions] = useState([]);
 
   // ---- Address ----
   const [address, setAddress] = useState("");
@@ -56,14 +50,38 @@ export default function AddClinic() {
   const [adminPhotoPreview, setAdminPhotoPreview] = useState(null);
   const [adminPhotoFile, setAdminPhotoFile] = useState(null);
 
-  // Load data when editing
+  // ✅ 1. Fetch Specializations from Listings API
+  useEffect(() => {
+    const fetchSpecializations = async () => {
+      try {
+        // Fetch all listings
+        const res = await axios.get(`${API_BASE}/listings`);
+        
+        // Filter manually since backend returns all listings
+        const options = res.data
+          .filter(item => 
+            (item.type?.toLowerCase() === 'specialization') && 
+            (item.status === 'Active')
+          )
+          .map(item => item.name);
+        
+        setSpecializationOptions(options);
+      } catch (err) {
+        console.error("Failed to fetch specializations", err);
+        toast.error("Could not load specializations list");
+      }
+    };
+    fetchSpecializations();
+  }, []);
+
+  // 2. Load data when editing
   useEffect(() => {
     if (!isEditing) return;
 
     (async () => {
       try {
         const res = await axios.get(
-          `${API_BASE_URL}/api/clinics/${clinicId}`
+          `${API_BASE}/api/clinics/${clinicId}`
         );
         const c = res.data.clinic;
 
@@ -92,10 +110,10 @@ export default function AddClinic() {
         setGender(c.admin?.gender || "");
 
         if (c.clinicLogo) {
-          setClinicLogoPreview(`${API_BASE_URL}/uploads/${c.clinicLogo}`);
+          setClinicLogoPreview(`${API_BASE}/uploads/${c.clinicLogo}`);
         }
         if (c.admin?.photo) {
-          setAdminPhotoPreview(`${API_BASE_URL}/uploads/${c.admin.photo}`);
+          setAdminPhotoPreview(`${API_BASE}/uploads/${c.admin.photo}`);
         }
       } catch (err) {
         console.error("Failed to load clinic:", err);
@@ -173,8 +191,8 @@ export default function AddClinic() {
 
     try {
       const endpoint = isEditing
-        ? `${API_BASE_URL}/api/clinics/${clinicId}`
-        : `${API_BASE_URL}/api/clinics`;
+        ? `${API_BASE}/api/clinics/${clinicId}`
+        : `${API_BASE}/api/clinics`;
 
       const method = isEditing ? axios.put : axios.post;
 
@@ -190,7 +208,7 @@ export default function AddClinic() {
         error: "Failed to save clinic. Please try again.",
       });
 
-      navigate("/clinic-list");
+      navigate("/clinic-list"); // Ensure this route matches your main list route
     } catch (err) {
       console.error(err);
     }
@@ -203,12 +221,13 @@ export default function AddClinic() {
   return (
     <AdminLayout>
       <Toaster position="top-right" />
-      <div className="add-clinic-card">
+      <div className="container-fluid p-4"> {/* Replaced custom CSS class with bootstrap container for safety */}
+        
         {/* Header */}
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <h4 className="fw-bold">{isEditing ? "Edit Clinic" : "Add Clinic"}</h4>
+          <h4 className="fw-bold text-primary">{isEditing ? "Edit Clinic" : "Add Clinic"}</h4>
           <button
-            className="btn btn-blue d-flex align-items-center gap-1"
+            className="btn btn-primary d-flex align-items-center gap-2"
             onClick={() => navigate("/clinic-list")}
           >
             <FaArrowLeft />
@@ -216,265 +235,251 @@ export default function AddClinic() {
           </button>
         </div>
 
-        {/* BASIC DETAILS */}
-        <div className="section-title">Basic details</div>
+        <div className="card shadow-sm p-4 border-0">
+            {/* BASIC DETAILS */}
+            <h6 className="fw-bold text-dark mb-3 border-bottom pb-2">Basic Details</h6>
 
-        <div className="row">
-          <div className="col-md-4 mb-3">
-            <label className="form-label">Name *</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Enter clinic name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-
-          <div className="col-md-4 mb-3">
-            <label className="form-label">Email *</label>
-            <input
-              type="email"
-              className="form-control"
-              placeholder="Enter email address"
-              value={clinicEmail}
-              onChange={(e) => setClinicEmail(e.target.value)}
-            />
-          </div>
-
-          <div className="col-md-4 mb-3">
-            <label className="form-label">Contact No *</label>
-            <div className="input-group">
-              <span className="input-group-text">+91</span>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Phone number"
-                value={clinicContact}
-                onChange={(e) => setClinicContact(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Specialization dropdown */}
-          <div className="col-md-4 mb-3">
-            <label className="form-label">Specialization *</label>
-            <select
-              className="form-control"
-              value={specialization}
-              onChange={(e) => setSpecialization(e.target.value)}
-            >
-              <option value="">Select specialization</option>
-              {SPECIALIZATION_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="col-md-4 mb-3">
-            <label className="form-label">Status *</label>
-            <select
-              className="form-control"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-            >
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
-          </div>
-
-          {/* Clinic Logo */}
-          <div className="col-md-4 mb-3 d-flex justify-content-center">
-            <div className="image-upload-circle">
-              {clinicLogoPreview ? (
-                <img src={clinicLogoPreview} alt="clinic-logo" />
-              ) : (
-                <span className="text-muted">Upload</span>
-              )}
-
-              <label className="edit-icon">
-                <FaEdit size={12} />
+            <div className="row g-3">
+              <div className="col-md-4">
+                <label className="form-label small fw-bold">Name *</label>
                 <input
-                  type="file"
-                  hidden
-                  accept="image/*"
-                  onChange={(e) =>
-                    handleFileChange(
-                      e,
-                      setClinicLogoFile,
-                      setClinicLogoPreview
-                    )
-                  }
+                  type="text"
+                  className="form-control"
+                  placeholder="Enter clinic name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                 />
-              </label>
-            </div>
-          </div>
-        </div>
+              </div>
 
-        {/* ADDRESS SECTION */}
-        <div className="section-title mt-4">Address</div>
-
-        <div className="mb-3">
-          <textarea
-            className="form-control"
-            placeholder="Enter address"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-          ></textarea>
-        </div>
-
-        <div className="row">
-          <div className="col-md-4 mb-3">
-            <label className="form-label">City *</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Enter city"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-            />
-          </div>
-
-          <div className="col-md-4 mb-3">
-            <label className="form-label">Country *</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Enter country name"
-              value={country}
-              onChange={(e) => setCountry(e.target.value)}
-            />
-          </div>
-
-          <div className="col-md-4 mb-3">
-            <label className="form-label">Postal Code *</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Enter postal code"
-              value={postalCode}
-              onChange={(e) => setPostalCode(e.target.value)}
-            />
-          </div>
-        </div>
-
-        {/* ADMIN DETAILS */}
-        <div className="section-title mt-4">Clinic Admin Detail</div>
-
-        <div className="row">
-          <div className="col-md-4 mb-3">
-            <label className="form-label">First Name *</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Enter first name"
-              value={adminFirstName}
-              onChange={(e) => setAdminFirstName(e.target.value)}
-            />
-          </div>
-
-          <div className="col-md-4 mb-3">
-            <label className="form-label">Last Name *</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Enter last name"
-              value={adminLastName}
-              onChange={(e) => setAdminLastName(e.target.value)}
-            />
-          </div>
-
-          {/* Admin Photo */}
-          <div className="col-md-4 mb-3 d-flex justify-content-center">
-            <div className="image-upload-circle">
-              {adminPhotoPreview ? (
-                <img src={adminPhotoPreview} alt="admin-photo" />
-              ) : (
-                <span className="text-muted">Upload</span>
-              )}
-
-              <label className="edit-icon">
-                <FaEdit size={12} />
+              <div className="col-md-4">
+                <label className="form-label small fw-bold">Email *</label>
                 <input
-                  type="file"
-                  hidden
-                  accept="image/*"
-                  onChange={(e) =>
-                    handleFileChange(
-                      e,
-                      setAdminPhotoFile,
-                      setAdminPhotoPreview
-                    )
-                  }
+                  type="email"
+                  className="form-control"
+                  placeholder="Enter email address"
+                  value={clinicEmail}
+                  onChange={(e) => setClinicEmail(e.target.value)}
                 />
-              </label>
-            </div>
-          </div>
+              </div>
 
-          <div className="col-md-4 mb-3">
-            <label className="form-label">Email *</label>
-            <input
-              type="email"
-              className="form-control"
-              placeholder="Enter email"
-              value={adminEmail}
-              onChange={(e) => setAdminEmail(e.target.value)}
-            />
-          </div>
-
-          <div className="col-md-4 mb-3">
-            <label className="form-label">Contact No *</label>
-            <div className="input-group">
-              <span className="input-group-text">+91</span>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Phone number"
-                value={adminContact}
-                onChange={(e) => setAdminContact(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="col-md-4 mb-3">
-            <label className="form-label">DOB *</label>
-            <input
-              type="date"
-              className="form-control"
-              value={dob}
-              onChange={(e) => setDob(e.target.value)}
-            />
-          </div>
-
-          <div className="col-md-4 mb-3">
-            <label className="form-label d-block">Gender *</label>
-            <div className="d-flex gap-4">
-              {["Male", "Female", "Other"].map((g) => (
-                <label key={g}>
+              <div className="col-md-4">
+                <label className="form-label small fw-bold">Contact No *</label>
+                <div className="input-group">
+                  <span className="input-group-text">+91</span>
                   <input
-                    type="radio"
-                    name="gender"
-                    value={g}
-                    checked={gender === g}
-                    onChange={(e) => setGender(e.target.value)}
-                  />{" "}
-                  {g}
-                </label>
-              ))}
-            </div>
-          </div>
-        </div>
+                    type="text"
+                    className="form-control"
+                    placeholder="Phone number"
+                    value={clinicContact}
+                    onChange={(e) => setClinicContact(e.target.value)}
+                  />
+                </div>
+              </div>
 
-        {/* ACTION BUTTONS */}
-        <div className="text-end mt-4">
-          <button className="btn btn-blue me-2" onClick={handleSave}>
-            {isEditing ? "Update" : "Save"}
-          </button>
-          <button className="btn btn-white" onClick={handleCancel}>
-            Cancel
-          </button>
+              {/* Specialization Dropdown (Dynamic) */}
+              <div className="col-md-4">
+                <label className="form-label small fw-bold">Specialization *</label>
+                <select
+                  className="form-select"
+                  value={specialization}
+                  onChange={(e) => setSpecialization(e.target.value)}
+                >
+                  <option value="">Select specialization</option>
+                  {specializationOptions.length > 0 ? (
+                      specializationOptions.map((opt, i) => (
+                        <option key={i} value={opt}>{opt}</option>
+                      ))
+                  ) : (
+                      <option disabled>No specializations added in Settings</option>
+                  )}
+                </select>
+              </div>
+
+              <div className="col-md-4">
+                <label className="form-label small fw-bold">Status *</label>
+                <select
+                  className="form-select"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                >
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
+
+              {/* Clinic Logo */}
+              <div className="col-md-4 d-flex justify-content-center align-items-center">
+                 <div className="position-relative" style={{width: '80px', height: '80px'}}>
+                    <div className="w-100 h-100 rounded-circle bg-light border d-flex align-items-center justify-content-center overflow-hidden">
+                       {clinicLogoPreview ? (
+                           <img src={clinicLogoPreview} alt="logo" className="w-100 h-100 object-fit-cover" />
+                       ) : (
+                           <span className="text-muted small">Logo</span>
+                       )}
+                    </div>
+                    <label className="position-absolute bottom-0 end-0 bg-white border rounded-circle p-1 cursor-pointer shadow-sm" style={{cursor:'pointer'}}>
+                       <FaEdit size={12} className="text-primary"/>
+                       <input type="file" hidden accept="image/*" onChange={(e) => handleFileChange(e, setClinicLogoFile, setClinicLogoPreview)} />
+                    </label>
+                 </div>
+              </div>
+            </div>
+
+            {/* ADDRESS SECTION */}
+            <h6 className="fw-bold text-dark mt-4 mb-3 border-bottom pb-2">Address</h6>
+
+            <div className="mb-3">
+              <textarea
+                className="form-control"
+                placeholder="Enter address"
+                rows="2"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+              ></textarea>
+            </div>
+
+            <div className="row g-3">
+              <div className="col-md-4">
+                <label className="form-label small fw-bold">City *</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Enter city"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                />
+              </div>
+
+              <div className="col-md-4">
+                <label className="form-label small fw-bold">Country *</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Enter country name"
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                />
+              </div>
+
+              <div className="col-md-4">
+                <label className="form-label small fw-bold">Postal Code *</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Enter postal code"
+                  value={postalCode}
+                  onChange={(e) => setPostalCode(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* ADMIN DETAILS */}
+            <h6 className="fw-bold text-dark mt-4 mb-3 border-bottom pb-2">Clinic Admin Detail</h6>
+
+            <div className="row g-3">
+              <div className="col-md-4">
+                <label className="form-label small fw-bold">First Name *</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Enter first name"
+                  value={adminFirstName}
+                  onChange={(e) => setAdminFirstName(e.target.value)}
+                />
+              </div>
+
+              <div className="col-md-4">
+                <label className="form-label small fw-bold">Last Name *</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Enter last name"
+                  value={adminLastName}
+                  onChange={(e) => setAdminLastName(e.target.value)}
+                />
+              </div>
+
+              {/* Admin Photo */}
+              <div className="col-md-4 d-flex justify-content-center align-items-center">
+                 <div className="position-relative" style={{width: '80px', height: '80px'}}>
+                    <div className="w-100 h-100 rounded-circle bg-light border d-flex align-items-center justify-content-center overflow-hidden">
+                       {adminPhotoPreview ? (
+                           <img src={adminPhotoPreview} alt="admin" className="w-100 h-100 object-fit-cover" />
+                       ) : (
+                           <span className="text-muted small">Photo</span>
+                       )}
+                    </div>
+                    <label className="position-absolute bottom-0 end-0 bg-white border rounded-circle p-1 cursor-pointer shadow-sm" style={{cursor:'pointer'}}>
+                       <FaEdit size={12} className="text-primary"/>
+                       <input type="file" hidden accept="image/*" onChange={(e) => handleFileChange(e, setAdminPhotoFile, setAdminPhotoPreview)} />
+                    </label>
+                 </div>
+              </div>
+
+              <div className="col-md-4">
+                <label className="form-label small fw-bold">Email *</label>
+                <input
+                  type="email"
+                  className="form-control"
+                  placeholder="Enter email"
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                />
+              </div>
+
+              <div className="col-md-4">
+                <label className="form-label small fw-bold">Contact No *</label>
+                <div className="input-group">
+                  <span className="input-group-text">+91</span>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Phone number"
+                    value={adminContact}
+                    onChange={(e) => setAdminContact(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="col-md-4">
+                <label className="form-label small fw-bold">DOB *</label>
+                <input
+                  type="date"
+                  className="form-control"
+                  value={dob}
+                  onChange={(e) => setDob(e.target.value)}
+                />
+              </div>
+
+              <div className="col-md-4">
+                <label className="form-label small fw-bold">Gender *</label>
+                <div className="d-flex gap-3 mt-2">
+                  {["Male", "Female", "Other"].map((g) => (
+                    <div className="form-check" key={g}>
+                        <input
+                            className="form-check-input"
+                            type="radio"
+                            name="gender"
+                            value={g}
+                            checked={gender === g}
+                            onChange={(e) => setGender(e.target.value)}
+                        />
+                        <label className="form-check-label">{g}</label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* ACTION BUTTONS */}
+            <div className="d-flex justify-content-end gap-2 mt-5">
+              <button className="btn btn-primary px-4" onClick={handleSave}>
+                {isEditing ? "Update Clinic" : "Save Clinic"}
+              </button>
+              <button className="btn btn-outline-secondary px-4" onClick={handleCancel}>
+                Cancel
+              </button>
+            </div>
         </div>
       </div>
     </AdminLayout>

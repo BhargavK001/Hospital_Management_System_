@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { FaPlus, FaTimes, FaEdit, FaEye, FaTrash } from "react-icons/fa";
 import axios from "axios";
+import { FaPlus, FaTimes, FaTrash, FaEdit, FaEye } from "react-icons/fa";
 import toast from "react-hot-toast";
-import "../../admin-dashboard/styles/services.css";
+import "../../admin-dashboard/styles/admin-shared.css";
+import API_BASE from "../../config";
 
-export default function MedicalReport({ role }) {
+export default function MedicalReport({ isEmbedded = false }) {
   const { id } = useParams();
-
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const patientId = searchParams.get("patientId");
@@ -23,13 +23,17 @@ export default function MedicalReport({ role }) {
   });
   const [loading, setLoading] = useState(true);
 
+  // Delete Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [reportToDelete, setReportToDelete] = useState(null);
+
   useEffect(() => {
     fetchEncounterDetails();
   }, [id, patientId]);
 
   const fetchEncounterDetails = async () => {
     try {
-      const res = await axios.get(`http://localhost:3001/encounters`);
+      const res = await axios.get(`${API_BASE}/encounters`);
       
       if (id) {
         // Single encounter mode
@@ -92,12 +96,12 @@ export default function MedicalReport({ role }) {
       }
 
       if (editingReportId) {
-         res = await axios.put(`http://localhost:3001/encounters/${targetEncounterId}/reports/${editingReportId}`, formData, {
+         res = await axios.put(`${API_BASE}/encounters/${targetEncounterId}/reports/${editingReportId}`, formData, {
             headers: { "Content-Type": "multipart/form-data" }
          });
          toast.success("Report updated successfully");
       } else {
-         res = await axios.post(`http://localhost:3001/encounters/${targetEncounterId}/reports`, formData, {
+         res = await axios.post(`${API_BASE}/encounters/${targetEncounterId}/reports`, formData, {
             headers: { "Content-Type": "multipart/form-data" }
          });
          toast.success("Report added successfully");
@@ -136,54 +140,84 @@ export default function MedicalReport({ role }) {
     setReportData({ name: "", date: new Date().toISOString().split('T')[0], file: null });
   };
 
-  const handleDeleteReport = async (report) => {
-    if (!window.confirm("Are you sure you want to delete this report?")) return;
-    
-    const targetEncounterId = report.encounterId || id;
+  const handleDeleteClick = (report) => {
+    setReportToDelete(report);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!reportToDelete) return;
+
+    const targetEncounterId = reportToDelete.encounterId || id;
     if (!targetEncounterId) {
         toast.error("Encounter ID missing");
+        setIsDeleteModalOpen(false);
         return;
     }
 
     try {
-      await axios.delete(`http://localhost:3001/encounters/${targetEncounterId}/reports/${report._id}`);
+      await axios.delete(`${API_BASE}/encounters/${targetEncounterId}/reports/${reportToDelete._id}`);
       // Refresh data
       fetchEncounterDetails();
       toast.success("Report deleted");
     } catch (err) {
       console.error("Error deleting report:", err);
       toast.error("Failed to delete report");
+    } finally {
+      setIsDeleteModalOpen(false);
+      setReportToDelete(null);
     }
   };
 
   if (loading) return <div className="p-5 text-center">Loading...</div>;
 
   return (
-    <div className="container-fluid mt-3">
-       <div className="services-topbar services-card d-flex justify-content-between align-items-center mb-3">
-         <h5 className="fw-bold text-white mb-0">Medical Report</h5>
-         <div className="d-flex gap-2">
+    <div className={isEmbedded ? "mt-3" : "container-fluid mt-3"}>
+       {!isEmbedded && (
+         <div className="services-topbar services-card d-flex justify-content-between align-items-center mb-3">
+           <h5 className="fw-bold text-white mb-0">Medical Report</h5>
+           <div className="d-flex gap-2">
+               {!isReportFormOpen && id ? (
+                  <button 
+                    className="btn btn-light btn-sm d-flex align-items-center gap-1 text-primary"
+                    onClick={() => {
+                      setEditingReportId(null);
+                      setCurrentEncounterId(id); // Only allow adding if we have a global ID (single encounter mode)
+                      setReportData({ name: "", date: new Date().toISOString().split('T')[0], file: null });
+                      setIsReportFormOpen(true);
+                    }}
+                  >
+                    <FaPlus /> Add Medical Report
+                  </button>
+               ) : null }
+                <button 
+                  className="btn btn-light btn-sm d-flex align-items-center gap-1 text-dark"
+                  onClick={() => navigate(-1)}
+                >
+                  Back
+                </button>
+           </div>
+         </div>
+       )}
+
+       {isEmbedded && (
+          <div className="d-flex justify-content-between align-items-center mb-3">
+             <h6 className="fw-bold text-muted mb-0">Medical Reports</h6>
              {!isReportFormOpen && id ? (
                 <button 
-                  className="btn btn-light btn-sm d-flex align-items-center gap-1 text-primary"
+                  className="btn btn-primary btn-sm d-flex align-items-center gap-1"
                   onClick={() => {
                     setEditingReportId(null);
-                    setCurrentEncounterId(id); // Only allow adding if we have a global ID (single encounter mode)
+                    setCurrentEncounterId(id);
                     setReportData({ name: "", date: new Date().toISOString().split('T')[0], file: null });
                     setIsReportFormOpen(true);
                   }}
                 >
-                  <FaPlus /> Add Medical Report
+                  <FaPlus /> Add Report
                 </button>
-             ) : null }
-              <button 
-                className="btn btn-light btn-sm d-flex align-items-center gap-1 text-dark"
-                onClick={() => navigate(-1)}
-              >
-                Back
-              </button>
-         </div>
-       </div>
+             ) : null}
+          </div>
+       )}
 
        <div className="bg-white shadow-sm rounded p-3">
          {isReportFormOpen && (
@@ -283,7 +317,7 @@ export default function MedicalReport({ role }) {
                            <FaEdit />
                          </button>
                          <a 
-                           href={`http://localhost:3001${report.file}`} 
+                           href={`${API_BASE}${report.file}`} 
                            target="_blank" 
                            rel="noopener noreferrer"
                            className="btn btn-sm btn-outline-primary"
@@ -292,7 +326,7 @@ export default function MedicalReport({ role }) {
                          </a>
                          <button 
                            className="btn btn-sm btn-outline-danger"
-                           onClick={() => handleDeleteReport(report)}
+                           onClick={() => handleDeleteClick(report)}
                            title="Delete"
                          >
                            <FaTrash />
@@ -306,6 +340,30 @@ export default function MedicalReport({ role }) {
            </table>
          </div>
        </div>
+
+       {/* Delete Confirmation Modal */}
+       {isDeleteModalOpen && (
+        <>
+          <div className="modal-backdrop fade show"></div>
+          <div className="modal fade show d-block" tabIndex="-1">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Confirm Delete</h5>
+                  <button type="button" className="btn-close" onClick={() => setIsDeleteModalOpen(false)}></button>
+                </div>
+                <div className="modal-body">
+                  <p>Are you sure you want to delete this report?</p>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={() => setIsDeleteModalOpen(false)}>Cancel</button>
+                  <button type="button" className="btn btn-danger" onClick={confirmDelete}>Delete</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

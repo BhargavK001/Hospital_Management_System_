@@ -1,27 +1,59 @@
 const express = require("express");
 const router = express.Router();
 const BillingModel = require("../models/Billing");
+const { PDFDocument, StandardFonts, rgb } = require("pdf-lib");
+const fs = require("fs");
+const path = require("path");
 
+// --- CREATE BILL (POST) ---
 router.post("/", async (req, res) => {
   try {
-    const bill = await BillingModel.create(req.body);
+    // FIX: Generate a random 6-digit Bill Number
+    // (Your Schema requires this field, but the frontend wasn't sending it)
+    const generatedBillNumber = Math.floor(100000 + Math.random() * 900000);
+
+    const payload = {
+        ...req.body,
+        billNumber: generatedBillNumber
+    };
+
+    const bill = await BillingModel.create(payload);
     res.json({ message: "Bill created successfully", data: bill });
   } catch (err) {
-    res.status(500).json({ message: "Error", error: err.message });
+    console.error("Error creating bill:", err); // Log error to terminal
+    res.status(500).json({ message: "Error creating bill", error: err.message });
   }
 });
 
+// // --- GET ALL BILLS ---
+// router.get("/", async (req, res) => {
+//   try {
+//     const bills = await BillingModel.find().sort({ createdAt: -1 });
+//     res.json(bills);
+//   } catch (err) {
+//     res.status(500).json({ message: "Error fetching bills", error: err.message });
+//   }
+// });
+
+// --- GET ALL BILLS (Updated with Filter) ---
 router.get("/", async (req, res) => {
   try {
-    const bills = await BillingModel.find().sort({ createdAt: -1 });
+    const { doctorId } = req.query;
+    let query = {};
+
+    // If doctorId is passed, filter by it
+    if (doctorId) {
+      query.doctorId = doctorId;
+    }
+
+    const bills = await BillingModel.find(query).sort({ createdAt: -1 });
     res.json(bills);
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Error fetching bills", error: err.message });
+    res.status(500).json({ message: "Error fetching bills", error: err.message });
   }
 });
 
+// --- GET SINGLE BILL ---
 router.get("/:id", async (req, res) => {
   try {
     const bill = await BillingModel.findById(req.params.id);
@@ -31,6 +63,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+// --- UPDATE BILL ---
 router.put("/:id", async (req, res) => {
   try {
     const updated = await BillingModel.findByIdAndUpdate(
@@ -44,6 +77,7 @@ router.put("/:id", async (req, res) => {
   }
 });
 
+// --- DELETE BILL ---
 router.delete("/:id", async (req, res) => {
   try {
     await BillingModel.findByIdAndDelete(req.params.id);
@@ -53,10 +87,7 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-const { PDFDocument, StandardFonts, rgb } = require("pdf-lib");
-const fs = require("fs");
-const path = require("path");
-
+// --- PDF GENERATION ---
 // Helper: Hex to PDF color
 function colorFromHex(hex = "#000000") {
   const h = (hex || "#000000").replace("#", "");
@@ -184,17 +215,12 @@ router.get("/:id/pdf", async (req, res) => {
     y -= 20;
 
     // --- Services Items ---
-    // If services is array of strings or objects?
-    // Based on user output: "services":[""] -> it might be empty or strings
-    // We'll just list them.
     if (Array.isArray(bill.services)) {
       for (const svc of bill.services) {
         const svcName = typeof svc === "string" ? svc : svc.name || JSON.stringify(svc);
         if (!svcName) continue;
         
         page.drawText(svcName, { x: margin, y, size: 10, font });
-        // If we had individual prices, we'd put them here.
-        // But the model seems to have totalAmount directly.
         y -= 15;
       }
     }

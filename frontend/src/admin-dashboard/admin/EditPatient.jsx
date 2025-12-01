@@ -6,15 +6,21 @@ import { FaArrowLeft, FaSave } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 
+// ✅ 1. Use the exact same Base URL as your working code
+const API_BASE = "http://127.0.0.1:3001";
+
 const EditPatient = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [loading, setLoading] = useState(true);
+  
+  // State for dynamic dropdown options
+  const [clinics, setClinics] = useState([]); 
 
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    clinic: "",
+    clinic: "", 
     email: "",
     phone: "",
     dob: "",
@@ -26,37 +32,57 @@ const EditPatient = () => {
     postalCode: "",
   });
 
-  // Fetch patient data on mount
+  // ✅ 2. Fetch Data using the logic from PatientBookAppointment
   useEffect(() => {
-    const fetchPatient = async () => {
+    const fetchData = async () => {
       try {
-        const res = await axios.get(`http://localhost:3001/patients/${id}`);
-        if (res.data) {
+        setLoading(true);
+        console.log("🚀 Fetching Edit Patient data...");
+
+        // A. Fetch Clinics & Patient in parallel
+        const [patientRes, clinicRes] = await Promise.all([
+          axios.get(`${API_BASE}/patients/${id}`),
+          axios.get(`${API_BASE}/api/clinics`)
+        ]);
+
+        // --- B. Extract Clinics (Using your working logic) ---
+        const clinicData = Array.isArray(clinicRes.data)
+          ? clinicRes.data
+          : (clinicRes.data?.data || clinicRes.data?.clinics || []);
+        
+        setClinics(clinicData);
+        console.log("✅ Clinics Loaded for Edit:", clinicData);
+
+        // --- C. Set Patient Data ---
+        if (patientRes.data) {
+          const p = patientRes.data;
           setFormData({
-            firstName: res.data.firstName || "",
-            lastName: res.data.lastName || "",
-            clinic: res.data.clinic || "",
-            email: res.data.email || "",
-            phone: res.data.phone || "",
-            dob: res.data.dob || "",
-            bloodGroup: res.data.bloodGroup || "",
-            gender: res.data.gender || "",
-            address: res.data.address || "",
-            city: res.data.city || "",
-            country: res.data.country || "",
-            postalCode: res.data.postalCode || "",
+            firstName: p.firstName || "",
+            lastName: p.lastName || "",
+            clinic: p.clinic || "", 
+            email: p.email || "",
+            phone: p.phone || "",
+            // Format date for HTML input (YYYY-MM-DD)
+            dob: p.dob ? new Date(p.dob).toISOString().split('T')[0] : "",
+            bloodGroup: p.bloodGroup || "",
+            gender: p.gender || "",
+            address: p.address || "",
+            city: p.city || "",
+            country: p.country || "",
+            postalCode: p.postalCode || "",
           });
         }
-        setLoading(false);
+        
       } catch (error) {
-        console.error("Error fetching patient:", error);
-        toast.error("Error loading patient data");
-        navigate("/patients");
+        console.error("❌ Error fetching data:", error);
+        toast.error("Error loading data. Check console.");
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchPatient();
-  }, [id, navigate]);
+    fetchData();
+  }, [id]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -66,24 +92,24 @@ const EditPatient = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.put(`http://localhost:3001/patients/${id}`, formData);
+      // ✅ 3. Use API_BASE for update as well
+      const res = await axios.put(`${API_BASE}/patients/${id}`, formData);
       if (res.data) {
         toast.success("Patient updated successfully!");
         navigate("/patients");
-      } else {
-        toast.error("Something went wrong!");
       }
     } catch (error) {
       console.error("Error updating patient:", error);
-      toast.error("Error updating patient. Check console for details.");
+      toast.error("Error updating patient.");
     }
   };
 
   if (loading) {
     return (
       <AdminLayout>
-        <div className="container bg-white p-4 rounded shadow-sm">
-          <p>Loading patient data...</p>
+        <div className="container bg-white p-4 rounded shadow-sm text-center">
+          <div className="spinner-border text-primary" role="status"></div>
+          <p className="mt-2">Loading patient details...</p>
         </div>
       </AdminLayout>
     );
@@ -105,7 +131,6 @@ const EditPatient = () => {
 
         {/* Form */}
         <form onSubmit={handleSubmit}>
-          {/* Basic Details */}
           <h6 className="text-primary fw-bold mb-3">Basic Details</h6>
           <div className="row g-3">
             <div className="col-md-6">
@@ -114,7 +139,6 @@ const EditPatient = () => {
                 type="text"
                 name="firstName"
                 className="form-control"
-                placeholder="Enter first name"
                 value={formData.firstName}
                 onChange={handleChange}
                 required
@@ -127,13 +151,13 @@ const EditPatient = () => {
                 type="text"
                 name="lastName"
                 className="form-control"
-                placeholder="Enter last name"
                 value={formData.lastName}
                 onChange={handleChange}
                 required
               />
             </div>
 
+            {/* ✅ 4. Dynamic Clinic Dropdown */}
             <div className="col-md-6">
               <label className="form-label">Select Clinic *</label>
               <select
@@ -144,8 +168,19 @@ const EditPatient = () => {
                 required
               >
                 <option value="">Select clinic</option>
-                <option value="Valley Clinic">Valley Clinic</option>
-                <option value="City Care">City Care</option>
+                {clinics.length > 0 ? (
+                  clinics.map((c, idx) => {
+                    // Handle various naming conventions
+                    const cName = c.name || c.clinicName || c.clinic || "Clinic";
+                    return (
+                      <option key={c._id || idx} value={cName}>
+                        {cName}
+                      </option>
+                    );
+                  })
+                ) : (
+                  <option disabled>No clinics available</option>
+                )}
               </select>
             </div>
 
@@ -155,7 +190,6 @@ const EditPatient = () => {
                 type="email"
                 name="email"
                 className="form-control"
-                placeholder="Enter email"
                 value={formData.email}
                 onChange={handleChange}
                 required
@@ -168,7 +202,6 @@ const EditPatient = () => {
                 type="tel"
                 name="phone"
                 className="form-control"
-                placeholder="Enter phone number"
                 value={formData.phone}
                 onChange={handleChange}
                 required
@@ -247,7 +280,6 @@ const EditPatient = () => {
 
           <hr className="my-4" />
 
-          {/* Other Details */}
           <h6 className="text-primary fw-bold mb-3">Other Details</h6>
           <div className="mb-3">
             <label className="form-label">Address</label>
@@ -255,7 +287,6 @@ const EditPatient = () => {
               name="address"
               className="form-control"
               rows="2"
-              placeholder="Enter address"
               value={formData.address}
               onChange={handleChange}
             ></textarea>
@@ -268,7 +299,6 @@ const EditPatient = () => {
                 type="text"
                 name="city"
                 className="form-control"
-                placeholder="Enter city"
                 value={formData.city}
                 onChange={handleChange}
               />
@@ -280,7 +310,6 @@ const EditPatient = () => {
                 type="text"
                 name="country"
                 className="form-control"
-                placeholder="Enter country"
                 value={formData.country}
                 onChange={handleChange}
               />
@@ -292,14 +321,12 @@ const EditPatient = () => {
                 type="text"
                 name="postalCode"
                 className="form-control"
-                placeholder="Enter postal code"
                 value={formData.postalCode}
                 onChange={handleChange}
               />
             </div>
           </div>
 
-          {/* Buttons */}
           <div className="d-flex justify-content-end mt-4 gap-2">
             <button
               type="button"

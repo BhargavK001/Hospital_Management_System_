@@ -4,8 +4,7 @@ import axios from "axios";
 import PhoneInput from "react-phone-input-2";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
-
-const API_BASE = "http://localhost:3001";
+import API_BASE from "../../config";
 
 export default function PatientProfileSetup() {
   const navigate = useNavigate();
@@ -245,6 +244,7 @@ export default function PatientProfileSetup() {
               name="clinic"
               className="form-select"
               value={form.clinic}
+              disabled
               onChange={handleChange}
               required
             >
@@ -264,6 +264,7 @@ export default function PatientProfileSetup() {
               name="email"
               className="form-control"
               value={form.email}
+              disabled
               onChange={handleChange}
               required
             />
@@ -280,6 +281,8 @@ export default function PatientProfileSetup() {
               inputStyle={{ width: "100%" }}
               containerStyle={{ width: "100%" }}
               enableSearch
+              disabled={false}
+              placeholder="Enter mobile number"
             />
           </div>
 

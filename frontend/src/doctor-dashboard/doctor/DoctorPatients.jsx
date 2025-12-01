@@ -8,6 +8,7 @@ import PdfPreviewModal from "../components/PdfPreviewModal"; // <- fixed import
 import "../styles/PdfPreviewModal.css"; // modal styles
 import { toast } from "react-hot-toast";
 import ConfirmationModal from "../../components/ConfirmationModal";
+import API_BASE from "../../config";
 
 export default function DoctorPatients() {
   const [patients, setPatients] = useState([]);
@@ -26,6 +27,11 @@ export default function DoctorPatients() {
     confirmText: "Delete",
     confirmVariant: "danger"
   });
+
+  // Import Modal State
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const fileInputRef = React.useRef(null);
 
   useEffect(() => {
     let mounted = true;
@@ -63,7 +69,7 @@ export default function DoctorPatients() {
       setLoading(true);
       setErr(null);
       try {
-        const res = await axios.get("http://localhost:3001/patients");
+        const res = await axios.get(`${API_BASE}/patients`);
         if (!mounted) return;
         const raw = Array.isArray(res.data)
           ? res.data
@@ -100,7 +106,7 @@ export default function DoctorPatients() {
     const prev = patients;
     setPatients((p) => p.filter((x) => (x._id || x.id) !== id));
     try {
-      await axios.delete(`http://localhost:3001/patients/${id}`);
+      await axios.delete(`${API_BASE}/patients/${id}`);
       toast.success("Patient deleted");
     } catch (err) {
       console.error("Delete failed:", err);
@@ -130,9 +136,9 @@ export default function DoctorPatients() {
     );
 
     const endpoints = [
-      `http://localhost:3001/patients/${id}`,
-      `http://localhost:3001/patients/${id}/status`,
-      `http://localhost:3001/api/patients/${id}`,
+      `${API_BASE}/patients/${id}`,
+      `${API_BASE}/patients/${id}/status`,
+      `${API_BASE}/api/patients/${id}`,
     ];
 
     let success = false;
@@ -174,7 +180,7 @@ export default function DoctorPatients() {
   const patientId = p._id || p.id;
 
   try {
-    const res = await axios.get(`http://localhost:3001/patients/${patientId}/latest-appointment`);
+    const res = await axios.get(`${API_BASE}/patients/${patientId}/latest-appointment`);
     const appt = res.data;
 
     setSelectedAppointmentForPdf(appt._id);
@@ -183,6 +189,40 @@ export default function DoctorPatients() {
     toast.error("No appointment found for this patient.");
   }
 };
+
+  const handleImportClick = () => {
+    setIsImportModalOpen(true);
+    setImportFile(null);
+  };
+
+  const handleFileChange = (e) => {
+    setImportFile(e.target.files[0]);
+  };
+
+  const handleImportSubmit = async () => {
+    if (!importFile) {
+        toast.error("Please select a file to upload");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", importFile);
+
+    const toastId = toast.loading("Importing patients...");
+
+    try {
+        const res = await axios.post(`${API_BASE}/patients/import`, formData, {
+            headers: { "Content-Type": "multipart/form-data" }
+        });
+        toast.success(res.data.message || "Patients imported successfully", { id: toastId });
+        setIsImportModalOpen(false);
+       
+        window.location.reload(); 
+    } catch (err) {
+        console.error("Import failed:", err);
+        toast.error(err.response?.data?.message || "Failed to import patients", { id: toastId });
+    }
+  };
 
 
   const formatDate = (d) => {
@@ -198,10 +238,10 @@ export default function DoctorPatients() {
         <div className="d-flex align-items-center justify-content-between mb-3">
           <h3 className="fw-bold text-primary mb-0">Patients</h3>
           <div>
-            <button className="btn btn-outline-primary me-2" onClick={() => navigate("/doctor/patients/import")}>
+            <button className="btn btn-outline-primary me-2" onClick={handleImportClick}>
               <i className="fa fa-file-import me-1" /> Import data
             </button>
-            <button className="btn btn-primary" onClick={() => navigate("/doctor/patients/add")}>
+            <button className="btn btn-primary" onClick={() => navigate("/doctor/AddPatient")}>
               <i className="fa fa-plus me-1" /> Add patient
             </button>
           </div>
@@ -288,7 +328,7 @@ export default function DoctorPatients() {
                               <button
                                 title="Edit"
                                 className="btn btn-sm btn-outline-primary"
-                                onClick={() => navigate(`/doctor/patients/edit/${id}`)}
+                                onClick={() => navigate(`/doctor/EditPatient/${id}`)}
                               >
                                 <i className="fa fa-pen" />
                               </button>
@@ -369,6 +409,65 @@ export default function DoctorPatients() {
         confirmText={confirmModal.confirmText}
         confirmVariant={confirmModal.confirmVariant}
       />
+
+      {/* Import Modal */}
+      {isImportModalOpen && (
+        <>
+          <div className="modal-backdrop fade show"></div>
+          <div className="modal fade show d-block" tabIndex="-1">
+            <div className="modal-dialog modal-lg modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header border-bottom-0">
+                  <h5 className="modal-title fw-bold text-primary">Patients Import</h5>
+                  <button type="button" className="btn-close" onClick={() => setIsImportModalOpen(false)}></button>
+                </div>
+                <div className="modal-body">
+                  <div className="row g-3 mb-4">
+                     <div className="col-md-4">
+                        <label className="form-label small text-muted">Select Type</label>
+                        <select className="form-select">
+                            <option>CSV</option>
+                        </select>
+                     </div>
+                     <div className="col-md-8">
+                        <label className="form-label small text-muted">Upload CSV File</label>
+                        <input 
+                            type="file" 
+                            className="form-control" 
+                            accept=".csv"
+                            onChange={handleFileChange}
+                            ref={fileInputRef}
+                        />
+                     </div>
+                  </div>
+                  
+                  <div className="mb-3">
+                    <h6 className="fw-bold small">CSV Required Fields:</h6>
+                    <ul className="small text-muted">
+                        <li>firstName</li>
+                        <li>lastName</li>
+                        <li>clinic</li>
+                        <li>email</li>
+                        <li>phone</li>
+                        <li>dob</li>
+                        <li>bloodGroup (optional)</li>
+                        <li>gender</li>
+                        <li>address (optional)</li>
+                        <li>city (optional)</li>
+                        <li>country (optional)</li>
+                        <li>postalCode (optional)</li>
+                    </ul>
+                  </div>
+                </div>
+                <div className="modal-footer border-top-0">
+                  <button type="button" className="btn btn-light text-primary" onClick={() => setIsImportModalOpen(false)}>Cancel</button>
+                  <button type="button" className="btn btn-primary px-4" onClick={handleImportSubmit}>Save</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </DoctorLayout>
   );
 }

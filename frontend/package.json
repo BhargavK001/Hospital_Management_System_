@@ -12,6 +12,7 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@fullcalendar/core": "^6.1.19",
     "@fullcalendar/daygrid": "^6.1.19",
     "@fullcalendar/interaction": "^6.1.19",
     "@fullcalendar/react": "^6.1.19",
@@ -20,13 +21,20 @@
     "@mui/x-data-grid": "^8.19.0",
     "axios": "^1.13.2",
     "bootstrap": "^5.3.8",
+    "flatpickr": "^4.6.13",
+    "jspdf": "^3.0.4",
+    "jspdf-autotable": "^5.0.2",
+    "lucide-react": "^0.555.0",
     "react": "^19.2.0",
     "react-bootstrap": "^2.10.10",
     "react-dom": "^19.2.0",
+    "react-flatpickr": "^4.0.11",
     "react-hot-toast": "^2.6.0",
     "react-icons": "^5.5.0",
     "react-phone-input-2": "^2.15.1",
-    "react-router-dom": "^7.9.6"
+    "react-quill-new": "^3.6.0",
+    "react-router-dom": "^7.9.6",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
