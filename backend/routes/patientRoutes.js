@@ -77,7 +77,6 @@ router.get("/by-user/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // FIX: Check if userId is valid before querying
     if (!mongoose.Types.ObjectId.isValid(userId)) {
        return res.status(400).json({ message: "Invalid User ID format" });
     }
@@ -98,26 +97,42 @@ router.put("/by-user/:userId", async (req, res) => {
     let { userId } = req.params;
     const updateData = req.body;
 
-    // FIX: Check validity
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ message: "Invalid userId format" });
     }
 
     const patient = await PatientModel.findOneAndUpdate(
-      { userId }, 
-      { $set: { ...updateData, userId } }, 
+      { userId },
+      { $set: { ...updateData, userId } },
       { new: true, upsert: true } // create if not found
     );
+
+    // Sync common fields to User model
+    const userUpdate = {};
+    if (updateData.phone) userUpdate.phone = updateData.phone;
+    if (updateData.gender) userUpdate.gender = updateData.gender;
+    if (updateData.dob) userUpdate.dob = updateData.dob;
+    if (updateData.bloodGroup) userUpdate.bloodGroup = updateData.bloodGroup;
+    if (updateData.address) userUpdate.addressLine1 = updateData.address;
+    if (updateData.city) userUpdate.city = updateData.city;
+    if (updateData.postalCode) userUpdate.postalCode = updateData.postalCode;
+    
+    if (updateData.firstName || updateData.lastName) {
+       if (updateData.firstName && updateData.lastName) {
+         userUpdate.name = `${updateData.firstName} ${updateData.lastName}`.trim();
+       }
+    }
+
+    if (Object.keys(userUpdate).length > 0) {
+      await User.findByIdAndUpdate(userId, { $set: userUpdate });
+    }
+
     return res.json(patient);
   } catch (err) {
     console.error("Error updating/creating patient:", err);
     return res.status(500).json({ message: "Failed to update patient profile" });
   }
 });
-
-// =================================================================
-// 2. GENERIC ROUTES (Must come AFTER specific routes)
-// =================================================================
 
 // Get all patients
 router.get("/", (req, res) => {
@@ -126,7 +141,7 @@ router.get("/", (req, res) => {
     .catch((err) => res.status(500).json(err));
 });
 
-// Resend credentials (Specific ID route, but structure is :id/action, so safe here)
+// Resend credentials
 router.post("/:id/resend-credentials", async (req, res) => {
   try {
     const patient = await PatientModel.findById(req.params.id);
@@ -139,11 +154,9 @@ router.post("/:id/resend-credentials", async (req, res) => {
       return res.status(400).json({ message: "Patient has no email address" });
     }
 
-    // Generate new password
     const newPassword = generateRandomPassword();
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // Find or Create User
     let user = await User.findOne({ email });
     if (user) {
       user.password = hashedPassword;
@@ -158,14 +171,12 @@ router.post("/:id/resend-credentials", async (req, res) => {
       });
       await user.save();
       
-      // Link patient to user if not linked
       if (!patient.userId) {
         patient.userId = user._id;
         await patient.save();
       }
     }
 
-    // Send Email
     const html = credentialsTemplate({
       name: `${patient.firstName} ${patient.lastName}`,
       email,

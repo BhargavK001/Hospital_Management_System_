@@ -33,7 +33,7 @@ router.post("/preview", async (req, res) => {
       .populate({
         path: "patientId",
         select: "firstName lastName email phone dob",
-        model: "patients",
+        model: "Patient",
       })
       .lean();
 

@@ -244,6 +244,7 @@ export default function PatientProfileSetup() {
               name="clinic"
               className="form-select"
               value={form.clinic}
+              disabled
               onChange={handleChange}
               required
             >
@@ -263,6 +264,7 @@ export default function PatientProfileSetup() {
               name="email"
               className="form-control"
               value={form.email}
+              disabled
               onChange={handleChange}
               required
             />
@@ -279,6 +281,8 @@ export default function PatientProfileSetup() {
               inputStyle={{ width: "100%" }}
               containerStyle={{ width: "100%" }}
               enableSearch
+              disabled={false}
+              placeholder="Enter mobile number"
             />
           </div>
 
