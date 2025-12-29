@@ -21,9 +21,6 @@ export default defineConfig({
           // React core - rarely changes, cache separately
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
 
-          // MUI - large library, separate chunk
-          'vendor-mui': ['@mui/material', '@mui/x-data-grid'],
-
           // FullCalendar - only needed on appointment pages
           'vendor-calendar': [
             '@fullcalendar/core',
@@ -72,7 +69,6 @@ export default defineConfig({
       'react',
       'react-dom',
       'react-router-dom',
-      '@mui/material',
       'bootstrap',
     ],
   },
