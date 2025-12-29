@@ -142,7 +142,22 @@ app.use("/holidays", holidayRoutes);
 app.use("/listings", listingRoutes);
 app.use("/api/settings", settingsRoutes);
 
+// --- Serve Static Frontend Files ---
+const frontendDistPath = path.join(__dirname, "../frontend/dist");
+app.use(express.static(frontendDistPath));
+
 // --- 404 Handler (Must be after all routes) ---
+// Note: For SPA, we want to return index.html for non-API routes instead of 404
+// Express 5 requires (.*) for wildcard or regex
+app.get(/(.*)/, (req, res, next) => {
+  // If it's an API request, let it fall through to the 404 handler
+  if (req.path.startsWith("/api") || req.path.startsWith("/uploads")) {
+    return next();
+  }
+  // Otherwise serve index.html
+  res.sendFile(path.join(frontendDistPath, "index.html"));
+});
+
 app.use(notFoundHandler);
 
 // --- Global Error Handler (Must be last) ---
