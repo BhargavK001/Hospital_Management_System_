@@ -50,7 +50,7 @@ export default function DoctorBillingRecords({ sidebarCollapsed = false, toggleS
   const [bills, setBills] = useState([]);
   const [encountersList, setEncountersList] = useState([]);
   const [loading, setLoading] = useState(false);
-  
+
   // UI State
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
@@ -75,8 +75,8 @@ export default function DoctorBillingRecords({ sidebarCollapsed = false, toggleS
         const doctorId = doctor?._id || doctor?.id;
 
         if (!doctorId) {
-            toast.error("Doctor not found. Please login.");
-            return;
+          toast.error("Doctor not found. Please login.");
+          return;
         }
 
         // 2. Fetch Bills (Filtered by doctorId via Query Param)
@@ -136,7 +136,7 @@ export default function DoctorBillingRecords({ sidebarCollapsed = false, toggleS
     return bills.filter((bill) => {
       const customEncId = lookupCustomId(bill);
       const combined = `${bill._id} ${customEncId} ${bill.clinicName} ${bill.patientName} ${bill.status}`.toLowerCase();
-      
+
       if (q && !combined.includes(q)) return false;
 
       if (filter.id && !bill._id?.toLowerCase().includes(filter.id.toLowerCase())) return false;
@@ -182,28 +182,28 @@ export default function DoctorBillingRecords({ sidebarCollapsed = false, toggleS
             <table className="custom-table">
               <thead>
                 <tr>
-                  <th style={{width: '50px'}}>ID</th>
+                  <th style={{ width: '50px' }}>ID</th>
                   <th>Encounter ID</th>
                   <th>Clinic Name</th>
                   <th>Patient Name</th>
                   <th>Services</th>
-                  <th style={{textAlign: 'right'}}>Total</th>
-                  <th style={{textAlign: 'right'}}>Discount</th>
-                  <th style={{textAlign: 'right'}}>Amount due</th>
+                  <th style={{ textAlign: 'right' }}>Total</th>
+                  <th style={{ textAlign: 'right' }}>Discount</th>
+                  <th style={{ textAlign: 'right' }}>Amount due</th>
                   <th>Date</th>
                   <th>Status</th>
-                  <th style={{textAlign: 'right'}}>Action</th>
+                  <th style={{ textAlign: 'right' }}>Action</th>
                 </tr>
                 <tr className="filter-row">
-                  <td><input className="filter-input" placeholder="ID" style={{width: '40px'}} onChange={(e) => handleFilterChange("id", e.target.value)}/></td>
-                  <td><input className="filter-input" placeholder="Enc ID" onChange={(e) => handleFilterChange("encounterId", e.target.value)}/></td>
-                  <td><input className="filter-input" placeholder="Clinic" onChange={(e) => handleFilterChange("clinic", e.target.value)}/></td>
-                  <td><input className="filter-input" placeholder="Patient" onChange={(e) => handleFilterChange("patient", e.target.value)}/></td>
+                  <td><input className="filter-input" placeholder="ID" style={{ width: '40px' }} onChange={(e) => handleFilterChange("id", e.target.value)} /></td>
+                  <td><input className="filter-input" placeholder="Enc ID" onChange={(e) => handleFilterChange("encounterId", e.target.value)} /></td>
+                  <td><input className="filter-input" placeholder="Clinic" onChange={(e) => handleFilterChange("clinic", e.target.value)} /></td>
+                  <td><input className="filter-input" placeholder="Patient" onChange={(e) => handleFilterChange("patient", e.target.value)} /></td>
                   <td></td>
                   <td></td>
                   <td></td>
                   <td></td>
-                  <td><input type="date" className="filter-input" style={{width: '130px'}} onChange={(e) => handleFilterChange("date", e.target.value)}/></td>
+                  <td><input type="date" className="filter-input" style={{ width: '130px' }} onChange={(e) => handleFilterChange("date", e.target.value)} /></td>
                   <td>
                     <select className="filter-input" onChange={(e) => handleFilterChange("status", e.target.value)}>
                       <option value="">Filter</option>
@@ -222,21 +222,21 @@ export default function DoctorBillingRecords({ sidebarCollapsed = false, toggleS
                 ) : (
                   pageItems.map((bill, i) => (
                     <tr key={bill._id || i}>
-                      <td style={{fontWeight: 'bold', color: '#6c757d'}}>{(page - 1) * rowsPerPage + i + 1}</td>
+                      <td style={{ fontWeight: 'bold', color: '#6c757d' }}>{(page - 1) * rowsPerPage + i + 1}</td>
                       <td><span className="enc-badge">{lookupCustomId(bill)}</span></td>
                       <td>{bill.clinicName}</td>
                       <td>{bill.patientName}</td>
-                      <td>{Array.isArray(bill.services) ? bill.services[0] : (bill.services || "-")}</td>
-                      <td style={{textAlign: 'right'}}>{bill.totalAmount}</td>
-                      <td style={{textAlign: 'right'}}>{bill.discount}</td>
-                      <td style={{textAlign: 'right'}}>{bill.amountDue}</td>
+                      <td>{Array.isArray(bill.services) ? bill.services.map(s => (typeof s === 'string' ? s : s.name)).join(", ") : (bill.services || "-")}</td>
+                      <td style={{ textAlign: 'right' }}>{bill.totalAmount}</td>
+                      <td style={{ textAlign: 'right' }}>{bill.discount}</td>
+                      <td style={{ textAlign: 'right' }}>{bill.amountDue}</td>
                       <td>{bill.date ? new Date(bill.date).toLocaleDateString() : "-"}</td>
                       <td><span className={bill.status === 'paid' ? "badge-status status-paid" : "badge-status status-unpaid"}>{bill.status.toUpperCase()}</span></td>
                       <td>
                         <div className="action-group">
                           {/* Doctor cannot edit usually, but if needed change route */}
-                          <button className="btn-icon text-edit" onClick={() => navigate(`/doctor/edit-bill/${bill._id}`)}><FaEdit size={16}/></button>
-                          <button className="btn-icon text-delete" onClick={() => openDeleteModal(bill._id)}><FaTrash size={14}/></button>
+                          <button className="btn-icon text-edit" onClick={() => navigate(`/doctor/edit-bill/${bill._id}`)}><FaEdit size={16} /></button>
+                          <button className="btn-icon text-delete" onClick={() => openDeleteModal(bill._id)}><FaTrash size={14} /></button>
                           <a href={`${BASE}/bills/${bill._id}/pdf`} target="_blank" rel="noopener noreferrer" className="pdf-link"><FaFilePdf /> PDF</a>
                         </div>
                       </td>
@@ -249,7 +249,7 @@ export default function DoctorBillingRecords({ sidebarCollapsed = false, toggleS
 
           <div className="table-footer">
             <div className="d-flex align-items-center">
-              Rows per page: 
+              Rows per page:
               <select className="rows-selector" value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(1); }}>
                 <option value={10}>10</option>
                 <option value={20}>20</option>

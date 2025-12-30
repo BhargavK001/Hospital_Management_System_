@@ -25,6 +25,9 @@ const userSchema = new mongoose.Schema({
   // Password Reset Fields
   resetPasswordToken: { type: String },
   resetPasswordExpires: { type: Date },
+
+  // Added for Patient/Doctor Unification
+  country: { type: String },
 });
 
 // Database Indexes

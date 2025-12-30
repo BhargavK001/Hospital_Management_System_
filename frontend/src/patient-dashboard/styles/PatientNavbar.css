@@ -44,19 +44,20 @@
 }
 
 
-.patient-dropdown, 
+.patient-dropdown,
 .doctor-dropdown {
   background: #ffffff;
   border-radius: 8px;
   padding: 6px 0;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   overflow: hidden;
 }
 
 /* Dropdown Items */
 .patient-dropdown .dropdown-item,
 .doctor-dropdown .dropdown-item {
-  color: #333 !important;  /* FIX: Dark text visible */
+  color: #333 !important;
+  /* FIX: Dark text visible */
   font-size: 14px;
   padding: 12px 15px;
   display: flex;
@@ -97,7 +98,7 @@
 .navbar-title {
   color: white;
   font-size: 20px;
-  font-weight: 600;
+  font-weight: 700;
   margin: 0;
 }
 
@@ -116,7 +117,7 @@
 }
 
 .patient-menu-btn svg {
-  color: #0d47ff;   
+  color: #0d47ff;
   font-size: 18px;
 }
 
@@ -124,8 +125,41 @@
   background: #f3f6ff;
 }
 
-.navbar-title {
-  color: white;
-  font-size: 20px;
-  font-weight: 700;
+
+
+/* --- MOBILE NAVBAR --- */
+@media (max-width: 768px) {
+  .patient-navbar {
+    padding: 10px 15px;
+    height: 55px;
+  }
+
+  .navbar-title {
+    font-size: 16px;
+  }
+
+  /* Hide user name to save space */
+  .username {
+    display: none !important;
+  }
+
+  .patient-navbar {
+    padding: 0 15px;
+    height: 60px;
+    flex-wrap: nowrap !important;
+  }
+
+  /* Target the h4 title specifically */
+  .patient-navbar h4 {
+    font-size: 16px !important;
+    white-space: nowrap;
+  }
+
+  .left {
+    gap: 10px;
+  }
+
+  .right {
+    gap: 8px;
+  }
 }
