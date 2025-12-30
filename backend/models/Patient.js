@@ -6,21 +6,13 @@ const PatientSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    required: false, // will be filled for signup patients
+    required: true, // Must exist now
   },
 
-  firstName: String,
-  lastName: String,
   clinic: String,
-  email: String,
-  phone: String,
-  dob: String,
-  bloodGroup: String,
-  gender: String,
-  address: String,
-  city: String,
-  country: String,
-  postalCode: String,
+  // Removed redundant fields (firstName, lastName, email, phone, dob, bloodGroup, gender, address, city, country, postalCode)
+  // These are now fetched from User via populating userId
+
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
 });

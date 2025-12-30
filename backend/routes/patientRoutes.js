@@ -73,6 +73,30 @@ router.post("/import", verifyToken, upload.single("file"), async (req, res) => {
   }
 });
 
+// Helper to merge User and Patient data
+const mergePatientUser = (patient) => {
+  if (!patient || !patient.userId) return patient;
+  const user = patient.userId;
+  // Handle case where populate wasn't called or userId is raw ID
+  if (!user.email && !user.name) return patient;
+
+  return {
+    ...patient.toObject(),
+    firstName: user.name ? user.name.split(" ")[0] : "",
+    lastName: user.name ? user.name.split(" ").slice(1).join(" ") : "",
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    dob: user.dob,
+    gender: user.gender,
+    bloodGroup: user.bloodGroup,
+    address: user.addressLine1,
+    city: user.city,
+    country: user.country,
+    postalCode: user.postalCode,
+  };
+};
+
 // GET patient by userId (returns patient doc if exists)
 router.get("/by-user/:userId", verifyToken, async (req, res) => {
   try {
@@ -82,10 +106,11 @@ router.get("/by-user/:userId", verifyToken, async (req, res) => {
       return res.status(400).json({ message: "Invalid User ID format" });
     }
 
-    const patient = await PatientModel.findOne({ userId });
+    const patient = await PatientModel.findOne({ userId }).populate("userId");
 
     if (!patient) return res.status(404).json({ message: "Patient not found" });
-    return res.json(patient);
+
+    return res.json(mergePatientUser(patient));
   } catch (err) {
     console.error("GET /patients/by-user/:userId error:", err);
     return res.status(500).json({ message: "Server error" });
@@ -104,11 +129,11 @@ router.put("/by-user/:userId", verifyToken, async (req, res) => {
 
     const patient = await PatientModel.findOneAndUpdate(
       { userId },
-      { $set: { ...updateData, userId } },
-      { new: true, upsert: true } // create if not found
+      { $set: { ...updateData, userId } }, // Mongoose will ignore fields not in schema
+      { new: true, upsert: true }
     );
 
-    // Sync common fields to User model
+    // Sync demographic fields to User model
     const userUpdate = {};
     if (updateData.phone) userUpdate.phone = updateData.phone;
     if (updateData.gender) userUpdate.gender = updateData.gender;
@@ -116,11 +141,17 @@ router.put("/by-user/:userId", verifyToken, async (req, res) => {
     if (updateData.bloodGroup) userUpdate.bloodGroup = updateData.bloodGroup;
     if (updateData.address) userUpdate.addressLine1 = updateData.address;
     if (updateData.city) userUpdate.city = updateData.city;
+    if (updateData.country) userUpdate.country = updateData.country;
     if (updateData.postalCode) userUpdate.postalCode = updateData.postalCode;
 
     if (updateData.firstName || updateData.lastName) {
+      const currentName = updateData.firstName + " " + updateData.lastName;
+      // Or handle split if provided separately. 
+      // If one is missing, we might want to fetch user, but usually formatted form sends both.
       if (updateData.firstName && updateData.lastName) {
         userUpdate.name = `${updateData.firstName} ${updateData.lastName}`.trim();
+      } else if (updateData.name) {
+        userUpdate.name = updateData.name;
       }
     }
 
@@ -128,7 +159,9 @@ router.put("/by-user/:userId", verifyToken, async (req, res) => {
       await User.findByIdAndUpdate(userId, { $set: userUpdate });
     }
 
-    return res.json(patient);
+    // Return merged result so frontend sees the update immediately
+    const updatedPatient = await PatientModel.findOne({ userId }).populate("userId");
+    return res.json(mergePatientUser(updatedPatient));
   } catch (err) {
     console.error("Error updating/creating patient:", err);
     return res.status(500).json({ message: "Failed to update patient profile" });
@@ -136,10 +169,14 @@ router.put("/by-user/:userId", verifyToken, async (req, res) => {
 });
 
 // Get all patients
-router.get("/", verifyToken, (req, res) => {
-  PatientModel.find()
-    .then((patients) => res.json(patients))
-    .catch((err) => res.status(500).json(err));
+router.get("/", verifyToken, async (req, res) => {
+  try {
+    const patients = await PatientModel.find().populate("userId");
+    const mergedPatients = patients.map(p => mergePatientUser(p));
+    res.json(mergedPatients);
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
 });
 
 // Resend credentials
@@ -233,9 +270,9 @@ router.get("/:id", verifyToken, async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ message: "Invalid Patient ID" });
     }
-    const patient = await PatientModel.findById(req.params.id);
+    const patient = await PatientModel.findById(req.params.id).populate("userId");
     if (!patient) return res.status(404).json({ message: "Patient not found" });
-    res.json(patient);
+    res.json(mergePatientUser(patient));
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
@@ -254,8 +291,48 @@ router.delete("/:id", verifyToken, async (req, res) => {
 // Create patient (POST)
 router.post("/", verifyToken, async (req, res) => {
   try {
-    const newPatient = await PatientModel.create(req.body);
-    res.json({ message: "Patient added", data: newPatient });
+    const { firstName, lastName, email, phone, gender, dob, bloodGroup, address, city, country, postalCode, ...patientData } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    let user = await User.findOne({ email });
+    if (!user) {
+      // Create new user if doesn't exist
+      const password = generateRandomPassword();
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const name = `${firstName || ""} ${lastName || ""}`.trim() || email.split("@")[0];
+
+      user = await User.create({
+        email,
+        password: hashedPassword, // Auto-generated
+        role: "patient",
+        name,
+        phone,
+        gender,
+        dob,
+        bloodGroup,
+        addressLine1: address,
+        city,
+        country,
+        postalCode
+      });
+
+      // Ideally send email with credentials here
+      // await sendEmail(...) 
+    }
+
+    // Create Patient linked to User
+    const newPatient = await PatientModel.create({
+      ...patientData,
+      userId: user._id,
+      clinic: req.body.clinic
+    });
+
+    const populated = await PatientModel.findById(newPatient._id).populate("userId");
+    res.json({ message: "Patient added", data: mergePatientUser(populated) });
+
   } catch (err) {
     console.error("Error creating patient:", err);
     res.status(500).json({ message: "Server error", error: err.message });
@@ -266,14 +343,37 @@ router.post("/", verifyToken, async (req, res) => {
 router.put("/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const updated = await PatientModel.findByIdAndUpdate(id, req.body, {
+    const { firstName, lastName, email, phone, gender, dob, bloodGroup, address, city, country, postalCode, ...patientData } = req.body;
+
+    const patient = await PatientModel.findById(id);
+    if (!patient) return res.status(404).json({ message: "Patient not found" });
+
+    // Update Patient specific fields
+    const updatedPatient = await PatientModel.findByIdAndUpdate(id, patientData, {
       new: true,
       runValidators: true,
-    });
+    }); // This ignores User fields if strict mode is on
 
-    if (!updated) return res.status(404).json({ message: "Patient not found" });
+    // Update User fields
+    if (patient.userId) {
+      const userUpdate = {};
+      if (firstName || lastName) userUpdate.name = `${firstName || ""} ${lastName || ""}`.trim();
+      if (phone) userUpdate.phone = phone;
+      if (gender) userUpdate.gender = gender;
+      if (dob) userUpdate.dob = dob;
+      if (bloodGroup) userUpdate.bloodGroup = bloodGroup;
+      if (address) userUpdate.addressLine1 = address;
+      if (city) userUpdate.city = city;
+      if (country) userUpdate.country = country;
+      if (postalCode) userUpdate.postalCode = postalCode;
 
-    return res.json({ success: true, patient: updated });
+      if (Object.keys(userUpdate).length > 0) {
+        await User.findByIdAndUpdate(patient.userId, userUpdate);
+      }
+    }
+
+    const finalPatient = await PatientModel.findById(id).populate("userId");
+    return res.json({ success: true, patient: mergePatientUser(finalPatient) });
   } catch (err) {
     console.error("PUT /patients/:id error:", err);
     return res.status(500).json({ message: "Server error", error: err.message });
@@ -300,11 +400,11 @@ router.patch("/:id", verifyToken, async (req, res) => {
     const updated = await PatientModel.findByIdAndUpdate(id, update, {
       new: true,
       runValidators: true,
-    });
+    }).populate("userId");
 
     if (!updated) return res.status(404).json({ message: "Patient not found" });
 
-    return res.json({ success: true, patient: updated });
+    return res.json({ success: true, patient: mergePatientUser(updated) });
   } catch (err) {
     console.error("PATCH /patients/:id error:", err);
     return res.status(500).json({ message: "Server error", error: err.message });

@@ -255,9 +255,7 @@ router.post("/signup", signupValidation, async (req, res) => {
       // Create basic patient record linked with this user
       await PatientModel.create({
         userId: newUser._id,
-        firstName: name,
-        email,
-        phone,
+        // Removed redundant fields: firstName, email, phone. Now only linking userId.
       });
 
       const patientPayload = {
