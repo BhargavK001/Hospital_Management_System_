@@ -30,13 +30,13 @@ const billsStyles = `
 
 export default function PatientBills({ sidebarCollapsed, toggleSidebar }) {
   const [rows, setRows] = useState([]);
-  const [encounters, setEncounters] = useState([]); 
+  const [encounters, setEncounters] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
 
   // Filters State
   const [filters, setFilters] = useState({
-    encounterId: "", doctor: "", clinic: "", patient: "", service: "", 
+    encounterId: "", doctor: "", clinic: "", patient: "", service: "",
     total: "", discount: "", due: "", date: "", status: ""
   });
 
@@ -57,39 +57,34 @@ export default function PatientBills({ sidebarCollapsed, toggleSidebar }) {
       setLoading(true);
       try {
         const patientId = localStorage.getItem("patientId");
-        
-        // 1. Fetch BOTH Bills and Encounters
+
+        // 1. Fetch BOTH Bills (Filtered) and Encounters
+        // Security Fix: Fetch only this patient's bills
         const [billsRes, encRes] = await Promise.all([
-            api.get("/bills"),
-            api.get("/encounters")
+          api.get(`/bills?patientId=${patientId}`),
+          api.get("/encounters")
         ]);
 
-        const allBills = Array.isArray(billsRes.data) ? billsRes.data : (billsRes.data.bills || []);
+        const myBills = Array.isArray(billsRes.data) ? billsRes.data : (billsRes.data.bills || []);
         const allEncounters = Array.isArray(encRes.data) ? encRes.data : (encRes.data.encounters || []);
-        
+
         setEncounters(allEncounters);
 
-        // 2. Filter Bills for THIS patient
-        const myBills = allBills.filter(b => {
-            const pId = b.patientId || b.patient?._id || b.patient;
-            return pId?.toString() === patientId?.toString();
-        });
-
-        // 3. Apply Filters
+        // 2. Apply Search & Column Filters (Client-side)
         let processedBills = myBills.filter(bill => {
-            const customEncId = lookupCustomId(bill, allEncounters);
-            
-            // Global Search
-            if(search) {
-                const str = (JSON.stringify(bill) + customEncId).toLowerCase();
-                if(!str.includes(search.toLowerCase())) return false;
-            }
+          const customEncId = lookupCustomId(bill, allEncounters);
 
-            // Column Filters
-            if(filters.encounterId && !customEncId.toLowerCase().includes(filters.encounterId.toLowerCase())) return false;
-            if(filters.doctor && !bill.doctorName?.toLowerCase().includes(filters.doctor.toLowerCase())) return false;
-            
-            return true;
+          // Global Search
+          if (search) {
+            const str = (JSON.stringify(bill) + customEncId).toLowerCase();
+            if (!str.includes(search.toLowerCase())) return false;
+          }
+
+          // Column Filters
+          if (filters.encounterId && !customEncId.toLowerCase().includes(filters.encounterId.toLowerCase())) return false;
+          if (filters.doctor && !bill.doctorName?.toLowerCase().includes(filters.doctor.toLowerCase())) return false;
+
+          return true;
         });
 
         setRows(processedBills);
@@ -104,41 +99,41 @@ export default function PatientBills({ sidebarCollapsed, toggleSidebar }) {
   }, [page, limit, search, filters]);
 
   const lookupCustomId = (bill, list = encounters) => {
-      const refId = bill.encounterId || bill.encounter_id || bill.encounter;
-      if (!refId) return "-";
-      if (refId.toString().startsWith("ENC-")) return refId;
-      const found = list.find(e => e._id === refId);
-      return found ? (found.encounterId || "Pending") : refId.substring(0,8)+"...";
+    const refId = bill.encounterId || bill.encounter_id || bill.encounter;
+    if (!refId) return "-";
+    if (refId.toString().startsWith("ENC-")) return refId;
+    const found = list.find(e => e._id === refId);
+    return found ? (found.encounterId || "Pending") : refId.substring(0, 8) + "...";
   };
 
   const formatDate = (dateString) => {
-    if(!dateString) return "-";
+    if (!dateString) return "-";
     return new Date(dateString).toLocaleDateString();
   };
 
   const getStatusBadge = (status) => {
-      const s = (status || "").toLowerCase();
-      return s === 'paid' ? <span className="status-paid">PAID</span> : <span className="status-unpaid">{status || "UNPAID"}</span>;
+    const s = (status || "").toLowerCase();
+    return s === 'paid' ? <span className="status-paid">PAID</span> : <span className="status-unpaid">{status || "UNPAID"}</span>;
   };
 
   return (
     <PatientLayout sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar}>
       <style>{billsStyles}</style>
-      
+
       <div className="container-fluid py-4 bills-scope">
         <div className="d-flex justify-content-between align-items-center mb-3">
-           <h3 className="fw-bold text-primary m-0">Bills</h3>
+          <h3 className="fw-bold text-primary m-0">Bills</h3>
         </div>
 
         <div className="table-card">
           {/* Search Bar */}
           <div className="search-bar-container">
             <div className="input-group">
-              <span className="input-group-text bg-white border-end-0"><FiSearch className="text-muted"/></span>
-              <input 
-                type="text" 
-                className="form-control border-start-0 shadow-none" 
-                placeholder="Search bills..." 
+              <span className="input-group-text bg-white border-end-0"><FiSearch className="text-muted" /></span>
+              <input
+                type="text"
+                className="form-control border-start-0 shadow-none"
+                placeholder="Search bills..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -150,47 +145,47 @@ export default function PatientBills({ sidebarCollapsed, toggleSidebar }) {
             <table className="table table-hover mb-0 custom-table">
               <thead>
                 <tr>
-                   <th style={{width:'50px'}}>ID</th>
-                   <th>Encounter ID</th>
-                   <th>Doctor</th>
-                   <th>Clinic</th>
-                   <th>Patient</th>
-                   <th>Services</th>
-                   <th>Tax</th>
-                   <th>Total</th>
-                   <th>Disc</th>
-                   <th>Due</th>
-                   <th>Date</th>
-                   <th>Status</th>
-                   <th>Action</th>
+                  <th style={{ width: '50px' }}>ID</th>
+                  <th>Encounter ID</th>
+                  <th>Doctor</th>
+                  <th>Clinic</th>
+                  <th>Patient</th>
+                  <th>Services</th>
+                  <th>Tax</th>
+                  <th>Total</th>
+                  <th>Disc</th>
+                  <th>Due</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th>Action</th>
                 </tr>
                 <tr className="bg-light">
-                   <td className="p-2"></td>
-                   <td className="p-2"><input className="filter-input" placeholder="Enc ID" onChange={e=>handleFilter('encounterId', e.target.value)}/></td>
-                   <td className="p-2"><input className="filter-input" placeholder="Doctor" onChange={e=>handleFilter('doctor', e.target.value)}/></td>
-                   <td className="p-2"></td>
-                   <td className="p-2"></td>
-                   <td className="p-2"></td>
-                   <td className="p-2"></td>
-                   <td className="p-2"></td>
-                   <td className="p-2"></td>
-                   <td className="p-2"></td>
-                   <td className="p-2"></td>
-                   <td className="p-2"></td>
-                   <td className="p-2"></td>
+                  <td className="p-2"></td>
+                  <td className="p-2"><input className="filter-input" placeholder="Enc ID" onChange={e => handleFilter('encounterId', e.target.value)} /></td>
+                  <td className="p-2"><input className="filter-input" placeholder="Doctor" onChange={e => handleFilter('doctor', e.target.value)} /></td>
+                  <td className="p-2"></td>
+                  <td className="p-2"></td>
+                  <td className="p-2"></td>
+                  <td className="p-2"></td>
+                  <td className="p-2"></td>
+                  <td className="p-2"></td>
+                  <td className="p-2"></td>
+                  <td className="p-2"></td>
+                  <td className="p-2"></td>
+                  <td className="p-2"></td>
                 </tr>
               </thead>
               <tbody>
-                {loading ? <tr><td colSpan="13" className="text-center py-5">Loading...</td></tr> : 
-                 rows.length === 0 ? <tr><td colSpan="13" className="text-center py-5 text-muted">No Data Found</td></tr> :
-                 rows.map((row, i) => (
-                    <tr key={i}>
+                {loading ? <tr><td colSpan="13" className="text-center py-5">Loading...</td></tr> :
+                  rows.length === 0 ? <tr><td colSpan="13" className="text-center py-5 text-muted">No Data Found</td></tr> :
+                    rows.map((row, i) => (
+                      <tr key={i}>
                         <td>{(page - 1) * limit + i + 1}</td>
                         <td><span className="enc-id-text">{lookupCustomId(row)}</span></td>
                         <td>{row.doctorName}</td>
                         <td>{row.clinicName}</td>
                         <td>{row.patientName}</td>
-                        <td>{Array.isArray(row.services) ? row.services.join(", ") : row.services}</td>
+                        <td>{Array.isArray(row.services) ? row.services.map(s => (typeof s === 'string' ? s : s.name)).join(", ") : row.services}</td>
                         <td>{row.taxAmount || row.tax || 0}</td>
                         <td>{row.totalAmount}</td>
                         <td>{row.discount}</td>
@@ -198,16 +193,16 @@ export default function PatientBills({ sidebarCollapsed, toggleSidebar }) {
                         <td>{formatDate(row.date)}</td>
                         <td>{getStatusBadge(row.status)}</td>
                         <td>
-                            <button 
-                                className="btn btn-sm btn-outline-dark" 
-                                onClick={() => handlePdf(row._id)}
-                                title="Print PDF"
-                            >
-                                <FiPrinter/>
-                            </button>
+                          <button
+                            className="btn btn-sm btn-outline-dark"
+                            onClick={() => handlePdf(row._id)}
+                            title="Print PDF"
+                          >
+                            <FiPrinter />
+                          </button>
                         </td>
-                    </tr>
-                 ))}
+                      </tr>
+                    ))}
               </tbody>
             </table>
           </div>
