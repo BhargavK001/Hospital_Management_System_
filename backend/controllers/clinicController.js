@@ -69,36 +69,37 @@ exports.createClinic = async (req, res) => {
     // 2️⃣ Create User for Clinic Admin if not exists
     const targetEmail = adminEmail || email;
     let password = generateRandomPassword();
-    
+
     if (targetEmail) {
-        let user = await User.findOne({ email: targetEmail });
-        if (!user) {
-            const hashedPassword = await bcrypt.hash(password, 10);
-            user = new User({
-                email: targetEmail,
-                password: hashedPassword,
-                role: "clinic_admin", // Using a specific role
-                name: `${adminFirstName} ${adminLastName}`,
-                profileCompleted: true,
-            });
-            await user.save();
-        } else {
-            password = null; // Don't send password if we didn't generate it
-        }
+      let user = await User.findOne({ email: targetEmail });
+      if (!user) {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        user = new User({
+          email: targetEmail,
+          password: hashedPassword,
+          role: "clinic_admin", // Using a specific role
+          name: `${adminFirstName} ${adminLastName}`,
+          clinicId: clinic._id,
+          profileCompleted: true,
+        });
+        await user.save();
+      } else {
+        password = null; // Don't send password if we didn't generate it
+      }
     }
 
     // 3️⃣ Send email
     if (targetEmail) {
-      const html = password 
+      const html = password
         ? credentialsTemplate({
-            name: adminFirstName || "Admin",
-            email: targetEmail,
-            password: password
-          })
+          name: adminFirstName || "Admin",
+          email: targetEmail,
+          password: password
+        })
         : clinicAddedTemplate({
-            clinicName: name,
-            contactName: adminFirstName || "there",
-          });
+          clinicName: name,
+          contactName: adminFirstName || "there",
+        });
 
       sendEmail({
         to: targetEmail,
@@ -330,9 +331,9 @@ exports.importClinics = async (req, res) => {
           try {
             const specialties = row.specialties
               ? row.specialties
-                  .split(/[|,]/)
-                  .map((s) => s.trim())
-                  .filter(Boolean)
+                .split(/[|,]/)
+                .map((s) => s.trim())
+                .filter(Boolean)
               : [];
 
             const clinic = new Clinic({

@@ -401,7 +401,12 @@ export default function BillingRecords({ sidebarCollapsed = false, toggleSidebar
                       <td>{bill.doctorName}</td>
                       <td>{bill.clinicName}</td>
                       <td>{bill.patientName}</td>
-                      <td>{Array.isArray(bill.services) ? bill.services[0] : (bill.services || "-")}</td>
+                      <td>
+                        {Array.isArray(bill.services)
+                          ? bill.services.map(s => (typeof s === 'string' ? s : s.name)).join(", ")
+                          : (bill.services || "-")
+                        }
+                      </td>
 
                       <td style={{ textAlign: 'right' }}>{bill.totalAmount}</td>
                       <td style={{ textAlign: 'right' }}>{bill.discount}</td>

@@ -80,20 +80,30 @@ const mergePatientUser = (patient) => {
   // Handle case where populate wasn't called or userId is raw ID
   if (!user.email && !user.name) return patient;
 
+  // Explicitly selecting fields to prevent data leaks (internal fields, passwords, etc.)
+  const patientObj = patient.toObject();
+
   return {
-    ...patient.toObject(),
-    firstName: user.name ? user.name.split(" ")[0] : "",
-    lastName: user.name ? user.name.split(" ").slice(1).join(" ") : "",
-    name: user.name,
-    email: user.email,
-    phone: user.phone,
-    dob: user.dob,
-    gender: user.gender,
-    bloodGroup: user.bloodGroup,
-    address: user.addressLine1,
-    city: user.city,
-    country: user.country,
-    postalCode: user.postalCode,
+    _id: patientObj._id,
+    userId: user._id, // Only return ID of the user link
+    // Patient Data (Merged with User Data where applicable)
+    firstName: user.name ? user.name.split(" ")[0] : (patientObj.firstName || ""),
+    lastName: user.name ? user.name.split(" ").slice(1).join(" ") : (patientObj.lastName || ""),
+    name: user.name || `${patientObj.firstName || ""} ${patientObj.lastName || ""}`.trim(),
+    email: user.email || patientObj.email || "",
+    phone: user.phone || patientObj.phone || "",
+    dob: user.dob || patientObj.dob,
+    gender: user.gender || patientObj.gender,
+    bloodGroup: user.bloodGroup || patientObj.bloodGroup,
+    address: user.addressLine1 || patientObj.address || "",
+    city: user.city || patientObj.city || "",
+    country: user.country || patientObj.country || "",
+    postalCode: user.postalCode || patientObj.postalCode || "",
+    // Metadata
+    clinicId: patientObj.clinicId,
+    clinic: patientObj.clinic,
+    isActive: patientObj.isActive,
+    createdAt: patientObj.createdAt
   };
 };
 
@@ -142,7 +152,15 @@ router.put("/by-user/:userId", verifyToken, async (req, res) => {
     if (updateData.address) userUpdate.addressLine1 = updateData.address;
     if (updateData.city) userUpdate.city = updateData.city;
     if (updateData.country) userUpdate.country = updateData.country;
+    if (updateData.country) userUpdate.country = updateData.country;
     if (updateData.postalCode) userUpdate.postalCode = updateData.postalCode;
+
+    // Sync clinicId if provided (Critical for Google Auth users)
+    if (updateData.clinicId) {
+      userUpdate.clinicId = updateData.clinicId;
+      // Also update patient record to match
+      await PatientModel.findOneAndUpdate({ userId }, { $set: { clinicId: updateData.clinicId } });
+    }
 
     if (updateData.firstName || updateData.lastName) {
       const currentName = updateData.firstName + " " + updateData.lastName;
@@ -171,7 +189,47 @@ router.put("/by-user/:userId", verifyToken, async (req, res) => {
 // Get all patients
 router.get("/", verifyToken, async (req, res) => {
   try {
-    const patients = await PatientModel.find().populate("userId");
+    const query = {};
+
+    // Verify user from DB to ensure fresh clinicId (bypassing potentially stale token)
+    let currentUser = null;
+    let safeClinicId = null;
+
+    // 1. Resolve User based on Role
+    if (req.user.role === 'admin') {
+      currentUser = await require("../models/Admin").findById(req.user.id);
+    } else {
+      currentUser = await require("../models/User").findById(req.user.id);
+    }
+
+    // 2. Determine Safe Clinic ID
+    if (currentUser) {
+      safeClinicId = currentUser.clinicId;
+    } else {
+      // Fallback for Doctor/Receptionist who might not be in 'User' collection
+      safeClinicId = req.user.clinicId || null;
+    }
+
+    // 3. Determine Effective Role
+    const effectiveRole = currentUser ? currentUser.role : req.user.role;
+
+    console.log("GET /patients - Effective Role:", effectiveRole);
+    console.log("GET /patients - Safe ClinicId:", safeClinicId);
+
+    if (effectiveRole === 'admin') {
+      // Global View for Super Admin
+      console.log("GET /patients - Global View (Admin)");
+    } else if (safeClinicId) {
+      // Scoped View for Clinic Admin / Doctor / Staff
+      query.clinicId = safeClinicId;
+      console.log("GET /patients - Filtering by SafeClinicId:", query.clinicId);
+    } else {
+      // SAFETY FALLBACK: Non-admin user with NO clinicId should see NOTHING.
+      console.log("GET /patients - BLOCKED: Non-admin user with no Clinic ID triggered safety fallback.");
+      return res.json([]); // Return empty list instead of full leak
+    }
+
+    const patients = await PatientModel.find(query).populate("userId");
     const mergedPatients = patients.map(p => mergePatientUser(p));
     res.json(mergedPatients);
   } catch (err) {
@@ -182,14 +240,20 @@ router.get("/", verifyToken, async (req, res) => {
 // Resend credentials
 router.post("/:id/resend-credentials", verifyToken, async (req, res) => {
   try {
-    const patient = await PatientModel.findById(req.params.id);
+    const patient = await PatientModel.findById(req.params.id).populate("userId");
     if (!patient) {
+      console.log("Resend Creds: Patient not found", req.params.id);
       return res.status(404).json({ message: "Patient not found" });
     }
 
-    const email = patient.email;
+    console.log("Resend Creds: Found patient:", patient._id);
+    console.log("Resend Creds: Linked userId:", patient.userId);
+
+    const email = patient.userId ? patient.userId.email : patient.email;
+    console.log("Resend Creds: Resolved email:", email);
+
     if (!email) {
-      return res.status(400).json({ message: "Patient has no email address" });
+      return res.status(400).json({ message: "Patient has no email address linked" });
     }
 
     const newPassword = generateRandomPassword();
@@ -204,7 +268,7 @@ router.post("/:id/resend-credentials", verifyToken, async (req, res) => {
         email,
         password: hashedPassword,
         role: "patient",
-        name: `${patient.firstName} ${patient.lastName}`,
+        name: patient.userId ? patient.userId.name : `${patient.firstName} ${patient.lastName}`,
         profileCompleted: true,
       });
       await user.save();
@@ -215,8 +279,10 @@ router.post("/:id/resend-credentials", verifyToken, async (req, res) => {
       }
     }
 
+    const patientName = patient.userId ? patient.userId.name : `${patient.firstName} ${patient.lastName}`;
+
     const html = credentialsTemplate({
-      name: `${patient.firstName} ${patient.lastName}`,
+      name: patientName,
       email,
       password: newPassword,
     });
@@ -281,8 +347,20 @@ router.get("/:id", verifyToken, async (req, res) => {
 // Delete Patient
 router.delete("/:id", verifyToken, async (req, res) => {
   try {
+    const patient = await PatientModel.findById(req.params.id);
+    if (!patient) {
+      return res.status(404).json({ message: "Patient not found" });
+    }
+
+    // Delete linked User account first
+    if (patient.userId) {
+      await User.findByIdAndDelete(patient.userId);
+    }
+
+    // Delete Patient record
     await PatientModel.findByIdAndDelete(req.params.id);
-    res.json({ message: "Patient deleted successfully" });
+
+    res.json({ message: "Patient and associated user account deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
@@ -323,11 +401,34 @@ router.post("/", verifyToken, async (req, res) => {
       // await sendEmail(...) 
     }
 
+    // Log to debug isolation
+    console.log("Create Patient - User:", req.user._id, "Role:", req.user.role);
+    console.log("Create Patient - Token ClinicId:", req.user.clinicId);
+    console.log("Create Patient - Body Clinic:", req.body.clinic);
+
+    // Fetch fresh user to guarantee clinicId accuracy
+    const creatorUser = await User.findById(req.user.id);
+    let guaranteedClinicId = creatorUser ? creatorUser.clinicId : null;
+
+    // Fallback: If no ID found, try to look up by name in Body
+    if (!guaranteedClinicId && !req.body.clinicId && req.body.clinic) {
+      const foundClinic = await Clinic.findOne({ name: req.body.clinic });
+      if (foundClinic) {
+        guaranteedClinicId = foundClinic._id;
+        console.log("Create Patient - Fallback: Found ClinicId by Name:", guaranteedClinicId);
+      }
+    }
+
     // Create Patient linked to User
+    const finalClinicId = req.user.role === 'admin'
+      ? (req.body.clinicId || guaranteedClinicId)
+      : (guaranteedClinicId || req.user.clinicId);
+
     const newPatient = await PatientModel.create({
       ...patientData,
       userId: user._id,
-      clinic: req.body.clinic
+      clinic: req.body.clinic,
+      clinicId: finalClinicId
     });
 
     const populated = await PatientModel.findById(newPatient._id).populate("userId");

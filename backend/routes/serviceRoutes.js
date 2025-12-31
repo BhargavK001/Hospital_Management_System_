@@ -64,6 +64,33 @@ router.get("/", verifyToken, async (req, res) => {
       ];
     }
 
+    // Multi-tenant filtering
+    // Multi-tenant filtering
+    let currentUser = null;
+    let safeClinicId = null;
+
+    if (req.user.role === 'admin') {
+      currentUser = await require("../models/Admin").findById(req.user.id);
+    } else {
+      currentUser = await require("../models/User").findById(req.user.id);
+    }
+
+    if (currentUser) {
+      safeClinicId = currentUser.clinicId;
+    } else {
+      safeClinicId = req.user.clinicId || null;
+    }
+
+    const effectiveRole = currentUser ? currentUser.role : req.user.role;
+
+    if (effectiveRole === "admin") {
+      // Global View
+    } else if (safeClinicId) {
+      filter.clinicId = safeClinicId;
+    } else {
+      return res.json({ rows: [], total: 0 });
+    }
+
     // 2. Specific Filters
     if (serviceId) filter.serviceId = new RegExp(serviceId, "i");
     if (name) filter.name = new RegExp(name, "i");
@@ -131,7 +158,9 @@ router.post("/import", verifyToken, upload.single("file"), (req, res) => {
           serviceId: data.serviceId || `SVC-${Date.now()}-${Math.floor(Math.random() * 1000)}`, // Auto-generate if missing
           name: data.name,
           category: data.category,
-          clinicName: data.clinicName,
+          clinicName: data.clinicName, // This is just a string name, but we might want clinicId too?
+          // Strict Isolation: Only Admins can manually set clinicId
+          clinicId: req.user.role === 'admin' ? (req.body.clinicId || null) : req.user.clinicId,
           doctor: data.doctor,
           charges: data.charges,
           duration: data.duration,
@@ -177,6 +206,8 @@ router.post("/", verifyToken, upload.single("image"), async (req, res) => {
       active: req.body.active === "true" || req.body.active === true,
       isTelemed: req.body.isTelemed === "true" || req.body.isTelemed === true,
       allowMulti: req.body.allowMulti === "true" || req.body.allowMulti === true,
+      // Enforce Isolation
+      clinicId: req.user.role === 'admin' ? (req.body.clinicId || null) : req.user.clinicId,
     };
 
     // Auto-generate ID if not provided

@@ -36,7 +36,8 @@ router.post("/", verifyToken, async (req, res) => {
       billNumber: generatedBillNumber,
       patientId: toObjectId(req.body.patientId),
       doctorId: toObjectId(req.body.doctorId),
-      clinicId: toObjectId(req.body.clinicId),
+      // Force clinicId from token if available
+      clinicId: req.user.clinicId ? toObjectId(req.user.clinicId) : toObjectId(req.body.clinicId),
       encounterId: toObjectId(req.body.encounterId),
       date: req.body.date ? new Date(req.body.date) : new Date(),
     };
@@ -63,6 +64,35 @@ router.get("/", verifyToken, async (req, res) => {
     }
     if (status) {
       query.status = status;
+    }
+
+    if (status) {
+      query.status = status;
+    }
+
+    let currentUser = null;
+    let safeClinicId = null;
+
+    if (req.user.role === 'admin') {
+      currentUser = await require("../models/Admin").findById(req.user.id);
+    } else {
+      currentUser = await require("../models/User").findById(req.user.id);
+    }
+
+    if (currentUser) {
+      safeClinicId = currentUser.clinicId;
+    } else {
+      safeClinicId = req.user.clinicId || null;
+    }
+
+    const effectiveRole = currentUser ? currentUser.role : req.user.role;
+
+    if (effectiveRole === "admin") {
+      // Global View
+    } else if (safeClinicId) {
+      query.clinicId = safeClinicId;
+    } else {
+      return res.json([]);
     }
 
     const bills = await BillingModel.find(query)
