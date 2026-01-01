@@ -30,7 +30,21 @@ export default function PatientBookAppointment() {
     }
   })();
 
+  // Also get authUser for clinicId fallback (patient object may not have clinicId for existing users)
+  const authUser = (() => {
+    try {
+      const a = localStorage.getItem("authUser");
+      if (a) return JSON.parse(a);
+      return null;
+    } catch {
+      return null;
+    }
+  })();
+
   const patientName = storedPatient?.name || (storedPatient?.firstName ? `${storedPatient.firstName} ${storedPatient.lastName || ""}`.trim() : "") || "Patient";
+  
+  // Get patient's registered clinicId - check both patient and authUser
+  const patientClinicId = storedPatient?.clinicId || authUser?.clinicId || null;
   const params = new URLSearchParams(location.search);
   const preselectedDate = params.get("date") || "";
 
@@ -113,8 +127,19 @@ export default function PatientBookAppointment() {
               doctorName: s.doctor || ""
             };
           }));
+
+          // Auto-set clinic from patient's registered clinic
+          if (patientClinicId) {
+            const patientClinic = clinicData.find(c => 
+              (c._id === patientClinicId) || (c.id === patientClinicId)
+            );
+            if (patientClinic) {
+              const clinicName = patientClinic.name || patientClinic.clinicName || "";
+              setForm(prev => ({ ...prev, clinic: clinicName }));
+            }
+          }
         }
-      } catch (err) {
+      } catch {
         // Error loading initial data, form will be empty
       } finally {
         if (mounted) setLoadingData(false);
@@ -123,7 +148,7 @@ export default function PatientBookAppointment() {
 
     loadData();
     return () => { mounted = false; };
-  }, []);
+  }, [patientClinicId]);
 
   // --- 2. Filter Doctors when Clinic Changes ---
   useEffect(() => {
@@ -180,7 +205,7 @@ export default function PatientBookAppointment() {
             setDynamicSlots(res.data.slots || []);
           }
 
-        } catch (err) {
+        } catch {
           // Error fetching slots
           setDynamicSlots([]);
         } finally {
@@ -311,18 +336,33 @@ export default function PatientBookAppointment() {
             {/* LEFT COLUMN */}
             <div className="col-lg-6">
 
-              <div className="mb-3">
-                <label className="form-label">Select Clinic <span className="text-danger">*</span></label>
-                <select name="clinic" className="form-select" value={form.clinic} onChange={handleChange} required>
-                  <option value="">Select clinic</option>
-                  {loadingData ? <option disabled>Loading...</option> :
-                    clinics.map((c, idx) => {
-                      const cName = c.name || c.clinicName || "Clinic " + (idx + 1);
-                      return <option key={c._id || idx} value={cName}>{cName}</option>;
-                    })
-                  }
-                </select>
-              </div>
+              {/* Show clinic as read-only if patient has a registered clinic */}
+              {patientClinicId && form.clinic ? (
+                <div className="mb-3">
+                  <label className="form-label">Your Clinic</label>
+                  <input 
+                    type="text" 
+                    className="form-control" 
+                    value={form.clinic} 
+                    disabled 
+                    style={{ backgroundColor: '#f8f9fa' }}
+                  />
+                  <small className="text-muted">Appointments are booked at your registered clinic.</small>
+                </div>
+              ) : (
+                <div className="mb-3">
+                  <label className="form-label">Select Clinic <span className="text-danger">*</span></label>
+                  <select name="clinic" className="form-select" value={form.clinic} onChange={handleChange} required>
+                    <option value="">Select clinic</option>
+                    {loadingData ? <option disabled>Loading...</option> :
+                      clinics.map((c, idx) => {
+                        const cName = c.name || c.clinicName || "Clinic " + (idx + 1);
+                        return <option key={c._id || idx} value={cName}>{cName}</option>;
+                      })
+                    }
+                  </select>
+                </div>
+              )}
 
               <div className="mb-3">
                 <label className="form-label">Doctor <span className="text-danger">*</span></label>

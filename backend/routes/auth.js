@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
+const jwt = require("jsonwebtoken");
 const { OAuth2Client } = require("google-auth-library");
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -130,7 +131,8 @@ router.post("/google", async (req, res) => {
       role: user.role,
       name: user.name,
       profileCompleted: user.profileCompleted,
-      clinicId: user.clinicId // Include clinicId in token payload
+      clinicId: user.clinicId, // Include clinicId in token payload
+      googleId: user.googleId // Include googleId to identify Google login users
     };
 
     const jwtToken = generateToken(userPayload);
@@ -581,6 +583,69 @@ router.post("/change-password", changePasswordValidation, async (req, res) => {
   } catch (err) {
     console.error("Change password error:", err.message);
     res.status(500).json({ message: "Server error while changing password" });
+  }
+});
+
+// Set Password for Google Login Users (who don't have a known password)
+// Requires authentication to prevent unauthorized password setting
+router.post("/set-password", async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    if (!email || !newPassword) {
+      return res.status(400).json({ message: "Email and new password are required" });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters long" });
+    }
+
+    // Verify authentication token
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    const token = authHeader.split(' ')[1];
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+      return res.status(401).json({ message: "Invalid or expired token" });
+    }
+
+    // Ensure the logged-in user is setting their own password
+    if (decoded.email !== email) {
+      return res.status(403).json({ message: "You can only set your own password" });
+    }
+
+    // Only allow this for Google login users in User collection
+    // Use decoded.id from token for secure user lookup
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Double-check email matches (additional security)
+    if (user.email !== email) {
+      return res.status(403).json({ message: "Email mismatch" });
+    }
+
+    // Verify user has googleId (Google login user)
+    if (!user.googleId) {
+      return res.status(400).json({ 
+        message: "This feature is only available for Google login users. Please use the regular change password form." 
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    return res.json({ message: "Password set successfully. You can now login with email and password." });
+  } catch (err) {
+    console.error("Set password error:", err.message);
+    res.status(500).json({ message: "Server error while setting password" });
   }
 });
 
