@@ -32,10 +32,13 @@ const EditBill = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
+        const token = localStorage.getItem("token");
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        
         const [docRes, patRes, billRes] = await Promise.all([
-          axios.get(`${API_BASE}/doctors`),
-          axios.get(`${API_BASE}/patients`),
-          axios.get(`${API_BASE}/api/bills/${id}`),
+          axios.get(`${API_BASE}/doctors`, config),
+          axios.get(`${API_BASE}/patients`, config),
+          axios.get(`${API_BASE}/bills/${id}`, config),
         ]);
 
         setDoctors(docRes.data);
@@ -103,7 +106,9 @@ const EditBill = () => {
 
     try {
       setSaving(true);
-      await axios.put(`${API_BASE}/api/bills/${id}`, payload);
+      const token = localStorage.getItem("token");
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      await axios.put(`${API_BASE}/bills/${id}`, payload, config);
       alert("Bill updated successfully!");
       navigate("/BillingRecords");
     } catch (err) {

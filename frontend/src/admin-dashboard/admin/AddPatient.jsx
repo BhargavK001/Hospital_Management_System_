@@ -36,8 +36,10 @@ const AddPatient = () => {
     const fetchClinics = async () => {
       try {
         setIsLoadingClinics(true);
+        const token = localStorage.getItem("token");
+        const config = { headers: { Authorization: `Bearer ${token}` } };
         // Note: Ensure this endpoint matches your backend route exactly
-        const res = await axios.get(`${API_BASE}/api/clinics`);
+        const res = await axios.get(`${API_BASE}/api/clinics`, config);
 
         // Handle different response structures
         if (Array.isArray(res.data)) {
@@ -79,7 +81,9 @@ const AddPatient = () => {
     }
 
     try {
-      const promise = axios.post(`${API_BASE}/patients`, formData);
+      const token = localStorage.getItem("token");
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const promise = axios.post(`${API_BASE}/patients`, formData, config);
 
       await toast.promise(promise, {
         loading: "Saving patient...",

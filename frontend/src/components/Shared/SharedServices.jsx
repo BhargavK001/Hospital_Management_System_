@@ -255,9 +255,7 @@ function ServiceForm({ initial, onClose, onSave, availableCategories, isDoctor, 
         <form className="modal-content" onSubmit={submit}>
           <div className="modal-header">
             <h5 className="modal-title">{initial ? (isDoctor ? "Edit My Service" : "Edit Service") : (isDoctor ? "Add My Service" : "Add Service")}</h5>
-            <div className="d-flex gap-2">
-              <button type="button" className="btn btn-light btn-sm" onClick={onClose}>{isDoctor ? "Close" : "close form"}</button>
-            </div>
+            <button type="button" className="btn-close" onClick={onClose} aria-label="Close"></button>
           </div>
           <div className="modal-body">
             <div className="row g-3">

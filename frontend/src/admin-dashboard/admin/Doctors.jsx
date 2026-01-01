@@ -3,7 +3,7 @@ import axios from "axios";
 import API_BASE from "../../config";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
-import { FaSearch, FaPlus, FaTrash, FaEdit, FaDownload, FaEnvelope, FaCalendarAlt, FaBriefcaseMedical } from "react-icons/fa";
+import { FaSearch, FaPlus, FaTrash, FaEdit, FaDownload, FaEnvelope, FaCalendarAlt, FaBriefcaseMedical, FaCamera, FaPencilAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../styles/admin-shared.css";
@@ -204,7 +204,9 @@ const Doctors = ({ sidebarCollapsed, toggleSidebar }) => {
         active: serviceForm.status === "Active",
       };
 
-      await axios.post(`${API_BASE}/services`, payload);
+      const token = localStorage.getItem("token");
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      await axios.post(`${API_BASE}/services`, payload, config);
       toast.success("Service added successfully!");
       setServiceModalOpen(false);
     } catch (error) {
@@ -231,9 +233,13 @@ const Doctors = ({ sidebarCollapsed, toggleSidebar }) => {
         ];
         setCategories(categoriesData);
 
-        const clinicsRes = await axios.get(`${API_BASE}/api/clinics`);
+        const token = localStorage.getItem("token");
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        const clinicsRes = await axios.get(`${API_BASE}/api/clinics`, config);
         if (clinicsRes.data.success) {
           setClinics(clinicsRes.data.clinics || []);
+        } else if (Array.isArray(clinicsRes.data)) {
+          setClinics(clinicsRes.data);
         }
       } catch (error) {
         console.error("Error loading options:", error);
@@ -523,7 +529,7 @@ const Doctors = ({ sidebarCollapsed, toggleSidebar }) => {
                               }}
                             >
                               <div className="text-center">
-                                <i className="bi bi-camera" style={{ fontSize: "36px", color: "#999" }}></i>
+                                <FaCamera style={{ fontSize: "36px", color: "#999" }} />
                                 <div style={{ fontSize: "11px", color: "#999", marginTop: "5px" }}>Upload Image</div>
                               </div>
                             </div>
@@ -540,7 +546,7 @@ const Doctors = ({ sidebarCollapsed, toggleSidebar }) => {
                                 boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
                               }}
                             >
-                              <i className="bi bi-pencil-fill"></i>
+                              <FaPencilAlt />
                             </button>
                           </div>
                         </div>

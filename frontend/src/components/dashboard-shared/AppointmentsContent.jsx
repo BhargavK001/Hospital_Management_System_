@@ -415,6 +415,31 @@ const AppointmentsContent = ({ basePath = "/admin", sidebarCollapsed }) => {
     });
   };
 
+  const handleCancel = (id) => {
+    setConfirmModal({
+      show: true,
+      title: "Cancel Appointment",
+      message: "Are you sure you want to cancel this appointment?",
+      action: () => executeCancel(id),
+      confirmText: "Cancel Appointment",
+      confirmVariant: "warning"
+    });
+  };
+
+  const executeCancel = async (id) => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.put(`${API_BASE}/appointments/${id}/cancel`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      // Update local state
+      setAppointments((prev) => prev.map((a) => a._id === id ? { ...a, status: 'cancelled' } : a));
+      toast.success("Appointment cancelled");
+    } catch (err) {
+      toast.error("Error cancelling appointment");
+    } finally {
+      closeConfirmModal();
+    }
+  };
+
   const executeDelete = async (id) => {
     try {
       const token = localStorage.getItem("token");
@@ -432,8 +457,22 @@ const AppointmentsContent = ({ basePath = "/admin", sidebarCollapsed }) => {
     setConfirmModal({ show: false, title: "", message: "", action: null });
   };
 
-  const handlePdf = (id) => {
-    window.open(`${API_BASE}/appointments/${id}/pdf`, "_blank");
+  const handlePdf = async (id) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(`${API_BASE}/appointments/${id}/pdf`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+      });
+      
+      // Create blob URL and open in new tab
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (err) {
+      console.error("Error generating PDF:", err);
+      toast.error("Failed to generate PDF");
+    }
   };
 
   // ------------------ IMPORT LOGIC ------------------
@@ -685,6 +724,9 @@ const AppointmentsContent = ({ basePath = "/admin", sidebarCollapsed }) => {
                         <div className="d-flex gap-2">
                           <button className="btn btn-sm btn-outline-primary" onClick={() => openEditForm(a)}>Edit</button>
                           <button className="btn btn-sm btn-outline-dark" onClick={() => handlePdf(a._id)}>PDF</button>
+                          {a.status !== 'cancelled' && (
+                            <button className="btn btn-sm btn-outline-warning" onClick={() => handleCancel(a._id)}>Cancel</button>
+                          )}
                           <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(a._id)}>Delete</button>
                         </div>
                       </td>
