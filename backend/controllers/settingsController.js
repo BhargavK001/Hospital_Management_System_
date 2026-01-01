@@ -100,6 +100,9 @@ exports.seedTemplates = async (req, res) => {
 // ==========================================
 const ProSetting = require("../models/ProSetting");
 
+// Token mask constant for sensitive data
+const TOKEN_MASK = "••••••••";
+
 exports.getProSettings = async (req, res) => {
     try {
         let settings = await ProSetting.findOne();
@@ -108,8 +111,8 @@ exports.getProSettings = async (req, res) => {
         }
         // Mask sensitive tokens for response
         const masked = settings.toObject();
-        if (masked.smsToken) masked.smsToken = "••••••••";
-        if (masked.whatsappToken) masked.whatsappToken = "••••••••";
+        if (masked.smsToken) masked.smsToken = TOKEN_MASK;
+        if (masked.whatsappToken) masked.whatsappToken = TOKEN_MASK;
         res.json(masked);
     } catch (err) {
         console.error("Error fetching pro settings:", err);
@@ -125,8 +128,8 @@ exports.updateProSettings = async (req, res) => {
         } else {
             // Only update if a new token is provided (not masked placeholder)
             const update = { ...req.body };
-            if (update.smsToken === "••••••••") delete update.smsToken;
-            if (update.whatsappToken === "••••••••") delete update.whatsappToken;
+            if (update.smsToken === TOKEN_MASK) delete update.smsToken;
+            if (update.whatsappToken === TOKEN_MASK) delete update.whatsappToken;
             Object.assign(settings, update);
         }
         await settings.save();

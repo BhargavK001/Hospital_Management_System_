@@ -19,8 +19,9 @@ const Navbar = ({ toggleSidebar }) => {
         if (authUser.name) {
           setUserName(authUser.name);
         }
-      } catch {
-        // Keep default
+      } catch (err) {
+        // Failed to parse authUser from localStorage - using default name
+        console.debug("Could not parse authUser:", err);
       }
     }
   }, []);
