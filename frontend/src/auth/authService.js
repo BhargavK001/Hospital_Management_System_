@@ -228,6 +228,7 @@ export function savePatientData(patientDoc, userId) {
         email: patientDoc.email || '',
         phone: patientDoc.phone || '',
         clinic: patientDoc.clinic || '',
+        clinicId: patientDoc.clinicId || null, // Include clinicId for auto-selecting clinic
         dob: patientDoc.dob || '',
         address: patientDoc.address || '',
     };

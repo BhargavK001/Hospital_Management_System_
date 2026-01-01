@@ -30,10 +30,21 @@ export default function PatientBookAppointment() {
     }
   })();
 
+  // Also get authUser for clinicId fallback (patient object may not have clinicId for existing users)
+  const authUser = (() => {
+    try {
+      const a = localStorage.getItem("authUser");
+      if (a) return JSON.parse(a);
+      return null;
+    } catch {
+      return null;
+    }
+  })();
+
   const patientName = storedPatient?.name || (storedPatient?.firstName ? `${storedPatient.firstName} ${storedPatient.lastName || ""}`.trim() : "") || "Patient";
   
-  // Get patient's registered clinicId
-  const patientClinicId = storedPatient?.clinicId || null;
+  // Get patient's registered clinicId - check both patient and authUser
+  const patientClinicId = storedPatient?.clinicId || authUser?.clinicId || null;
   const params = new URLSearchParams(location.search);
   const preselectedDate = params.get("date") || "";
 
