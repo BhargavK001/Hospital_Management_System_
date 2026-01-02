@@ -160,9 +160,20 @@ function ServiceForm({ initial, onClose, onSave, availableCategories, isDoctor, 
   const [doctors, setDoctors] = useState([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
 
-  // If doctor, use doctorInfo. If clinic, use clinicInfo. If admin, use empty defaults.
-  const defaultClinic = isDoctor ? (doctorInfo?.clinic || "") : (isClinic ? (clinicInfo?.clinicName || "") : "");
-  const defaultDoctor = isDoctor ? (`${doctorInfo?.firstName || ""} ${doctorInfo?.lastName || ""}`.trim()) : "";
+  // Determine default clinic/doctor based on role
+  const getDefaultClinic = () => {
+    if (isDoctor) return doctorInfo?.clinic || "";
+    if (isClinic) return clinicInfo?.clinicName || "";
+    return "";
+  };
+  
+  const getDefaultDoctor = () => {
+    if (isDoctor) return `${doctorInfo?.firstName || ""} ${doctorInfo?.lastName || ""}`.trim();
+    return "";
+  };
+
+  const defaultClinic = getDefaultClinic();
+  const defaultDoctor = getDefaultDoctor();
 
   const [form, setForm] = useState(
     initial || {
@@ -510,9 +521,12 @@ export default function SharedServices({ isDoctor = false, doctorInfo = null, is
   };
 
   useEffect(() => {
-    // Only load if not doctor OR (is doctor AND doctorInfo is available)
-    // For clinic, load immediately since clinicInfo should be available
-    if (!isDoctor || (isDoctor && doctorInfo?.firstName)) {
+    // Load data based on role:
+    // - For regular admin: load immediately
+    // - For doctor: wait until doctorInfo is available
+    // - For clinic: load immediately (clinicInfo is available from localStorage)
+    const shouldLoad = !isDoctor || (isDoctor && doctorInfo?.firstName);
+    if (shouldLoad) {
       load();
     }
   }, [page, limit, isDoctor, doctorInfo, isClinic, clinicInfo]);
@@ -520,10 +534,11 @@ export default function SharedServices({ isDoctor = false, doctorInfo = null, is
   useEffect(() => {
     const t = setTimeout(() => {
       setPage(1);
-      if (!isDoctor || (isDoctor && doctorInfo?.firstName)) load();
+      const shouldLoad = !isDoctor || (isDoctor && doctorInfo?.firstName);
+      if (shouldLoad) load();
     }, 400);
     return () => clearTimeout(t);
-  }, [search, filters, isDoctor, doctorInfo]);
+  }, [search, filters, isDoctor, doctorInfo, isClinic, clinicInfo]);
 
   const onAdd = () => { setEditing(null); setModalOpen(true); };
   const onEdit = (r) => { setEditing(r); setModalOpen(true); };

@@ -29,7 +29,12 @@ const formatRange = (start, end) => {
 
 const DoctorSessions = ({ sidebarCollapsed, toggleSidebar }) => {
   // Get clinic info from localStorage for auto-detecting clinic
-  const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+  let authUser = {};
+  try {
+    authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+  } catch (e) {
+    authUser = {};
+  }
   const clinicName = authUser?.clinicName || "";
 
   const [sessions, setSessions] = useState([]);

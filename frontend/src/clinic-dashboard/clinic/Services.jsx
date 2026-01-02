@@ -6,7 +6,12 @@ import SharedServices from "../../components/Shared/SharedServices";
 /* ---------- Main Services Component ---------- */
 export default function Services({ sidebarCollapsed = false, toggleSidebar }) {
   // Get clinic info from localStorage for auto-detecting clinic
-  const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+  let authUser = {};
+  try {
+    authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+  } catch (e) {
+    authUser = {};
+  }
   const clinicInfo = {
     clinicName: authUser?.clinicName || "",
     clinicId: authUser?.clinicId || authUser?.id || ""

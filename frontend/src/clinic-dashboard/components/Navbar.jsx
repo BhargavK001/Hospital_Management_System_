@@ -12,7 +12,12 @@ const Navbar = ({ toggleSidebar }) => {
   const navigate = useNavigate();
 
   // Get authUser from localStorage for displaying admin name
-  const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+  let authUser = {};
+  try {
+    authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+  } catch (e) {
+    authUser = {};
+  }
   const adminName = authUser?.name || authUser?.clinicName || "Clinic Admin";
 
   // close dropdown on outside click
