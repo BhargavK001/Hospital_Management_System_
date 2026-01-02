@@ -13,6 +13,15 @@ const EditPatient = () => {
   const { id } = useParams();
   const [loading, setLoading] = useState(true);
 
+  // Get clinic info from localStorage for auto-detecting clinic
+  let authUser = {};
+  try {
+    authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+  } catch (e) {
+    authUser = {};
+  }
+  const autoClinicName = authUser?.clinicName || "";
+
   // State for dynamic dropdown options
   const [clinics, setClinics] = useState([]);
 
@@ -154,31 +163,39 @@ const EditPatient = () => {
               />
             </div>
 
-            {/* ✅ 4. Dynamic Clinic Dropdown */}
+            {/* Clinic - Auto-detected for clinic dashboard */}
             <div className="col-md-6">
-              <label className="form-label">Select Clinic *</label>
-              <select
-                name="clinic"
-                className="form-select"
-                value={formData.clinic}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Select clinic</option>
-                {clinics.length > 0 ? (
-                  clinics.map((c, idx) => {
-                    // Handle various naming conventions
-                    const cName = c.name || c.clinicName || c.clinic || "Clinic";
-                    return (
-                      <option key={c._id || idx} value={cName}>
-                        {cName}
-                      </option>
-                    );
-                  })
-                ) : (
-                  <option disabled>No clinics available</option>
-                )}
-              </select>
+              <label className="form-label">Select Clinic {autoClinicName ? "(Auto-detected)" : "*"}</label>
+              {autoClinicName ? (
+                <input
+                  className="form-control bg-light"
+                  value={autoClinicName}
+                  readOnly
+                />
+              ) : (
+                <select
+                  name="clinic"
+                  className="form-select"
+                  value={formData.clinic}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Select clinic</option>
+                  {clinics.length > 0 ? (
+                    clinics.map((c, idx) => {
+                      // Handle various naming conventions
+                      const cName = c.name || c.clinicName || c.clinic || "Clinic";
+                      return (
+                        <option key={c._id || idx} value={cName}>
+                          {cName}
+                        </option>
+                      );
+                    })
+                  ) : (
+                    <option disabled>No clinics available</option>
+                  )}
+                </select>
+              )}
             </div>
 
             <div className="col-md-6">
