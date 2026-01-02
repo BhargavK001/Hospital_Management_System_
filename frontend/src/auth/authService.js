@@ -38,6 +38,37 @@ export async function loginUser(email, password) {
 }
 
 /**
+ * Login with Google
+ * @param {string} token - Google ID Token
+ * @returns {Promise<{success: boolean, data?: object, error?: string, token?: string}>}
+ */
+export async function googleLogin(token) {
+    try {
+        const res = await fetch(`${API_BASE}/google`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            return { success: false, error: data.message || 'Google login failed' };
+        }
+
+        // Extract token from response
+        const authToken = data.token;
+        const user = { ...data };
+        delete user.token;
+
+        return { success: true, data: user, token: authToken };
+    } catch (err) {
+        console.error('Google Login error:', err);
+        return { success: false, error: 'Network error: backend not responding' };
+    }
+}
+
+/**
  * Register new user
  * @param {object} userData - {name, email, password, phone, role, hospitalId}
  * @returns {Promise<{success: boolean, data?: object, error?: string}>}
@@ -170,6 +201,9 @@ export function saveAuthData(user, token) {
         name: user.name || '',
         profileCompleted: !!user.profileCompleted,
         mustChangePassword: user.mustChangePassword || false,
+        clinicId: user.clinicId || user.clinic?._id || null,
+        clinicName: user.clinicName || user.clinic?.name || user.clinic || '',
+        googleId: user.googleId || null, // Include googleId for Google login users
     };
 
     localStorage.setItem('authUser', JSON.stringify(authUser));
@@ -194,6 +228,7 @@ export function savePatientData(patientDoc, userId) {
         email: patientDoc.email || '',
         phone: patientDoc.phone || '',
         clinic: patientDoc.clinic || '',
+        clinicId: patientDoc.clinicId || null, // Include clinicId for auto-selecting clinic
         dob: patientDoc.dob || '',
         address: patientDoc.address || '',
     };

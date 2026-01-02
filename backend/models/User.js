@@ -28,6 +28,10 @@ const userSchema = new mongoose.Schema({
 
   // Added for Patient/Doctor Unification
   country: { type: String },
+  clinicId: { type: mongoose.Schema.Types.ObjectId, ref: "Clinic" },
+
+  // Google Auth Fields
+  googleId: { type: String },
 });
 
 // Database Indexes

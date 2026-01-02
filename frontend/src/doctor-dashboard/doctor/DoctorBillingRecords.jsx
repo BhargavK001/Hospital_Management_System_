@@ -86,11 +86,23 @@ export default function DoctorBillingRecords() {
   };
 
   const lookupCustomId = (bill) => {
-    if (bill.encounterId && bill.encounterId.startsWith("ENC-")) return bill.encounterId;
-    const mongoId = bill.encounterId || bill.encounter_id || bill.encounter;
-    if (!mongoId) return "-";
-    const found = encountersList.find((e) => e._id === mongoId);
-    return (found && found.encounterId) ? found.encounterId : (typeof mongoId === "string" ? mongoId.substring(0, 8) + "..." : "-");
+    // Check encounterCustomId first (set by backend)
+    if (bill.encounterCustomId) {
+      return bill.encounterCustomId;
+    }
+    // Check encounterId
+    if (bill.encounterId) {
+      const encId = bill.encounterId;
+      if (typeof encId === 'string') {
+        if (encId.startsWith("ENC-")) return encId;
+        if (encId.length === 24) return `ENC-${encId.substring(0, 6)}`;
+        return encId;
+      }
+      if (typeof encId === 'object' && encId._id) {
+        return encId.encounterId || `ENC-${encId._id.toString().substring(0, 6)}`;
+      }
+    }
+    return "-";
   };
 
   // --- FILTERING ---

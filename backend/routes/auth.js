@@ -3,6 +3,10 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
+const jwt = require("jsonwebtoken");
+const { OAuth2Client } = require("google-auth-library");
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // JWT Auth Middleware
 const { generateToken } = require("../middleware/auth");
@@ -38,6 +42,112 @@ async function checkPassword(inputPassword, storedPassword) {
   return false;
 }
 
+// Google Login Route (Patients Only)
+router.post("/google", async (req, res) => {
+  try {
+    const { token, clinicId } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ message: "Google token is required" });
+    }
+
+    // Verify Google Token (Access Token flow)
+    client.setCredentials({ access_token: token });
+
+    const userinfo = await client.request({
+      url: "https://www.googleapis.com/oauth2/v3/userinfo",
+    });
+
+    const { name, email, picture, sub: googleId } = userinfo.data;
+
+    console.log(`Google Login Attempt for email: ${email}`);
+
+    // Check if user exists in other roles (Doctor, Receptionist, Admin) - RESTRICT ACCESS
+    const existingDoctor = await DoctorModel.findOne({ email });
+    const existingReceptionist = await Receptionist.findOne({ email });
+    const existingAdmin = await Admin.findOne({ email });
+
+    if (existingDoctor || existingReceptionist || existingAdmin) {
+      console.warn(`Google login blocked for non-patient email: ${email}`);
+      return res.status(403).json({
+        message: "Google Login is restricted to Patients only. Please use your email and password to log in."
+      });
+    }
+
+    // Check User collection (Patients)
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // Create new patient user
+      console.log("Creating new user from Google Login:", email);
+
+      const randomPassword = crypto.randomBytes(16).toString("hex");
+      const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+      user = await User.create({
+        email,
+        name,
+        password: hashedPassword,
+        role: "patient",
+        profileCompleted: false,
+        googleId: googleId,
+        avatar: picture,
+        clinicId: clinicId || null // Save clinicId if provided
+      });
+
+      // Create linked Patient model
+      await PatientModel.create({
+        userId: user._id,
+        clinicId: clinicId || null // Save clinicId if provided
+      });
+    } else {
+      // Ensure existing user is a patient
+      if (user.role !== 'patient') {
+        return res.status(403).json({
+          message: "Account exists but is not a Patient account. Google Login is for Patients only."
+        });
+      }
+
+      let userUpdated = false;
+      // Update googleId if not present (linking existing account)
+      if (!user.googleId) {
+        user.googleId = googleId;
+        userUpdated = true;
+      }
+
+      // Update clinicId if missing in User profile and provided in request
+      if (!user.clinicId && clinicId) {
+        user.clinicId = clinicId;
+        userUpdated = true;
+      }
+
+      if (userUpdated) await user.save();
+    }
+
+    // Generate JWT
+    const userPayload = {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+      name: user.name,
+      profileCompleted: user.profileCompleted,
+      clinicId: user.clinicId, // Include clinicId in token payload
+      googleId: user.googleId // Include googleId to identify Google login users
+    };
+
+    const jwtToken = generateToken(userPayload);
+
+    return res.json({
+      ...userPayload,
+      token: jwtToken,
+    });
+
+  } catch (err) {
+    console.error("Google Login Error:", err.message);
+    res.status(500).json({ message: "Google authentication failed" });
+  }
+});
+
 // Login route (admin, receptionist, patient, doctor)
 router.post("/login", loginValidation, async (req, res) => {
   try {
@@ -57,6 +167,7 @@ router.post("/login", loginValidation, async (req, res) => {
         email: admin.email,
         role: "admin",
         profileCompleted: true,
+        clinicId: null, // Global admin has no specific clinic
       };
 
       const token = generateToken(adminPayload);
@@ -84,6 +195,7 @@ router.post("/login", loginValidation, async (req, res) => {
         name: receptionist.name,
         mustChangePassword: receptionist.mustChangePassword,
         profileCompleted: true,
+        clinicId: receptionist.clinicIds?.[0], // Default to first clinic
       };
 
       const token = generateToken(receptionistPayload);
@@ -109,6 +221,7 @@ router.post("/login", loginValidation, async (req, res) => {
         name: `${doctor.firstName} ${doctor.lastName}`,
         mustChangePassword: doctor.mustChangePassword,
         profileCompleted: true,
+        clinicId: doctor.clinicId,
       };
 
       const token = generateToken(doctorPayload);
@@ -120,10 +233,13 @@ router.post("/login", loginValidation, async (req, res) => {
     }
 
     // 4) If not receptionist or doctor, check User collection (patients)
+    console.log("Checking User collection for:", email);
     const user = await User.findOne({ email });
 
     if (user) {
+      console.log("User found:", user._id, user.role);
       const match = await checkPassword(password, user.password);
+      console.log("Password match result:", match);
 
       if (!match) {
         return res.status(401).json({ message: "Invalid email or password" });
@@ -140,6 +256,7 @@ router.post("/login", loginValidation, async (req, res) => {
           typeof user.mustChangePassword === "boolean"
             ? user.mustChangePassword
             : false,
+        clinicId: user.clinicId,
       };
 
       const token = generateToken(userPayload);
@@ -249,12 +366,14 @@ router.post("/signup", signupValidation, async (req, res) => {
         role: "patient",
         name,
         phone,
+        clinicId: hospitalId, // Save the selected clinic info
         profileCompleted: false,
       });
 
       // Create basic patient record linked with this user
       await PatientModel.create({
         userId: newUser._id,
+        clinicId: hospitalId, // Save the selected clinic info
         // Removed redundant fields: firstName, email, phone. Now only linking userId.
       });
 
@@ -464,6 +583,69 @@ router.post("/change-password", changePasswordValidation, async (req, res) => {
   } catch (err) {
     console.error("Change password error:", err.message);
     res.status(500).json({ message: "Server error while changing password" });
+  }
+});
+
+// Set Password for Google Login Users (who don't have a known password)
+// Requires authentication to prevent unauthorized password setting
+router.post("/set-password", async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    if (!email || !newPassword) {
+      return res.status(400).json({ message: "Email and new password are required" });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters long" });
+    }
+
+    // Verify authentication token
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    const token = authHeader.split(' ')[1];
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+      return res.status(401).json({ message: "Invalid or expired token" });
+    }
+
+    // Ensure the logged-in user is setting their own password
+    if (decoded.email !== email) {
+      return res.status(403).json({ message: "You can only set your own password" });
+    }
+
+    // Only allow this for Google login users in User collection
+    // Use decoded.id from token for secure user lookup
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Double-check email matches (additional security)
+    if (user.email !== email) {
+      return res.status(403).json({ message: "Email mismatch" });
+    }
+
+    // Verify user has googleId (Google login user)
+    if (!user.googleId) {
+      return res.status(400).json({ 
+        message: "This feature is only available for Google login users. Please use the regular change password form." 
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    return res.json({ message: "Password set successfully. You can now login with email and password." });
+  } catch (err) {
+    console.error("Set password error:", err.message);
+    res.status(500).json({ message: "Server error while setting password" });
   }
 });
 

@@ -151,11 +151,23 @@ export default function PatientBills({ sidebarCollapsed, toggleSidebar }) {
   }, [page, limit, search, filters]);
 
   const lookupCustomId = (bill, list = encounters) => {
-    const refId = bill.encounterId || bill.encounter_id || bill.encounter;
-    if (!refId) return "-";
-    if (refId.toString().startsWith("ENC-")) return refId;
-    const found = list.find(e => e._id === refId);
-    return found ? (found.encounterId || "Pending") : refId.substring(0, 8) + "...";
+    // Check encounterCustomId first (set by backend)
+    if (bill.encounterCustomId) {
+      return bill.encounterCustomId;
+    }
+    // Check encounterId
+    if (bill.encounterId) {
+      const encId = bill.encounterId;
+      if (typeof encId === 'string') {
+        if (encId.startsWith("ENC-")) return encId;
+        if (encId.length === 24) return `ENC-${encId.substring(0, 6)}`;
+        return encId;
+      }
+      if (typeof encId === 'object' && encId._id) {
+        return encId.encounterId || `ENC-${encId._id.toString().substring(0, 6)}`;
+      }
+    }
+    return "-";
   };
 
   const formatDate = (dateString) => {
