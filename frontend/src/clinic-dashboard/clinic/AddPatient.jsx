@@ -11,14 +11,24 @@ import API_BASE from "../../config";
 const AddPatient = () => {
   const navigate = useNavigate();
 
+  // Get clinic info from localStorage for auto-detecting clinic
+  let authUser = {};
+  try {
+    authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+  } catch (e) {
+    authUser = {};
+  }
+  const autoClinicName = authUser?.clinicName || "";
+
   // State for fetched clinics
   const [clinics, setClinics] = useState([]);
   const [isLoadingClinics, setIsLoadingClinics] = useState(true);
+  const [autoClinicId, setAutoClinicId] = useState("");
 
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    clinic: "",
+    clinic: autoClinicName, // Auto-fill with clinic name
     clinicId: "", // Added for precise tracking
     email: "",
     phone: "",
@@ -39,19 +49,33 @@ const AddPatient = () => {
         // Note: Ensure this endpoint matches your backend route exactly
         const res = await axios.get(`${API_BASE}/api/clinics`);
 
+        let clinicList = [];
         // Handle different response structures
         if (Array.isArray(res.data)) {
           // Case 1: API returns [ {name: 'One Care'}, ... ]
-          setClinics(res.data);
+          clinicList = res.data;
         } else if (res.data.clinics && Array.isArray(res.data.clinics)) {
           // Case 2: API returns { clinics: [ {name: 'One Care'}, ... ] }
-          setClinics(res.data.clinics);
+          clinicList = res.data.clinics;
         } else if (res.data.data && Array.isArray(res.data.data)) {
           // Case 3: API returns { data: [ {name: 'One Care'}, ... ] }
-          setClinics(res.data.data);
+          clinicList = res.data.data;
         } else {
           console.warn("Unexpected API response structure", res.data);
           toast.error("Loaded data is not a list of clinics.");
+        }
+        
+        setClinics(clinicList);
+        
+        // Auto-detect clinic ID if clinicName is available
+        if (autoClinicName && clinicList.length > 0) {
+          const matchedClinic = clinicList.find(c => 
+            (c.name || c.clinicName || "").toLowerCase() === autoClinicName.toLowerCase()
+          );
+          if (matchedClinic) {
+            setAutoClinicId(matchedClinic._id);
+            setFormData(prev => ({ ...prev, clinic: autoClinicName, clinicId: matchedClinic._id }));
+          }
         }
 
       } catch (error) {
@@ -87,7 +111,7 @@ const AddPatient = () => {
         error: "Failed to add patient.",
       });
 
-      navigate("/patients");
+      navigate("/clinic-dashboard/patients");
 
     } catch (error) {
       console.error("Error adding patient:", error);
@@ -104,7 +128,7 @@ const AddPatient = () => {
           <h4 className="fw-bold text-primary mb-0">Add Patient</h4>
           <button
             className="btn btn-outline-primary d-flex align-items-center gap-2"
-            onClick={() => navigate("/patients")}
+            onClick={() => navigate("/clinic-dashboard/patients")}
           >
             <FaArrowLeft /> Back
           </button>
@@ -140,39 +164,47 @@ const AddPatient = () => {
               />
             </div>
 
-            {/* ✅ UPDATED DROPDOWN LOGIC */}
+            {/* Clinic - Auto-detected for clinic dashboard */}
             <div className="col-md-6">
-              <label className="form-label">Select Clinic *</label>
-              <select
-                name="clinic"
-                className="form-select"
-                value={formData.clinicId} // Use ID as value
-                onChange={(e) => {
-                  const selectedClinic = clinics.find(c => c._id === e.target.value);
-                  setFormData({
-                    ...formData,
-                    clinicId: e.target.value,
-                    clinic: selectedClinic ? selectedClinic.name : ""
-                  });
-                }}
-                required
-              >
-                <option value="">Select clinic</option>
+              <label className="form-label">Select Clinic {autoClinicName ? "(Auto-detected)" : "*"}</label>
+              {autoClinicName ? (
+                <input
+                  className="form-control bg-light"
+                  value={autoClinicName}
+                  readOnly
+                />
+              ) : (
+                <select
+                  name="clinic"
+                  className="form-select"
+                  value={formData.clinicId} // Use ID as value
+                  onChange={(e) => {
+                    const selectedClinic = clinics.find(c => c._id === e.target.value);
+                    setFormData({
+                      ...formData,
+                      clinicId: e.target.value,
+                      clinic: selectedClinic ? selectedClinic.name : ""
+                    });
+                  }}
+                  required
+                >
+                  <option value="">Select clinic</option>
 
-                {/* Render options if clinics exist */}
-                {clinics.length > 0 ? (
-                  clinics.map((clinic, index) => (
-                    <option key={clinic._id || index} value={clinic._id}>
-                      {clinic.name}
+                  {/* Render options if clinics exist */}
+                  {clinics.length > 0 ? (
+                    clinics.map((clinic, index) => (
+                      <option key={clinic._id || index} value={clinic._id}>
+                        {clinic.name}
+                      </option>
+                    ))
+                  ) : (
+                    // Show appropriate message based on loading state
+                    <option disabled>
+                      {isLoadingClinics ? "Loading clinics..." : "No clinics found"}
                     </option>
-                  ))
-                ) : (
-                  // Show appropriate message based on loading state
-                  <option disabled>
-                    {isLoadingClinics ? "Loading clinics..." : "No clinics found"}
-                  </option>
-                )}
-              </select>
+                  )}
+                </select>
+              )}
             </div>
 
             <div className="col-md-6">
@@ -328,7 +360,7 @@ const AddPatient = () => {
             <button
               type="button"
               className="btn btn-outline-secondary"
-              onClick={() => navigate("/patients")}
+              onClick={() => navigate("/clinic-dashboard/patients")}
             >
               Cancel
             </button>

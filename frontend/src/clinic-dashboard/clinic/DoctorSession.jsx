@@ -28,6 +28,14 @@ const formatRange = (start, end) => {
 };
 
 const DoctorSessions = ({ sidebarCollapsed, toggleSidebar }) => {
+  // Get clinic info from localStorage for auto-detecting clinic
+  let authUser = {};
+  try {
+    authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+  } catch (e) {
+    authUser = {};
+  }
+  const clinicName = authUser?.clinicName || "";
 
   const [sessions, setSessions] = useState([]);
   const [doctors, setDoctors] = useState([]);
@@ -60,7 +68,7 @@ const DoctorSessions = ({ sidebarCollapsed, toggleSidebar }) => {
   const [form, setForm] = useState({
     doctorId: "",
     doctorName: "",
-    clinic: "",
+    clinic: clinicName, // Auto-fill clinic
     days: [],
     timeSlotMinutes: 30,
     morningStart: "",
@@ -74,7 +82,12 @@ const DoctorSessions = ({ sidebarCollapsed, toggleSidebar }) => {
     try {
       setLoading(true);
       const res = await axios.get(`${API_BASE}/doctor-sessions`);
-      setSessions(res.data || []);
+      // Filter sessions by clinic if clinicName is available
+      const allSessions = res.data || [];
+      const filteredSessions = clinicName 
+        ? allSessions.filter(s => (s.clinic || "").toLowerCase() === clinicName.toLowerCase())
+        : allSessions;
+      setSessions(filteredSessions);
     } catch (err) {
       console.error("Error fetching doctor sessions:", err);
     } finally {
@@ -85,7 +98,12 @@ const DoctorSessions = ({ sidebarCollapsed, toggleSidebar }) => {
   const fetchDoctors = async () => {
     try {
       const res = await axios.get(`${API_BASE}/doctors`);
-      setDoctors(res.data || []);
+      const allDoctors = res.data || [];
+      // Filter doctors by clinic if clinicName is available
+      const filteredDoctors = clinicName 
+        ? allDoctors.filter(d => (d.clinic || "").toLowerCase() === clinicName.toLowerCase())
+        : allDoctors;
+      setDoctors(filteredDoctors);
     } catch (err) {
       console.error("Error fetching doctors:", err);
     }
@@ -102,7 +120,7 @@ const DoctorSessions = ({ sidebarCollapsed, toggleSidebar }) => {
     setForm({
       doctorId: "",
       doctorName: "",
-      clinic: "",
+      clinic: clinicName, // Auto-fill clinic
       days: [],
       timeSlotMinutes: 30,
       morningStart: "",
@@ -475,13 +493,14 @@ const DoctorSessions = ({ sidebarCollapsed, toggleSidebar }) => {
                         </div>
 
                         <div className="col-md-6">
-                          <label className="form-label">Clinic *</label>
+                          <label className="form-label">Clinic {clinicName ? "(Auto-detected)" : "*"}</label>
                           <input
-                            className="form-control"
+                            className={`form-control ${clinicName ? "bg-light" : ""}`}
                             name="clinic"
                             value={form.clinic}
                             onChange={handleFormChange}
                             required
+                            readOnly={!!clinicName}
                           />
                         </div>
 

@@ -28,6 +28,15 @@ export default function ReceptionistList({
 }) {
   const navigate = useNavigate();
 
+  // Get clinic info from localStorage for data isolation
+  let authUser = {};
+  try {
+    authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+  } catch (e) {
+    authUser = {};
+  }
+  const clinicName = authUser?.clinicName || "";
+
   const [data, setData] = useState([]);
   const [clinics, setClinics] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,13 +59,23 @@ export default function ReceptionistList({
     setFilters((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Load receptionists
+  // Load receptionists with clinic filter
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
         const res = await getReceptionists();
-        const rows = res.data?.data || [];
+        const allRows = res.data?.data || [];
+        
+        // Filter by clinic if clinicName is available
+        const rows = clinicName 
+          ? allRows.filter(r => 
+              (r.clinicIds || []).some(c => 
+                (c.name || "").toLowerCase() === clinicName.toLowerCase()
+              )
+            )
+          : allRows;
+        
         setData(rows);
 
         const clinicSet = new Set();
@@ -72,7 +91,7 @@ export default function ReceptionistList({
       }
     };
     load();
-  }, []);
+  }, [clinicName]);
 
   // Processed rows
   const processed = useMemo(() => {
@@ -385,7 +404,7 @@ export default function ReceptionistList({
                                 className="btn btn-sm btn-outline-primary"
                                 onClick={() =>
                                   navigate(
-                                    `/add-receptionist?receptionistId=${row._id}`
+                                    `/clinic-dashboard/add-receptionist?receptionistId=${row._id}`
                                   )
                                 }
                               >
