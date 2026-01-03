@@ -25,6 +25,11 @@
   display: none;
 }
 
+/* Keep icons visible when closed */
+.patient-sidebar.closed .modern-nav-icon {
+  display: flex;
+}
+
 /* Center icons when closed */
 .patient-sidebar.closed .nav-link {
   justify-content: center;
@@ -68,11 +73,16 @@
   font-size: 18px;
 }
 
-.patient-sidebar.closed span {
+.patient-sidebar.closed .link-text {
   display: none;
 }
 
-.patient-sidebar.closed .nav-link {
+/* Keep icons visible when closed */
+.patient-sidebar.closed .modern-nav-icon {
+  display: flex;
+}
+
+.patient-sidebar.closed .modern-nav-link {
   justify-content: center;
 }
 
