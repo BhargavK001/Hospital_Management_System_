@@ -10,8 +10,14 @@ export default function PatientNavbar({ toggleSidebar }) {
   const menuRef = useRef();
   const navigate = useNavigate();
 
-  const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
-  const userId = authUser?.id;
+  // CHANGE 2: Safer localStorage parsing
+  let userId = null;
+  try {
+    const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+    userId = authUser?.id;
+  } catch (e) {
+    console.error("Error parsing authUser:", e);
+  }
 
   // Fetch patient profile on mount
   useEffect(() => {
@@ -26,6 +32,7 @@ export default function PatientNavbar({ toggleSidebar }) {
       const res = await fetch(`${API_BASE}/api/user/${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      
       if (res.ok) {
         const data = await res.json();
         setProfileData({

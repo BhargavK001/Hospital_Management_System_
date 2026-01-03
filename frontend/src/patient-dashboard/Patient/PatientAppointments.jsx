@@ -238,7 +238,7 @@ export default function PatientAppointments({ sidebarCollapsed, toggleSidebar })
         <div className="card shadow-sm p-3 mb-4">
           <h6 className="mb-3">Filters</h6>
           <div className="row g-2">
-            <div className="col-md-4">
+            <div className="col-12 col-md-4">
               <label className="form-label small">Select Date</label>
               <input
                 type="date"
@@ -247,7 +247,7 @@ export default function PatientAppointments({ sidebarCollapsed, toggleSidebar })
                 onChange={(e) => setFilterDate(e.target.value)}
               />
             </div>
-            <div className="col-md-4">
+            <div className="col-12 col-md-4">
               <label className="form-label small">Select status</label>
               <select
                 className="form-select"
@@ -261,7 +261,7 @@ export default function PatientAppointments({ sidebarCollapsed, toggleSidebar })
                 <option value="cancelled">Cancelled</option>
               </select>
             </div>
-            <div className="col-md-4">
+            <div className="col-12 col-md-4">
               <label className="form-label small">Select doctor</label>
               <select
                 className="form-select"
@@ -309,7 +309,7 @@ export default function PatientAppointments({ sidebarCollapsed, toggleSidebar })
         </div>
 
         {/* Appointment header */}
-        <div className="d-flex justify-content-between align-items-center mb-3">
+        <div className="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
           <h4 className="fw-bold text-primary m-0">Appointment</h4>
           <div>
             <button
@@ -428,12 +428,12 @@ export default function PatientAppointments({ sidebarCollapsed, toggleSidebar })
                       </div>
 
                       {/* second row: service, status, calendar, actions */}
-                      <div className="d-flex justify-content-between align-items-center mt-3">
+                      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mt-3 gap-3">
                         <div className="small text-muted">
                           {service}
                         </div>
 
-                        <div className="d-flex align-items-center gap-2">
+                        <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-3 w-100 justify-content-md-end">
                           <div>
                             <span
                               className={`badge ${status.toLowerCase() === "booked"
@@ -449,7 +449,7 @@ export default function PatientAppointments({ sidebarCollapsed, toggleSidebar })
                           </div>
 
                           {/* calendar placeholders */}
-                          <div className="d-flex gap-1">
+                          <div className="d-flex gap-1 flex-wrap">
                             <button
                               className="btn btn-sm btn-outline-light btn-sm"
                               title="Add to Google calendar"
@@ -474,7 +474,7 @@ export default function PatientAppointments({ sidebarCollapsed, toggleSidebar })
                           </div>
 
                           {/* action buttons */}
-                          <div className="d-flex gap-2">
+                          <div className="d-flex gap-2 flex-wrap">
                             <button
                               className="btn btn-sm btn-outline-primary"
                               title="View"
@@ -522,7 +522,7 @@ export default function PatientAppointments({ sidebarCollapsed, toggleSidebar })
         </div>
 
         {/* Pagination */}
-        <div className="d-flex justify-content-between align-items-center mt-3">
+        <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mt-3 gap-3">
           <div>Rows per page: {perPage}</div>
           <div className="d-flex gap-2 align-items-center">
             <button
