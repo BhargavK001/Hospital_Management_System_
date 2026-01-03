@@ -163,17 +163,31 @@ export const validators = {
     phone: (phone) => {
         if (!phone) return 'Phone number is required';
         const digits = phone.replace(/\D/g, '');
-        if (digits.length < 10) return 'Please enter a valid phone number';
+        if (digits.length !== 10) return 'Please enter a valid 10-digit phone number';
         return null;
     },
 };
 
 /**
- * Format phone number for API
+ * Format phone number for API (adds +91 if needed)
  * @param {string} phone 
  * @returns {string}
  */
 export function formatPhone(phone) {
+    // Remove all non-digit characters
+    const digits = phone.replace(/\D/g, '');
+
+    // If already has country code (starts with 91 and has 12 digits), just add +
+    if (digits.startsWith('91') && digits.length === 12) {
+        return `+${digits}`;
+    }
+
+    // If it's a 10-digit number, add +91
+    if (digits.length === 10) {
+        return `+91${digits}`;
+    }
+
+    // Fallback: just add + if not present
     return phone.startsWith('+') ? phone : `+${phone}`;
 }
 

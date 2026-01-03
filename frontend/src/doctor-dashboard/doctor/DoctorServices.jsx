@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from "react";
-// import Navbar from "../components/DoctorNavbar"; 
-// import Sidebar from "../components/DoctorSidebar"; 
+import DoctorLayout from "../layouts/DoctorLayout";
 import SharedServices from "../../components/Shared/SharedServices";
 import DoctorLayout from "../layouts/DoctorLayout";
 
 /* ---------- Main Doctor Services Component ---------- */
-export default function DoctorServices({ sidebarCollapsed = false, toggleSidebar }) {
+export default function DoctorServices() {
   const [currentDoctor, setCurrentDoctor] = useState({ firstName: "", lastName: "", clinic: "" });
 
   useEffect(() => {
@@ -15,9 +14,10 @@ export default function DoctorServices({ sidebarCollapsed = false, toggleSidebar
     }
   }, []);
 
-  return ( 
-      <DoctorLayout >
-        <SharedServices isDoctor={true} doctorInfo={currentDoctor} />
-      </DoctorLayout>
+  return (
+    <DoctorLayout>
+      {/* Pass isDoctor=true and the doctor info */}
+      <SharedServices isDoctor={true} doctorInfo={currentDoctor} />
+    </DoctorLayout>
   );
 }

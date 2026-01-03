@@ -19,7 +19,17 @@ export default function AddReceptionist() {
   const receptionistId = params.get("receptionistId");
   const isEdit = Boolean(receptionistId);
 
+  // Get clinic info from localStorage for auto-detecting clinic
+  let authUser = {};
+  try {
+    authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+  } catch (e) {
+    authUser = {};
+  }
+  const autoClinicName = authUser?.clinicName || "";
+
   const [clinics, setClinics] = useState([]);
+  const [autoClinicId, setAutoClinicId] = useState("");
 
   const [form, setForm] = useState({
     firstName: "",
@@ -49,6 +59,17 @@ export default function AddReceptionist() {
         const res = await axios.get(`${API_BASE}/api/clinics`);
         const rows = Array.isArray(res.data) ? res.data : res.data.clinics ?? [];
         setClinics(rows);
+        
+        // Auto-detect clinic ID if clinicName is available
+        if (autoClinicName) {
+          const matchedClinic = rows.find(c => 
+            (c.name || c.clinicName || "").toLowerCase() === autoClinicName.toLowerCase()
+          );
+          if (matchedClinic) {
+            setAutoClinicId(matchedClinic._id);
+            setForm(prev => ({ ...prev, clinicId: matchedClinic._id }));
+          }
+        }
       } catch (err) {
         console.error(err);
         toast.error("Failed to load clinics");
@@ -56,7 +77,7 @@ export default function AddReceptionist() {
     };
 
     loadClinics();
-  }, []);
+  }, [autoClinicName]);
 
   // -------------------------------
   // EDIT MODE → LOAD RECEPTIONIST
@@ -139,7 +160,7 @@ export default function AddReceptionist() {
       error: "Failed to save receptionist",
     });
 
-    navigate("/receptionists");
+    navigate("/clinic-dashboard/receptionists");
   };
 
   return (
@@ -204,21 +225,29 @@ export default function AddReceptionist() {
               {/* Clinic */}
               <div className="col-md-4 mb-3">
                 <label className="form-label">
-                  Select Clinic <span className="text-danger">*</span>
+                  Select Clinic {autoClinicId ? "(Auto-detected)" : ""}<span className="text-danger">*</span>
                 </label>
-                <select
-                  className="form-select"
-                  value={form.clinicId}
-                  onChange={(e) => handleInput("clinicId", e.target.value)}
-                  required
-                >
-                  <option value="">Select Clinic</option>
-                  {clinics.map((c) => (
-                    <option key={c._id} value={c._id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                {autoClinicId ? (
+                  <input
+                    className="form-control bg-light"
+                    value={autoClinicName}
+                    readOnly
+                  />
+                ) : (
+                  <select
+                    className="form-select"
+                    value={form.clinicId}
+                    onChange={(e) => handleInput("clinicId", e.target.value)}
+                    required
+                  >
+                    <option value="">Select Clinic</option>
+                    {clinics.map((c) => (
+                      <option key={c._id} value={c._id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               {/* Contact */}
@@ -332,7 +361,7 @@ export default function AddReceptionist() {
             <button
               type="button"
               className="btn btn-outline-secondary"
-              onClick={() => navigate("/receptionists")}
+              onClick={() => navigate("/clinic-dashboard/receptionists")}
             >
               Cancel
             </button>

@@ -192,6 +192,15 @@ const billingStyles = `
 export default function BillingRecords({ sidebarCollapsed = false, toggleSidebar }) {
   const navigate = useNavigate();
 
+  // Get clinic info from localStorage for data isolation
+  let authUser = {};
+  try {
+    authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+  } catch (e) {
+    authUser = {};
+  }
+  const clinicName = authUser?.clinicName || "";
+
   // Data
   const [bills, setBills] = useState([]);
   const [encountersList, setEncountersList] = useState([]);
@@ -226,8 +235,13 @@ export default function BillingRecords({ sidebarCollapsed = false, toggleSidebar
         ]);
 
         // Handle both array and { data: [...] } response formats
-        const billsData = Array.isArray(billsRes.data) ? billsRes.data : billsRes.data.bills || billsRes.data.data || [];
+        const allBillsData = Array.isArray(billsRes.data) ? billsRes.data : billsRes.data.bills || billsRes.data.data || [];
         const encData = Array.isArray(encRes.data) ? encRes.data : encRes.data.encounters || encRes.data.data || [];
+
+        // Filter bills by clinic if clinicName is available
+        const billsData = clinicName 
+          ? allBillsData.filter(b => (b.clinicName || "").toLowerCase() === clinicName.toLowerCase())
+          : allBillsData;
 
         setBills(billsData);
         setEncountersList(encData);
@@ -239,7 +253,7 @@ export default function BillingRecords({ sidebarCollapsed = false, toggleSidebar
       }
     };
     fetchData();
-  }, []);
+  }, [clinicName]);
 
   // --- DELETE HANDLERS ---
 

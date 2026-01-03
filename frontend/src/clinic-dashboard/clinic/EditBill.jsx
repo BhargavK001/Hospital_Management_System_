@@ -9,9 +9,18 @@ const EditBill = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
+  // Get clinic info from localStorage for auto-detecting clinic
+  let authUser = {};
+  try {
+    authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+  } catch (e) {
+    authUser = {};
+  }
+  const autoClinicName = authUser?.clinicName || "";
+
   const [form, setForm] = useState({
     doctorName: "",
-    clinicName: "",
+    clinicName: autoClinicName, // Auto-fill with clinic name
     patientName: "",
     services: "",
     totalAmount: "",
@@ -38,14 +47,25 @@ const EditBill = () => {
           axios.get(`${API_BASE}/api/bills/${id}`),
         ]);
 
-        setDoctors(docRes.data);
-        setPatients(patRes.data);
+        // Filter doctors and patients by clinic
+        const allDoctors = docRes.data || [];
+        const allPatients = patRes.data || [];
+        
+        const filteredDoctors = autoClinicName 
+          ? allDoctors.filter(d => (d.clinic || "").toLowerCase() === autoClinicName.toLowerCase())
+          : allDoctors;
+        const filteredPatients = autoClinicName 
+          ? allPatients.filter(p => (p.clinic || "").toLowerCase() === autoClinicName.toLowerCase())
+          : allPatients;
+        
+        setDoctors(filteredDoctors);
+        setPatients(filteredPatients);
 
         const bill = billRes.data;
 
         setForm({
           doctorName: bill.doctorName || "",
-          clinicName: bill.clinicName || "",
+          clinicName: bill.clinicName || autoClinicName,
           patientName: bill.patientName || "",
           services: Array.isArray(bill.services)
             ? bill.services.join(", ")
@@ -105,7 +125,7 @@ const EditBill = () => {
       setSaving(true);
       await axios.put(`${API_BASE}/api/bills/${id}`, payload);
       alert("Bill updated successfully!");
-      navigate("/BillingRecords");
+      navigate("/clinic-dashboard/BillingRecords");
     } catch (err) {
       console.error(err);
       alert("Error updating bill.");
@@ -169,14 +189,15 @@ const EditBill = () => {
                 </select>
               </div>
 
-              {/* Other fields remain same */}
+              {/* Clinic Name - Auto-detected for clinic dashboard */}
               <div className="col-md-6 mb-3">
-                <label className="form-label">Clinic Name</label>
+                <label className="form-label">Clinic Name {autoClinicName ? "(Auto-detected)" : ""}</label>
                 <input
                   name="clinicName"
-                  className="form-control"
+                  className={`form-control ${autoClinicName ? "bg-light" : ""}`}
                   value={form.clinicName}
                   onChange={handleChange}
+                  readOnly={!!autoClinicName}
                 />
               </div>
 
@@ -269,7 +290,7 @@ const EditBill = () => {
             <button
               type="button"
               className="btn btn-secondary ms-2"
-              onClick={() => navigate("/BillingRecords")}
+              onClick={() => navigate("/clinic-dashboard/BillingRecords")}
             >
               Cancel
             </button>

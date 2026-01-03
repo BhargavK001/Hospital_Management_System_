@@ -345,14 +345,33 @@ function Login() {
             </div>
 
             <div className={`input-group animate-enter ${signupErrors.phone ? 'has-error' : ''}`} style={{ '--i': 5 }}>
-              <input
-                type="tel"
-                placeholder="Phone Number"
-                value={signupForm.phone}
-                onChange={(e) => handleSignupChange('phone', e.target.value)}
-                autoComplete="tel"
-              />
-              <i className="fas fa-phone input-icon"></i>
+              <div className="phone-input-wrapper" style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                <span className="phone-prefix" style={{
+                  padding: '0 10px',
+                  background: 'rgba(0,0,0,0.05)',
+                  borderRadius: '8px 0 0 8px',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  color: '#666',
+                  fontWeight: '500',
+                  fontSize: '14px',
+                  minHeight: '44px'
+                }}>+91</span>
+                <input
+                  type="tel"
+                  placeholder="10-digit Phone Number"
+                  value={signupForm.phone}
+                  onChange={(e) => {
+                    // Only allow digits and limit to 10
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    handleSignupChange('phone', value);
+                  }}
+                  autoComplete="tel"
+                  style={{ borderRadius: '0 8px 8px 0', paddingLeft: '12px' }}
+                  maxLength={10}
+                />
+              </div>
               {signupErrors.phone && <span className="error-text">{signupErrors.phone}</span>}
             </div>
 

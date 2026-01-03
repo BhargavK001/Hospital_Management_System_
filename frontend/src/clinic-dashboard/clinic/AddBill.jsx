@@ -10,6 +10,15 @@ import API_BASE from "../../config";
 const AddBill = () => {
   const navigate = useNavigate();
 
+  // Get clinic info from localStorage for auto-detecting clinic
+  let authUser = {};
+  try {
+    authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+  } catch (e) {
+    authUser = {};
+  }
+  const autoClinicName = authUser?.clinicName || "";
+
   // --- 1. Form State ---
   const [form, setForm] = useState({
     patientId: "",
@@ -17,7 +26,7 @@ const AddBill = () => {
     doctorId: "",
     doctorName: "",
     clinicId: "",
-    clinicName: "", // Will be auto-filled
+    clinicName: autoClinicName, // Auto-fill with clinic name
     encounterId: "",
     services: "",
     totalAmount: "",
@@ -46,8 +55,19 @@ const AddBill = () => {
         ]);
 
         // Normalize Data
-        setDoctors(Array.isArray(docRes.data) ? docRes.data : docRes.data.data || []);
-        setPatients(Array.isArray(patRes.data) ? patRes.data : patRes.data.data || []);
+        const allDoctors = Array.isArray(docRes.data) ? docRes.data : docRes.data.data || [];
+        const allPatients = Array.isArray(patRes.data) ? patRes.data : patRes.data.data || [];
+        
+        // Filter doctors and patients by clinic
+        const filteredDoctors = autoClinicName 
+          ? allDoctors.filter(d => (d.clinic || "").toLowerCase() === autoClinicName.toLowerCase())
+          : allDoctors;
+        const filteredPatients = autoClinicName 
+          ? allPatients.filter(p => (p.clinic || "").toLowerCase() === autoClinicName.toLowerCase())
+          : allPatients;
+        
+        setDoctors(filteredDoctors);
+        setPatients(filteredPatients);
 
         // Handle Clinic Response
         const cData = Array.isArray(clinicRes.data)
@@ -55,6 +75,16 @@ const AddBill = () => {
           : clinicRes.data.clinics || [];
 
         setClinics(cData);
+        
+        // Find and set clinic ID for auto-detected clinic
+        if (autoClinicName) {
+          const matchedClinic = cData.find(c => 
+            (c.name || c.clinicName || "").toLowerCase() === autoClinicName.toLowerCase()
+          );
+          if (matchedClinic) {
+            setForm(prev => ({ ...prev, clinicId: matchedClinic._id, clinicName: autoClinicName }));
+          }
+        }
 
       } catch (err) {
         console.error("Fetch error:", err);
@@ -62,7 +92,7 @@ const AddBill = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [autoClinicName]);
 
   // --- 3. Fetch Encounters (Server-Side Filter) ---
   useEffect(() => {
@@ -155,7 +185,7 @@ const AddBill = () => {
 
       await axios.post(`${API_BASE}/bills`, payload);
       toast.success("Bill created successfully!");
-      navigate("/BillingRecords");
+      navigate("/clinic-dashboard/BillingRecords");
     } catch (err) {
       console.error(err);
       toast.error("Error creating bill. Please try again.");
@@ -211,24 +241,32 @@ const AddBill = () => {
                 </select>
               </div>
 
-              {/* ✅ FIXED: Clinic Name is NOW ALWAYS A DROPDOWN */}
+              {/* Clinic Name - Auto-detected for clinic dashboard */}
               <div className="col-md-6 mb-3">
-                <label className="form-label">Clinic Name <span className="text-danger">*</span></label>
-                <select
-                  name="clinicId"
-                  className="form-select"
-                  value={form.clinicId}
-                  onChange={handleClinicChange}
-                  required
-                >
-                  <option value="">-- Select Clinic --</option>
-                  {clinics.map((c) => (
-                    <option key={c._id} value={c._id}>
-                      {c.name || c.clinicName || "Unnamed Clinic"}
-                    </option>
-                  ))}
-                </select>
-                {clinics.length === 0 && (
+                <label className="form-label">Clinic Name {autoClinicName ? "(Auto-detected)" : ""}<span className="text-danger">*</span></label>
+                {autoClinicName ? (
+                  <input
+                    className="form-control bg-light"
+                    value={autoClinicName}
+                    readOnly
+                  />
+                ) : (
+                  <select
+                    name="clinicId"
+                    className="form-select"
+                    value={form.clinicId}
+                    onChange={handleClinicChange}
+                    required
+                  >
+                    <option value="">-- Select Clinic --</option>
+                    {clinics.map((c) => (
+                      <option key={c._id} value={c._id}>
+                        {c.name || c.clinicName || "Unnamed Clinic"}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {!autoClinicName && clinics.length === 0 && (
                   <small className="text-danger">No clinics found. Please add a clinic first.</small>
                 )}
               </div>
@@ -345,7 +383,7 @@ const AddBill = () => {
             <button
               type="button"
               className="btn btn-secondary ms-2"
-              onClick={() => navigate("/BillingRecords")}
+              onClick={() => navigate("/clinic-dashboard/BillingRecords")}
             >
               Cancel
             </button>
