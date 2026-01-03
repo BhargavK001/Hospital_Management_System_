@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { FaBars } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "../../admin-dashboard/styles/AdminNavbar.css";
 import { useNavigate } from "react-router-dom";
 import API_BASE from "../../config";
 
@@ -113,16 +114,7 @@ export default function PatientNavbar({ toggleSidebar }) {
 
         {open && (
           <div
-            className="shadow"
-            style={{
-              position: "absolute",
-              top: "55px",
-              right: "0",
-              background: "white",
-              borderRadius: "8px",
-              width: "180px",
-              zIndex: 1000,
-            }}
+            className="admin-dropdown shadow"
           >
             <button
               className="dropdown-item d-flex align-items-center gap-2"

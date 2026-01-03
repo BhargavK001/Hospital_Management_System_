@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "../../admin-dashboard/styles/AdminNavbar.css";
 import { FaBars } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import API_BASE from "../../config";
@@ -89,22 +90,24 @@ export default function DoctorNavbar({ onToggle }) {
             />
           ) : (
             <div
-              className="rounded-circle bg-white text-primary fw-bold d-flex align-items-center justify-content-center"
               style={{
-                width: 35,
-                height: 35,
-                fontSize: 18
+                width: "35px",
+                height: "35px",
+                borderRadius: "50%",
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "white",
+                fontWeight: "600",
+                fontSize: "16px",
               }}
             >
               {letter}
             </div>
           )}
 
-          {/* UPDATED: Added 'd-none d-md-block' class.
-             - d-none: Hides the name by default (mobile view).
-             - d-md-block: Shows the name on medium screens and up (desktop view).
-          */}
-          <span className="text-white ms-2 fw-semibold d-none d-md-block">
+          <span className="text-white ms-2 fw-semibold username">
             {profileData.name}
           </span>
         </div>
@@ -112,16 +115,6 @@ export default function DoctorNavbar({ onToggle }) {
         {dropdownOpen && (
           <div
             className="admin-dropdown"
-            style={{
-              position: "absolute",
-              top: "48px",
-              right: 0,
-              zIndex: 2000,
-              background: "white",
-              borderRadius: "8px",
-              overflow: "hidden",
-              boxShadow: "0 2px 10px rgba(0,0,0,0.15)"
-            }}
           >
             <button
               className="dropdown-item d-flex align-items-center gap-2"

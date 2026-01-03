@@ -1,30 +1,51 @@
 import React, { useState, useRef, useEffect } from "react";
 import { FaBars } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "../styles/AdminNavbar.css";
 import { useNavigate } from "react-router-dom";
-import admin from "../images/admin.png";
+import API_BASE from "../../config";
 
 const Navbar = ({ toggleSidebar }) => {
   const [open, setOpen] = useState(false);
-  const [userName, setUserName] = useState("Admin");
+  const [profileData, setProfileData] = useState({ name: "Admin", avatar: "" });
   const menuRef = useRef();
   const navigate = useNavigate();
 
-  // Load user name from localStorage
+  const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+  const userId = authUser?.id;
+
+  // Fetch admin profile on mount
   useEffect(() => {
-    const authUserStr = localStorage.getItem("authUser");
-    if (authUserStr) {
-      try {
-        const authUser = JSON.parse(authUserStr);
-        if (authUser.name) {
-          setUserName(authUser.name);
-        }
-      } catch (err) {
-        // Failed to parse authUser from localStorage - using default name
-        console.debug("Could not parse authUser:", err);
-      }
+    if (userId) {
+      fetchProfile();
+    } else {
+      // Fallback to authUser name if no userId
+      setProfileData({
+        name: authUser?.name || "System Admin",
+        avatar: ""
+      });
     }
-  }, []);
+  }, [userId]);
+
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/api/user/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setProfileData({
+          name: data.name || "Admin",
+          avatar: data.avatar || "",
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching admin profile:", err);
+    }
+  };
 
   // close dropdown on outside click
   useEffect(() => {
@@ -43,6 +64,9 @@ const Navbar = ({ toggleSidebar }) => {
     localStorage.removeItem("authUser");
     navigate("/");
   };
+
+  // Get first letter for avatar fallback
+  const letter = profileData.name?.trim()?.charAt(0)?.toUpperCase() || "A";
 
   return (
     <nav className="navbar navbar-dark bg-primary px-3 d-flex justify-content-between align-items-center">
@@ -64,14 +88,34 @@ const Navbar = ({ toggleSidebar }) => {
           style={{ cursor: "pointer" }}
           onClick={() => setOpen(!open)}
         >
-          <img
-            src={admin}
-            alt="User Avatar"
-            width="35"
-            height="35"
-            className="rounded-circle"
-          />
-          <span className="text-white ms-2 fw-semibold">{userName}</span>
+          {profileData.avatar ? (
+            <img
+              src={profileData.avatar}
+              alt="User Avatar"
+              width="35"
+              height="35"
+              className="rounded-circle"
+              style={{ objectFit: "cover" }}
+            />
+          ) : (
+            <div
+              style={{
+                width: "35px",
+                height: "35px",
+                borderRadius: "50%",
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "white",
+                fontWeight: "600",
+                fontSize: "16px",
+              }}
+            >
+              {letter}
+            </div>
+          )}
+          <span className="text-white ms-2 fw-semibold username">{profileData.name}</span>
         </div>
 
         {open && (
@@ -113,3 +157,4 @@ const Navbar = ({ toggleSidebar }) => {
 };
 
 export default Navbar;
+

@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { FaBars, FaBell, FaUserMd, FaUserNurse } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "../../admin-dashboard/styles/AdminNavbar.css";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import admin from "../images/admin.png";
 import API_BASE from "../../config";
 
 const Navbar = ({ toggleSidebar }) => {
@@ -16,14 +16,44 @@ const Navbar = ({ toggleSidebar }) => {
   const notificationRef = useRef();
   const navigate = useNavigate();
 
-  // Get authUser from localStorage for displaying admin name
-  let authUser = {};
-  try {
-    authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
-  } catch (e) {
-    authUser = {};
-  }
-  const adminName = authUser?.name || authUser?.clinicName || "Clinic Admin";
+  const [profileData, setProfileData] = useState({ name: "Clinic Admin", avatar: "" });
+
+  // Get authUser from localStorage
+  const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+  const userId = authUser?.id;
+
+  // Fetch profile on mount
+  useEffect(() => {
+    if (userId) {
+      fetchProfile();
+    } else {
+      setProfileData({
+        name: authUser?.name || authUser?.clinicName || "Clinic Admin",
+        avatar: ""
+      });
+    }
+  }, [userId]);
+
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/api/user/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setProfileData({
+          name: data.name || "Clinic Admin",
+          avatar: data.avatar || "",
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching clinic profile:", err);
+    }
+  };
+
+  // Get first letter for avatar fallback
+  const letter = profileData.name?.trim()?.charAt(0)?.toUpperCase() || "C";
 
   // Fetch pending approvals for notifications
   const fetchPendingApprovals = async () => {
@@ -127,70 +157,162 @@ const Navbar = ({ toggleSidebar }) => {
 
           {notificationOpen && (
             <div
-              className="position-absolute bg-white rounded shadow-lg"
+              className="position-absolute"
               style={{
                 right: 0,
                 top: "100%",
-                marginTop: "8px",
-                minWidth: "320px",
-                maxWidth: "380px",
-                zIndex: 1050
+                marginTop: "12px",
+                minWidth: "360px",
+                maxWidth: "400px",
+                zIndex: 1050,
+                background: "#fff",
+                borderRadius: "16px",
+                boxShadow: "0 10px 40px rgba(0, 0, 0, 0.15)",
+                border: "1px solid rgba(0, 0, 0, 0.05)",
+                overflow: "hidden",
               }}
             >
-              <div className="p-3 border-bottom d-flex justify-content-between align-items-center">
-                <h6 className="mb-0 fw-bold text-primary">
+              {/* Header with gradient */}
+              <div
+                style={{
+                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  padding: "16px 20px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <h6 style={{ margin: 0, fontWeight: 700, color: "#fff", fontSize: "16px" }}>
                   Notifications
-                  {notificationCount > 0 && (
-                    <span className="badge bg-danger ms-2">{notificationCount}</span>
-                  )}
                 </h6>
+                {notificationCount > 0 && (
+                  <span
+                    style={{
+                      background: "rgba(255, 255, 255, 0.25)",
+                      backdropFilter: "blur(10px)",
+                      padding: "4px 12px",
+                      borderRadius: "50px",
+                      color: "#fff",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {notificationCount} pending
+                  </span>
+                )}
               </div>
 
-              <div style={{ maxHeight: "300px", overflowY: "auto" }}>
+              <div style={{ maxHeight: "340px", overflowY: "auto" }}>
                 {loadingNotifications ? (
-                  <div className="p-3 text-center text-muted">
-                    <small>Loading...</small>
+                  <div style={{ padding: "40px", textAlign: "center" }}>
+                    <div
+                      style={{
+                        width: "40px",
+                        height: "40px",
+                        borderRadius: "50%",
+                        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                        margin: "0 auto 12px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <FaBell style={{ color: "#fff", animation: "pulse 1s infinite" }} />
+                    </div>
+                    <span style={{ color: "#64748b", fontSize: "14px" }}>Loading...</span>
                   </div>
                 ) : pendingApprovals.length === 0 ? (
-                  <div className="p-4 text-center text-muted">
-                    <div style={{ fontSize: "32px", opacity: 0.5 }}>✅</div>
-                    <small>No pending approvals</small>
+                  <div style={{ padding: "40px", textAlign: "center" }}>
+                    <div
+                      style={{
+                        width: "60px",
+                        height: "60px",
+                        borderRadius: "50%",
+                        background: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)",
+                        margin: "0 auto 16px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "28px",
+                      }}
+                    >
+                      ✅
+                    </div>
+                    <div style={{ color: "#1a1f36", fontWeight: 600, fontSize: "15px", marginBottom: "4px" }}>
+                      All caught up!
+                    </div>
+                    <span style={{ color: "#64748b", fontSize: "13px" }}>No pending approvals</span>
                   </div>
                 ) : (
-                  pendingApprovals.slice(0, 5).map((request) => (
+                  pendingApprovals.slice(0, 5).map((request, index) => (
                     <div
                       key={request._id}
-                      className="p-3 border-bottom d-flex align-items-start gap-3"
-                      style={{ cursor: "pointer", transition: "background 0.2s" }}
+                      style={{
+                        padding: "14px 20px",
+                        borderBottom: index < Math.min(pendingApprovals.length, 5) - 1 ? "1px solid #f1f5f9" : "none",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "14px",
+                      }}
                       onClick={() => {
                         setNotificationOpen(false);
                         navigate("/clinic-dashboard/pending-approvals");
                       }}
-                      onMouseOver={(e) => e.currentTarget.style.background = "#f8f9fa"}
-                      onMouseOut={(e) => e.currentTarget.style.background = "transparent"}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.background = "#f8fafc";
+                        e.currentTarget.style.transform = "translateX(4px)";
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.background = "transparent";
+                        e.currentTarget.style.transform = "translateX(0)";
+                      }}
                     >
                       <div
-                        className={`rounded-circle d-flex align-items-center justify-content-center ${request.role === "doctor" ? "bg-primary" : "bg-info"
-                          } bg-opacity-10`}
-                        style={{ width: "40px", height: "40px", flexShrink: 0 }}
+                        style={{
+                          width: "44px",
+                          height: "44px",
+                          borderRadius: "12px",
+                          background: request.role === "doctor"
+                            ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                            : "linear-gradient(135deg, #11998e 0%, #38ef7d 100%)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                        }}
                       >
                         {request.role === "doctor" ? (
-                          <FaUserMd className="text-primary" />
+                          <FaUserMd style={{ color: "#fff", fontSize: "18px" }} />
                         ) : (
-                          <FaUserNurse className="text-info" />
+                          <FaUserNurse style={{ color: "#fff", fontSize: "18px" }} />
                         )}
                       </div>
-                      <div className="flex-grow-1">
-                        <div className="fw-semibold text-dark" style={{ fontSize: "14px" }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, color: "#1a1f36", fontSize: "14px", marginBottom: "4px" }}>
                           {request.name}
                         </div>
-                        <div className="d-flex justify-content-between align-items-center">
-                          <span className={`badge ${request.role === "doctor" ? "bg-primary" : "bg-info"} bg-opacity-75`} style={{ fontSize: "10px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span
+                            style={{
+                              fontSize: "11px",
+                              fontWeight: 600,
+                              textTransform: "uppercase",
+                              letterSpacing: "0.3px",
+                              padding: "3px 10px",
+                              borderRadius: "50px",
+                              background: request.role === "doctor"
+                                ? "rgba(102, 126, 234, 0.1)"
+                                : "rgba(17, 153, 142, 0.1)",
+                              color: request.role === "doctor" ? "#667eea" : "#11998e",
+                            }}
+                          >
                             {request.role === "doctor" ? "Doctor" : "Staff"}
                           </span>
-                          <small className="text-muted" style={{ fontSize: "11px" }}>
+                          <span style={{ color: "#94a3b8", fontSize: "11px" }}>
                             {formatTimeAgo(request.createdAt)}
-                          </small>
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -200,18 +322,31 @@ const Navbar = ({ toggleSidebar }) => {
 
               {pendingApprovals.length > 0 && (
                 <div
-                  className="p-3 text-center border-top"
-                  style={{ cursor: "pointer" }}
+                  style={{
+                    padding: "14px 20px",
+                    textAlign: "center",
+                    borderTop: "1px solid #f1f5f9",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                  }}
                   onClick={() => {
                     setNotificationOpen(false);
                     navigate("/clinic-dashboard/pending-approvals");
                   }}
-                  onMouseOver={(e) => e.currentTarget.style.background = "#f8f9fa"}
+                  onMouseOver={(e) => e.currentTarget.style.background = "#f8fafc"}
                   onMouseOut={(e) => e.currentTarget.style.background = "transparent"}
                 >
-                  <small className="text-primary fw-semibold">
+                  <span
+                    style={{
+                      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      fontWeight: 600,
+                      fontSize: "13px",
+                    }}
+                  >
                     View All Pending Approvals →
-                  </small>
+                  </span>
                 </div>
               )}
             </div>
@@ -225,14 +360,34 @@ const Navbar = ({ toggleSidebar }) => {
             style={{ cursor: "pointer" }}
             onClick={() => setOpen(!open)}
           >
-            <img
-              src={admin}
-              alt="User Avatar"
-              width="35"
-              height="35"
-              className="rounded-circle"
-            />
-            <span className="text-white ms-2 fw-semibold">{adminName}</span>
+            {profileData.avatar ? (
+              <img
+                src={profileData.avatar}
+                alt="User Avatar"
+                width="35"
+                height="35"
+                className="rounded-circle"
+                style={{ objectFit: "cover" }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: "35px",
+                  height: "35px",
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "white",
+                  fontWeight: "600",
+                  fontSize: "16px",
+                }}
+              >
+                {letter}
+              </div>
+            )}
+            <span className="text-white ms-2 fw-semibold username">{profileData.name}</span>
           </div>
 
           {open && (
