@@ -8,64 +8,75 @@ import {
   FaChartBar
 } from "react-icons/fa";
 import logo from "../images/Logo.png";
+import "../../shared/styles/ModernUI.css";
+import "../styles/PatientSidebar.css";
 
 export default function PatientSidebar({ isOpen = true }) {
-  const widthExpanded = 250;
-  const widthCollapsed = 64;
-
-  const linkClass = ({ isActive }) =>
-    "nav-link d-flex align-items-center gap-2 " +
-    (isActive ? "active" : "text-primary");
-
   return (
-    <aside className={`patient-sidebar ${isOpen ? "open" : "closed"} d-flex flex-column vh-100`}>
-      {/* LOGO + TITLE */}
-      <div className="d-flex align-items-center mb-4 px-2">
-        <img src={logo} alt="Logo" width="30" height="30" />
-        <h4 className={`m-0 fw-bold text-primary ms-2 title-text ${isOpen ? "show" : "hide"}`}>One Care</h4>
+    <aside className={`patient-sidebar modern-sidebar ${isOpen ? "open" : "closed"} d-flex flex-column vh-100`}>
+      {/* Logo + Title */}
+      <div className="modern-sidebar-logo">
+        <img src={logo} alt="Logo" style={{ borderRadius: 10 }} />
+        {isOpen && <h4>One Care</h4>}
       </div>
 
-      {/* MENU */}
-      <ul className="nav nav-pills flex-column flex-grow-1">
-        <li className="nav-item mb-2">
-          <NavLink to="/patient-dashboard" className={linkClass}>
-            <div className="icon-wrapper"><FaTachometerAlt /></div>
+      {/* Menu */}
+      <ul className="modern-nav" style={{ overflowY: "auto", flex: 1 }}>
+        <li className="modern-nav-item">
+          <NavLink
+            to="/patient-dashboard"
+            className={({ isActive }) => `modern-nav-link ${isActive ? "active" : ""}`}
+            end
+          >
+            <span className="modern-nav-icon"><FaTachometerAlt /></span>
             <span className={`link-text ${isOpen ? "show" : "hide"}`}>Dashboard</span>
           </NavLink>
         </li>
 
-        <li className="nav-item mb-2">
-          <NavLink to="/patient/appointments" className={linkClass}>
-            <div className="icon-wrapper"><FaCalendarAlt /></div>
+        <li className="modern-nav-item">
+          <NavLink
+            to="/patient/appointments"
+            className={({ isActive }) => `modern-nav-link ${isActive ? "active" : ""}`}
+          >
+            <span className="modern-nav-icon"><FaCalendarAlt /></span>
             <span className={`link-text ${isOpen ? "show" : "hide"}`}>Appointments</span>
           </NavLink>
         </li>
 
-        <li className="nav-item mb-2">
-          <NavLink to="/patient/encounters" className={linkClass}>
-            <div className="icon-wrapper"><FaClipboardList /></div>
+        <li className="modern-nav-item">
+          <NavLink
+            to="/patient/encounters"
+            className={({ isActive }) => `modern-nav-link ${isActive ? "active" : ""}`}
+          >
+            <span className="modern-nav-icon"><FaClipboardList /></span>
             <span className={`link-text ${isOpen ? "show" : "hide"}`}>Encounters</span>
           </NavLink>
         </li>
 
-        <li className="nav-item mb-2">
-          <NavLink to="/patient/billing" className={linkClass}>
-            <div className="icon-wrapper"><FaFileInvoice /></div>
+        <li className="modern-nav-item">
+          <NavLink
+            to="/patient/billing"
+            className={({ isActive }) => `modern-nav-link ${isActive ? "active" : ""}`}
+          >
+            <span className="modern-nav-icon"><FaFileInvoice /></span>
             <span className={`link-text ${isOpen ? "show" : "hide"}`}>Billing Records</span>
           </NavLink>
         </li>
 
-        <li className="nav-item mb-2">
-          <NavLink to="/patient/reports" className={linkClass}>
-            <div className="icon-wrapper"><FaChartBar /></div>
+        <li className="modern-nav-item">
+          <NavLink
+            to="/patient/reports"
+            className={({ isActive }) => `modern-nav-link ${isActive ? "active" : ""}`}
+          >
+            <span className="modern-nav-icon"><FaChartBar /></span>
             <span className={`link-text ${isOpen ? "show" : "hide"}`}>Reports</span>
           </NavLink>
         </li>
       </ul>
 
-      {/* FOOTER */}
-      <div className="sidebar-footer mt-auto p-2 text-center text-muted small">
-        {isOpen ? "© One Care" : "©"}
+      {/* Footer */}
+      <div className="modern-sidebar-footer">
+        {isOpen ? "© 2024 One Care" : "©"}
       </div>
     </aside>
   );

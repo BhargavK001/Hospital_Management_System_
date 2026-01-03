@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
-// CHANGE 1: Added specific icons to the import
 import { FaBars, FaUser, FaLock, FaSignOutAlt } from "react-icons/fa";
-import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
 import API_BASE from "../../config";
+import "../../shared/styles/ModernUI.css";
 
 export default function PatientNavbar({ toggleSidebar }) {
   const [open, setOpen] = useState(false);
@@ -30,12 +29,8 @@ export default function PatientNavbar({ toggleSidebar }) {
   const fetchProfile = async () => {
     try {
       const token = localStorage.getItem("token");
-      
-      // NOTE: If you still get a 404, check if your backend route is actually "/api/users" (plural)
-      const res = await fetch(`${API_BASE}/api/users/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const res = await fetch(`${API_BASE}/api/user/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       
       if (res.ok) {
@@ -66,105 +61,66 @@ export default function PatientNavbar({ toggleSidebar }) {
     navigate("/");
   };
 
-  // Get first letter for avatar fallback
   const letter = profileData.name?.trim()?.charAt(0)?.toUpperCase() || "P";
 
   return (
-    <nav className="navbar navbar-dark bg-primary px-3 d-flex justify-content-between align-items-center">
-
-      {/* left side */}
-      <div className="d-flex align-items-center gap-2">
-        <button
-          className="btn btn-outline-light border-0"
-          onClick={toggleSidebar}
-        >
-          <FaBars size={22} />
+    <nav className="modern-navbar">
+      {/* Left section */}
+      <div className="modern-navbar-left">
+        <button className="modern-menu-btn" onClick={toggleSidebar}>
+          <FaBars />
         </button>
-
-        <h4 className="text-white fw-bold mb-0">One Care Patient</h4>
+        <h1 className="modern-navbar-title">Patient Portal</h1>
       </div>
 
-      {/* right side: profile dropdown */}
-      <div className="position-relative" ref={menuRef}>
-        <div
-          className="d-flex align-items-center"
-          style={{ cursor: "pointer" }}
-          onClick={() => setOpen(!open)}
-        >
-          {profileData.avatar ? (
-            <img
-              src={profileData.avatar}
-              alt="User Avatar"
-              width="35"
-              height="35"
-              className="rounded-circle"
-              style={{ objectFit: "cover" }}
-            />
-          ) : (
-            <div
-              style={{
-                width: "35px",
-                height: "35px",
-                borderRadius: "50%",
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "white",
-                fontWeight: "600",
-                fontSize: "16px",
-              }}
-            >
-              {letter}
+      {/* Right section */}
+      <div className="modern-navbar-right">
+        <div style={{ position: "relative" }} ref={menuRef}>
+          <button className="modern-profile-btn" onClick={() => setOpen(!open)}>
+            {profileData.avatar ? (
+              <div className="modern-profile-avatar">
+                <img src={profileData.avatar} alt="Avatar" />
+              </div>
+            ) : (
+              <div className="modern-profile-avatar">{letter}</div>
+            )}
+            <span className="modern-profile-name">{profileData.name}</span>
+          </button>
+
+          {open && (
+            <div className="modern-dropdown">
+              <button
+                className="modern-dropdown-item"
+                onClick={() => {
+                  navigate("/patient/profile");
+                  setOpen(false);
+                }}
+              >
+                <FaUser />
+                My Profile
+              </button>
+
+              <button
+                className="modern-dropdown-item"
+                onClick={() => {
+                  navigate("/patient/change-password");
+                  setOpen(false);
+                }}
+              >
+                <FaLock />
+                Change Password
+              </button>
+
+              <button
+                className="modern-dropdown-item danger"
+                onClick={handleLogout}
+              >
+                <FaSignOutAlt />
+                Logout
+              </button>
             </div>
           )}
-          <span className="text-white ms-2 fw-semibold username">{profileData.name}</span>
         </div>
-
-        {open && (
-          <div
-            className="shadow"
-            style={{
-              position: "absolute",
-              top: "55px",
-              right: "0",
-              background: "white",
-              borderRadius: "8px",
-              width: "180px",
-              zIndex: 1000,
-            }}
-          >
-            <button
-              className="dropdown-item d-flex align-items-center gap-2"
-              onClick={() => {
-                navigate("/patient/profile");
-                setOpen(false);
-              }}
-            >
-              {/* CHANGE 3: Replaced <i> tag with React Icon */}
-              <FaUser /> My Profile
-            </button>
-
-            <button
-              className="dropdown-item d-flex align-items-center gap-2"
-              onClick={() => {
-                navigate("/patient/change-password");
-                setOpen(false);
-              }}
-            >
-              {/* CHANGE 4: Replaced <i> tag with React Icon */}
-              <FaLock /> Change Password
-            </button>
-
-            <button
-              className="dropdown-item text-danger d-flex align-items-center gap-2"
-              onClick={handleLogout}
-            >
-              {/* CHANGE 5: Replaced <i> tag with React Icon */}
-              <FaSignOutAlt /> Logout
-            </button>
-          </div>
-        )}
       </div>
     </nav>
   );

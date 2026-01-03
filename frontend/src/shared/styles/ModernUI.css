@@ -1,0 +1,424 @@
+/* ===============================================
+   SHARED MODERN UI STYLES
+   Blue theme navbar + White modern sidebar
+   For: Admin, Clinic, Doctor, Patient dashboards
+   =============================================== */
+
+/* --- DESIGN TOKENS --- */
+:root {
+    --modern-primary: #0d6efd;
+    --modern-primary-light: #3d8bfd;
+    --modern-primary-dark: #0a58ca;
+    --modern-primary-glow: rgba(13, 110, 253, 0.15);
+    --modern-text-primary: #1e293b;
+    --modern-text-secondary: #64748b;
+    --modern-text-muted: #94a3b8;
+    --modern-hover-bg: #f0f7ff;
+    --modern-active-bg: linear-gradient(135deg, #0d6efd 0%, #3d8bfd 100%);
+    --modern-border: #e2e8f0;
+    --modern-shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.08);
+    --modern-shadow-glow: 0 4px 12px rgba(13, 110, 253, 0.3);
+    --modern-transition: all 0.2s ease;
+}
+
+/* --- MODERN WHITE SIDEBAR --- */
+.modern-sidebar {
+    background: #ffffff;
+    border-right: 1px solid var(--modern-border);
+    box-shadow: 2px 0 16px rgba(0, 0, 0, 0.04);
+}
+
+.modern-sidebar-logo {
+    padding: 20px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--modern-border);
+    margin-bottom: 8px;
+}
+
+.modern-sidebar-logo img {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    object-fit: cover;
+}
+
+.modern-sidebar-logo h4 {
+    color: var(--modern-primary);
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* Navigation Items */
+.modern-nav {
+    padding: 8px 12px;
+    list-style: none;
+    margin: 0;
+}
+
+.modern-nav-item {
+    margin-bottom: 4px;
+}
+
+.modern-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 14px;
+    border-radius: 10px;
+    color: var(--modern-text-secondary);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: var(--modern-transition);
+    position: relative;
+}
+
+.modern-nav-link:hover {
+    background: var(--modern-hover-bg);
+    color: var(--modern-primary);
+}
+
+.modern-nav-link:hover .modern-nav-icon {
+    color: var(--modern-primary);
+}
+
+.modern-nav-link.active {
+    background: var(--modern-active-bg);
+    color: #ffffff;
+    box-shadow: var(--modern-shadow-glow);
+}
+
+.modern-nav-link.active .modern-nav-icon {
+    color: #fff;
+}
+
+.modern-nav-icon {
+    font-size: 18px;
+    min-width: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--modern-transition);
+}
+
+/* Submenu Styling */
+.modern-submenu {
+    list-style: none;
+    padding: 4px 0 4px 20px;
+    margin: 0;
+}
+
+.modern-submenu .modern-nav-link {
+    padding: 9px 12px;
+    font-size: 13px;
+}
+
+.modern-nav-toggle {
+    cursor: pointer;
+    user-select: none;
+}
+
+.modern-nav-toggle .toggle-icon {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--modern-text-muted);
+    transition: transform 0.2s ease;
+}
+
+.modern-nav-toggle.open .toggle-icon {
+    transform: rotate(180deg);
+}
+
+/* Sidebar Footer */
+.modern-sidebar-footer {
+    margin-top: auto;
+    padding: 16px 20px;
+    border-top: 1px solid var(--modern-border);
+    color: var(--modern-text-muted);
+    font-size: 12px;
+    text-align: center;
+}
+
+/* --- MODERN NAVBAR (Blue Theme) --- */
+.modern-navbar {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    border-bottom: none;
+    box-shadow: 0 4px 20px rgba(13, 110, 253, 0.25);
+    padding: 0 24px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 999;
+}
+
+.modern-navbar-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.modern-navbar-title {
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.modern-menu-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    border: none;
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--modern-transition);
+    backdrop-filter: blur(10px);
+}
+
+.modern-menu-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(1.05);
+}
+
+.modern-menu-btn svg {
+    font-size: 18px;
+}
+
+.modern-navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Notification Bell */
+.modern-notification-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    border: none;
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--modern-transition);
+    position: relative;
+    backdrop-filter: blur(10px);
+}
+
+.modern-notification-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.modern-notification-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 700;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+}
+
+/* Profile Section */
+.modern-profile-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 14px 6px 6px;
+    border-radius: 50px;
+    border: none;
+    background: rgba(255, 255, 255, 0.15);
+    cursor: pointer;
+    transition: var(--modern-transition);
+    backdrop-filter: blur(10px);
+}
+
+.modern-profile-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.modern-profile-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0d6efd;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.modern-profile-avatar img {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.modern-profile-name {
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* Modern Dropdown */
+.modern-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: white;
+    border-radius: 16px;
+    min-width: 200px;
+    padding: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    z-index: 1000;
+    animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modern-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    color: #334155;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--modern-transition);
+}
+
+.modern-dropdown-item:hover {
+    background: #f8fafc;
+}
+
+.modern-dropdown-item.danger {
+    color: #ef4444;
+}
+
+.modern-dropdown-item.danger:hover {
+    background: #fef2f2;
+}
+
+.modern-dropdown-item i,
+.modern-dropdown-item svg {
+    font-size: 16px;
+    width: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Custom Scrollbar for Sidebar */
+.modern-sidebar::-webkit-scrollbar {
+    width: 5px;
+}
+
+.modern-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.modern-sidebar::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 3px;
+}
+
+.modern-sidebar::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e1;
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 768px) {
+    .modern-navbar {
+        padding: 0 16px;
+        height: 60px;
+    }
+
+    .modern-navbar-title {
+        font-size: 16px;
+    }
+
+    .modern-profile-name {
+        display: none;
+    }
+
+    .modern-menu-btn,
+    .modern-notification-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+    }
+
+    .modern-profile-btn {
+        padding: 4px;
+        border-radius: 50%;
+    }
+
+    .modern-profile-avatar {
+        width: 34px;
+        height: 34px;
+    }
+}
+
+@media (max-width: 480px) {
+    .modern-navbar {
+        padding: 0 12px;
+        height: 56px;
+    }
+
+    .modern-navbar-title {
+        font-size: 14px;
+    }
+
+    .modern-navbar-left {
+        gap: 10px;
+    }
+
+    .modern-navbar-right {
+        gap: 8px;
+    }
+
+    .modern-menu-btn,
+    .modern-notification-btn {
+        width: 36px;
+        height: 36px;
+    }
+}

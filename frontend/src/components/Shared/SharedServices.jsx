@@ -184,13 +184,33 @@ function StatusToggle({ active, onClick }) {
 function DurationPicker({ value, onChange }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
-  const [hh, mm] = (value || "00:00").split(":");
-  
-  // FIX: Ensure hours go up to a reasonable number for services (e.g. 24h or more) if needed
-  const hours = Array.from({ length: 13 }, (_, i) =>
-    i.toString().padStart(2, "0")
-  );
-  const minutes = ["00","05","10","15","20","25","30","35","40","45","50","55"];
+
+  // Handle both string "HH:MM" format and numeric (minutes) format
+  const normalizeValue = (val) => {
+    if (val === null || val === undefined) return "00:00";
+    if (typeof val === "number") {
+      // Convert minutes to HH:MM format
+      const hours = Math.floor(val / 60);
+      const mins = val % 60;
+      return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
+    }
+    if (typeof val === "string" && val.includes(":")) {
+      return val;
+    }
+    // Try to parse as number
+    const numVal = parseInt(val, 10);
+    if (!isNaN(numVal)) {
+      const hours = Math.floor(numVal / 60);
+      const mins = numVal % 60;
+      return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
+    }
+    return "00:00";
+  };
+
+  const normalizedValue = normalizeValue(value);
+  const [hh, mm] = normalizedValue.split(":");
+  const hours = Array.from({ length: 13 }, (_, i) => i.toString().padStart(2, "0"));
+  const minutes = ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"];
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -266,7 +286,7 @@ function ServiceForm({ initial, onClose, onSave, availableCategories, isDoctor, 
     if (isClinic) return clinicInfo?.clinicName || "";
     return "";
   };
-  
+
   const getDefaultDoctor = () => {
     if (isDoctor) return `${doctorInfo?.firstName || ""} ${doctorInfo?.lastName || ""}`.trim();
     return "";
@@ -335,12 +355,16 @@ function ServiceForm({ initial, onClose, onSave, availableCategories, isDoctor, 
     fetchOptions();
   }, [isDoctor]);
 
-  // Filter doctors by clinic (for clinic or admin)
-  const filteredDoctors = form.clinicName
-    ? doctors.filter(
-        (d) => (d.clinic || "").toLowerCase() === form.clinicName.toLowerCase()
-      )
-    : doctors;
+  // Filter doctors by clinic (for admin only - clinic admins don't need filtering as backend already filters by clinicId)
+  const filteredDoctors = isClinic
+    ? doctors // For clinic admins, backend already returns only their clinic's doctors
+    : (form.clinicName
+      ? doctors.filter(d => {
+        // Match by clinic name (legacy field) OR clinicName field
+        const docClinic = (d.clinic || d.clinicName || "").toLowerCase();
+        return docClinic === form.clinicName.toLowerCase();
+      })
+      : doctors);
 
   const change = (k) => (e) => {
     const val = e.target.value;

@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
-import "bootstrap/dist/css/bootstrap.min.css";
-import { FaBars } from "react-icons/fa";
+import { FaBars, FaUser, FaLock, FaSignOutAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import API_BASE from "../../config";
+import "../../shared/styles/ModernUI.css";
 
 export default function DoctorNavbar({ onToggle }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -61,96 +61,63 @@ export default function DoctorNavbar({ onToggle }) {
   const letter = profileData.name?.trim()?.charAt(0)?.toUpperCase() || "D";
 
   return (
-    <nav className="navbar navbar-dark bg-primary px-3 d-flex justify-content-between align-items-center">
-      {/* LEFT SECTION */}
-      <div className="d-flex align-items-center gap-2">
-        <button className="btn btn-outline-light border-0" onClick={onToggle}>
-          <FaBars size={22} />
+    <nav className="modern-navbar">
+      {/* Left section */}
+      <div className="modern-navbar-left">
+        <button className="modern-menu-btn" onClick={onToggle}>
+          <FaBars />
         </button>
-        {/* On mobile, you might want to show a shorter title or hide it if needed, currently keeps full text */}
-        <h4 className="text-white fw-bold mb-0">One Care Doctor</h4>
+        <h1 className="modern-navbar-title">Doctor Portal</h1>
       </div>
 
-      {/* RIGHT SECTION */}
-      <div className="position-relative" ref={menuRef}>
-        <div
-          className="d-flex align-items-center"
-          style={{ cursor: "pointer" }}
-          onClick={() => setDropdownOpen(!dropdownOpen)}
-        >
-          {profileData.avatar ? (
-            <img
-              src={profileData.avatar}
-              width="35"
-              height="35"
-              alt="doctor"
-              className="rounded-circle"
-              style={{ objectFit: "cover" }}
-            />
-          ) : (
-            <div
-              className="rounded-circle bg-white text-primary fw-bold d-flex align-items-center justify-content-center"
-              style={{
-                width: 35,
-                height: 35,
-                fontSize: 18
-              }}
-            >
-              {letter}
+      {/* Right section */}
+      <div className="modern-navbar-right">
+        <div style={{ position: "relative" }} ref={menuRef}>
+          <button className="modern-profile-btn" onClick={() => setDropdownOpen(!dropdownOpen)}>
+            {profileData.avatar ? (
+              <div className="modern-profile-avatar">
+                <img src={profileData.avatar} alt="Avatar" />
+              </div>
+            ) : (
+              <div className="modern-profile-avatar">{letter}</div>
+            )}
+            <span className="modern-profile-name">{profileData.name}</span>
+          </button>
+
+          {dropdownOpen && (
+            <div className="modern-dropdown">
+              <button
+                className="modern-dropdown-item"
+                onClick={() => {
+                  navigate("/doctor/profile");
+                  setDropdownOpen(false);
+                }}
+              >
+                <FaUser />
+                My Profile
+              </button>
+
+              <button
+                className="modern-dropdown-item"
+                onClick={() => {
+                  navigate("/doctor/change-password");
+                  setDropdownOpen(false);
+                }}
+              >
+                <FaLock />
+                Change Password
+              </button>
+
+              <button
+                className="modern-dropdown-item danger"
+                onClick={handleLogout}
+              >
+                <FaSignOutAlt />
+                Logout
+              </button>
             </div>
           )}
-
-          {/* UPDATED: Added 'd-none d-md-block' class.
-             - d-none: Hides the name by default (mobile view).
-             - d-md-block: Shows the name on medium screens and up (desktop view).
-          */}
-          <span className="text-white ms-2 fw-semibold d-none d-md-block">
-            {profileData.name}
-          </span>
         </div>
-
-        {dropdownOpen && (
-          <div
-            className="admin-dropdown"
-            style={{
-              position: "absolute",
-              top: "48px",
-              right: 0,
-              zIndex: 2000,
-              background: "white",
-              borderRadius: "8px",
-              overflow: "hidden",
-              boxShadow: "0 2px 10px rgba(0,0,0,0.15)"
-            }}
-          >
-            <button
-              className="dropdown-item d-flex align-items-center gap-2"
-              onClick={() => {
-                navigate("/doctor/profile");
-                setDropdownOpen(false);
-              }}
-            >
-              <i className="fa fa-user"></i> My Profile
-            </button>
-
-            <button
-              className="dropdown-item d-flex align-items-center gap-2"
-              onClick={() => {
-                navigate("/doctor/change-password");
-                setDropdownOpen(false);
-              }}
-            >
-              <i className="fa fa-lock"></i> Change Password
-            </button>
-
-            <button
-              className="dropdown-item text-danger d-flex align-items-center gap-2"
-              onClick={handleLogout}
-            >
-              <i className="fa fa-sign-out-alt"></i> Logout
-            </button>
-          </div>
-        )}
       </div>
     </nav>
   );

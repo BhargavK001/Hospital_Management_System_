@@ -1,13 +1,11 @@
-// src/components/Sidebar.jsx
+// src/clinic-dashboard/components/Sidebar.jsx
 import React, { useState } from "react";
 import { Collapse } from "react-bootstrap";
-import "bootstrap/dist/css/bootstrap.min.css";
-import logo from "../images/Logo.png";
+import defaultLogo from "../images/Logo.png";
 import { IoMdSettings } from "react-icons/io";
 import {
   FaTachometerAlt,
   FaCalendarAlt,
-  FaClinicMedical,
   FaUserInjured,
   FaUserMd,
   FaUsers,
@@ -16,187 +14,165 @@ import {
   FaMoneyBill,
   FaFileInvoice,
   FaChevronDown,
-  FaChevronUp,
   FaUserCheck
 } from "react-icons/fa";
 import { NavLink } from "react-router-dom";
+import "../styles/ClinicModern.css";
 
 export default function Sidebar({ collapsed = false }) {
-  const expandedWidth = 250;
-  const collapsedWidth = 64;
+  const expandedWidth = 260;
+  const collapsedWidth = 72;
   const [isEncountersOpen, setIsEncountersOpen] = useState(false);
 
   const linkClass = ({ isActive }) =>
-    "nav-link d-flex align-items-center gap-2 text-primary " + (isActive ? "active" : "");
+    `clinic-nav-link ${isActive ? "active" : ""}`;
+
+  const authUser = JSON.parse(localStorage.getItem('authUser')) || {};
+  const clinicName = authUser.clinicName || "Clinic Dashboard";
+  const clinicLogo = authUser.clinicLogo;
+
+  // Construct the clinic logo URL from uploads folder if available
+  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const logoSrc = clinicLogo ? `${API_BASE}/uploads/${clinicLogo}` : defaultLogo;
 
   return (
-    <>
-      {/* FIX: Make active text white so it doesn't disappear */}
-      <style>
-        {`
-          .nav-pills .nav-link.active {
-            background-color: #0d6efd !important;
-            color: #fff !important;
-            font-weight: 600;
-          }
-          .nav-pills .nav-link.active svg {
-            color: #fff !important;
-          }
-        `}
-      </style>
-
-      <div
-        className="d-flex flex-column vh-100 p-3"
-        style={{
-          width: collapsed ? collapsedWidth : expandedWidth,
-          backgroundColor: "#fff",
-          borderRight: "1px solid #ddd",
-          position: "fixed",
-          top: 0,
-          left: 0,
-          bottom: 0,
-          transition: "width 180ms ease",
-          overflow: "hidden",
-          zIndex: 1000
-        }}
-      >
-        {/* Logo / title */}
-        <div className="d-flex align-items-center mb-4">
-          <img src={logo} alt="Logo" width="30" height="30" />
-          {!collapsed && (
-            <h4 className="m-0 fw-bold text-primary ms-2">
-              {JSON.parse(localStorage.getItem('authUser'))?.clinicName || "Clinic Dashboard"}
-            </h4>
-          )}
-        </div>
-
-        {/* Menu items */}
-        <ul className="nav nav-pills flex-column">
-          <li className="nav-item mb-2">
-            <NavLink to="/clinic-dashboard" className={linkClass} end>
-              <FaTachometerAlt style={{ minWidth: 20 }} />
-              {!collapsed && <span>Dashboard</span>}
-            </NavLink>
-          </li>
-
-          <li className="nav-item mb-2">
-            <NavLink to="/clinic-dashboard/appointments" className={linkClass}>
-              <FaCalendarAlt style={{ minWidth: 20 }} />
-              {!collapsed && <span>Appointments</span>}
-            </NavLink>
-          </li>
-
-          <li className="nav-item mb-2">
-            <div
-              className="nav-link d-flex align-items-center gap-2 text-primary"
-              style={{ cursor: "pointer", justifyContent: "space-between" }}
-              onClick={() => setIsEncountersOpen(!isEncountersOpen)}
-            >
-              <div className="d-flex align-items-center gap-2">
-                <FaCalendarCheck style={{ minWidth: 20 }} />
-                {!collapsed && <span>Encounters</span>}
-              </div>
-              {!collapsed && (isEncountersOpen ? <FaChevronUp /> : <FaChevronDown />)}
-            </div>
-
-            {!collapsed && (
-              <Collapse in={isEncountersOpen}>
-                <ul className="nav flex-column ms-3">
-                  <li className="nav-item mb-2">
-                    <NavLink to="/clinic-dashboard/encounter-list" className={linkClass}>
-                      <FaListAlt style={{ minWidth: 20 }} />
-                      <span>Encounter List</span>
-                    </NavLink>
-                  </li>
-                  <li className="nav-item mb-2">
-                    <NavLink to="/clinic-dashboard/encounter-templates" className={linkClass}>
-                      <FaCalendarAlt style={{ minWidth: 20 }} />
-                      <span>Encounter Templates</span>
-                    </NavLink>
-                  </li>
-                </ul>
-              </Collapse>
-            )}
-          </li>
-
-
-
-          <li className="nav-item mb-2">
-            <NavLink to="/clinic-dashboard/patients" className={linkClass}>
-              <FaUserInjured style={{ minWidth: 20 }} />
-              {!collapsed && <span>Patients</span>}
-            </NavLink>
-          </li>
-
-          <li className="nav-item mb-2">
-            <NavLink to="/clinic-dashboard/doctors" className={linkClass}>
-              <FaUserMd style={{ minWidth: 20 }} />
-              {!collapsed && <span>Doctors</span>}
-            </NavLink>
-          </li>
-
-          <li className="nav-item mb-2">
-            <NavLink to="/clinic-dashboard/receptionists" className={linkClass}>
-              <FaUsers style={{ minWidth: 20 }} />
-              {!collapsed && <span>Receptionist</span>}
-            </NavLink>
-          </li>
-
-          <li className="nav-item mb-2">
-            <NavLink to="/clinic-dashboard/pending-approvals" className={linkClass}>
-              <FaUserCheck style={{ minWidth: 20 }} />
-              {!collapsed && <span>Pending Approvals</span>}
-            </NavLink>
-          </li>
-
-          <li className="nav-item mb-2">
-            <NavLink to="/clinic-dashboard/services" className={linkClass}>
-              <FaListAlt style={{ minWidth: 20 }} />
-              {!collapsed && <span>Services</span>}
-            </NavLink>
-          </li>
-
-          <li className="nav-item mb-2">
-            <NavLink to="/clinic-dashboard/DoctorSession" className={linkClass}>
-              <FaCalendarCheck style={{ minWidth: 20 }} />
-              {!collapsed && <span>Doctor Sessions</span>}
-            </NavLink>
-          </li>
-
-          <li className="nav-item mb-2">
-            <NavLink to="/clinic-dashboard/taxes" className={linkClass}>
-              <FaMoneyBill style={{ minWidth: 20 }} />
-              {!collapsed && <span>Taxes</span>}
-            </NavLink>
-          </li>
-
-          <li className="nav-item mb-2">
-            <NavLink to="/clinic-dashboard/BillingRecords" className={linkClass}>
-              <FaFileInvoice style={{ minWidth: 20 }} />
-              {!collapsed && <span>Billing Records</span>}
-            </NavLink>
-          </li>
-
-          <li className="nav-item mb-2">
-            <NavLink to="/clinic-dashboard/settings" className={linkClass}>
-              <IoMdSettings style={{ minWidth: 20 }} />
-              {!collapsed && <span>Settings</span>}
-            </NavLink>
-          </li>
-        </ul>
-
-        <div
-          style={{
-            marginTop: "auto",
-            padding: 12,
-            fontSize: 12,
-            color: "#6c757d",
-            textAlign: collapsed ? "center" : "left"
-          }}
-        >
-          {!collapsed ? "© One Care" : "©"}
-        </div>
+    <div
+      className="clinic-sidebar d-flex flex-column vh-100"
+      style={{
+        width: collapsed ? collapsedWidth : expandedWidth,
+        position: "fixed",
+        top: 0,
+        left: 0,
+        bottom: 0,
+        transition: "width 200ms cubic-bezier(0.4, 0, 0.2, 1)",
+        overflow: "hidden",
+        zIndex: 1000
+      }}
+    >
+      {/* Logo / title */}
+      <div className="clinic-sidebar-logo">
+        <img src={logoSrc} alt="Clinic Logo" style={{ borderRadius: 10 }} />
+        {!collapsed && <h4>{clinicName}</h4>}
       </div>
-    </>
+
+      {/* Menu items */}
+      <ul className="clinic-nav" style={{ overflowY: "auto", flex: 1 }}>
+        <li className="clinic-nav-item">
+          <NavLink to="/clinic-dashboard" className={linkClass} end>
+            <span className="clinic-nav-icon"><FaTachometerAlt /></span>
+            {!collapsed && <span>Dashboard</span>}
+          </NavLink>
+        </li>
+
+        <li className="clinic-nav-item">
+          <NavLink to="/clinic-dashboard/appointments" className={linkClass}>
+            <span className="clinic-nav-icon"><FaCalendarAlt /></span>
+            {!collapsed && <span>Appointments</span>}
+          </NavLink>
+        </li>
+
+        <li className="clinic-nav-item">
+          <div
+            className={`clinic-nav-link clinic-nav-toggle ${isEncountersOpen ? 'open' : ''}`}
+            onClick={() => setIsEncountersOpen(!isEncountersOpen)}
+          >
+            <span className="clinic-nav-icon"><FaCalendarCheck /></span>
+            {!collapsed && (
+              <>
+                <span>Encounters</span>
+                <span className="toggle-icon"><FaChevronDown /></span>
+              </>
+            )}
+          </div>
+
+          {!collapsed && (
+            <Collapse in={isEncountersOpen}>
+              <ul className="clinic-submenu">
+                <li className="clinic-nav-item">
+                  <NavLink to="/clinic-dashboard/encounter-list" className={linkClass}>
+                    <span className="clinic-nav-icon"><FaListAlt /></span>
+                    <span>Encounter List</span>
+                  </NavLink>
+                </li>
+                <li className="clinic-nav-item">
+                  <NavLink to="/clinic-dashboard/encounter-templates" className={linkClass}>
+                    <span className="clinic-nav-icon"><FaCalendarAlt /></span>
+                    <span>Templates</span>
+                  </NavLink>
+                </li>
+              </ul>
+            </Collapse>
+          )}
+        </li>
+
+        <li className="clinic-nav-item">
+          <NavLink to="/clinic-dashboard/patients" className={linkClass}>
+            <span className="clinic-nav-icon"><FaUserInjured /></span>
+            {!collapsed && <span>Patients</span>}
+          </NavLink>
+        </li>
+
+        <li className="clinic-nav-item">
+          <NavLink to="/clinic-dashboard/doctors" className={linkClass}>
+            <span className="clinic-nav-icon"><FaUserMd /></span>
+            {!collapsed && <span>Doctors</span>}
+          </NavLink>
+        </li>
+
+        <li className="clinic-nav-item">
+          <NavLink to="/clinic-dashboard/receptionists" className={linkClass}>
+            <span className="clinic-nav-icon"><FaUsers /></span>
+            {!collapsed && <span>Receptionist</span>}
+          </NavLink>
+        </li>
+
+        <li className="clinic-nav-item">
+          <NavLink to="/clinic-dashboard/pending-approvals" className={linkClass}>
+            <span className="clinic-nav-icon"><FaUserCheck /></span>
+            {!collapsed && <span>Pending Approvals</span>}
+          </NavLink>
+        </li>
+
+        <li className="clinic-nav-item">
+          <NavLink to="/clinic-dashboard/services" className={linkClass}>
+            <span className="clinic-nav-icon"><FaListAlt /></span>
+            {!collapsed && <span>Services</span>}
+          </NavLink>
+        </li>
+
+        <li className="clinic-nav-item">
+          <NavLink to="/clinic-dashboard/DoctorSession" className={linkClass}>
+            <span className="clinic-nav-icon"><FaCalendarCheck /></span>
+            {!collapsed && <span>Doctor Sessions</span>}
+          </NavLink>
+        </li>
+
+        <li className="clinic-nav-item">
+          <NavLink to="/clinic-dashboard/taxes" className={linkClass}>
+            <span className="clinic-nav-icon"><FaMoneyBill /></span>
+            {!collapsed && <span>Taxes</span>}
+          </NavLink>
+        </li>
+
+        <li className="clinic-nav-item">
+          <NavLink to="/clinic-dashboard/BillingRecords" className={linkClass}>
+            <span className="clinic-nav-icon"><FaFileInvoice /></span>
+            {!collapsed && <span>Billing Records</span>}
+          </NavLink>
+        </li>
+
+        <li className="clinic-nav-item">
+          <NavLink to="/clinic-dashboard/settings" className={linkClass}>
+            <span className="clinic-nav-icon"><IoMdSettings /></span>
+            {!collapsed && <span>Settings</span>}
+          </NavLink>
+        </li>
+      </ul>
+
+      {/* Footer */}
+      <div className="clinic-sidebar-footer">
+        {!collapsed ? "© 2024 One Care" : "©"}
+      </div>
+    </div>
   );
 }

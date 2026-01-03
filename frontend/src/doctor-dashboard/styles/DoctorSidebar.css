@@ -6,9 +6,12 @@
   background: #fff;
   transition: width 200ms ease, padding 200ms ease;
   box-sizing: border-box;
-  border-right: 1px solid #ddd; /* Added border for clean look */
-  height: 100vh; /* Ensure full height */
-  overflow-y: auto; /* Scrollable content */
+  border-right: 1px solid #ddd;
+  /* Added border for clean look */
+  height: 100vh;
+  /* Ensure full height */
+  overflow-y: auto;
+  /* Scrollable content */
   overflow-x: hidden;
 }
 
@@ -25,7 +28,8 @@
   font-weight: 500;
   border-radius: 8px;
   padding: 0.5rem 1rem;
-  margin-bottom: 4px; /* Slight gap between items */
+  margin-bottom: 4px;
+  /* Slight gap between items */
 }
 
 .doctor-sidebar .nav-link.active {
@@ -45,11 +49,23 @@
   justify-content: center;
 }
 
-/* Hide text when closed */
-.doctor-sidebar.closed .nav-link span,
+/* Hide text when closed (but keep icons) */
+.doctor-sidebar.closed .nav-link>span:not(.modern-nav-icon),
+.doctor-sidebar.closed .modern-nav-link>span:not(.modern-nav-icon),
 .doctor-sidebar.closed .nav-link .ms-2,
 .doctor-sidebar.closed h4 {
   display: none;
+}
+
+/* Ensure modern icons stay visible when closed */
+.doctor-sidebar.closed .modern-nav-icon {
+  display: flex;
+}
+
+/* Center nav links when collapsed */
+.doctor-sidebar.closed .modern-nav-link {
+  justify-content: center;
+  padding: 11px 0;
 }
 
 /* Encounter Submenu */
@@ -91,7 +107,7 @@
   z-index: 1050;
   background: white;
   transition: transform 0.3s ease;
-  
+
   /* On Desktop: No transform, let sidebar define width */
   transform: none;
   width: auto;
@@ -102,12 +118,14 @@
    3. MOBILE RESPONSIVENESS (Max-width: 768px)
    ========================================= */
 @media (max-width: 768px) {
-  
+
   /* HIDE the drawer off-screen by default */
   .sidebar-drawer {
     transform: translateX(-100%);
-    width: 260px; /* Fixed width for drawer */
-    box-shadow: 4px 0 15px rgba(0,0,0,0.1); /* Shadow for depth */
+    width: 260px;
+    /* Fixed width for drawer */
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+    /* Shadow for depth */
   }
 
   /* SLIDE IN when the 'open' class is added (via React) */
@@ -118,21 +136,23 @@
   /* Force inner sidebar content to fill the drawer */
   .doctor-sidebar {
     width: 100% !important;
-    border-right: none; /* Remove border on mobile since drawer has shadow */
+    border-right: none;
+    /* Remove border on mobile since drawer has shadow */
   }
 
   /* Ensure closed state doesn't shrink width on mobile */
   .doctor-sidebar.closed {
     width: 100% !important;
-    padding: 1rem !important; /* Reset padding */
+    padding: 1rem !important;
+    /* Reset padding */
   }
 
   /* Force text to show on mobile even if technically "closed" state */
   .doctor-sidebar.closed .nav-link {
     justify-content: flex-start;
   }
-  
-  .doctor-sidebar.closed .nav-link span, 
+
+  .doctor-sidebar.closed .nav-link span,
   .doctor-sidebar.closed h4 {
     display: inline-block;
   }

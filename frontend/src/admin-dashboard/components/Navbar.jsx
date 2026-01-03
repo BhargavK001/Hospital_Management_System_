@@ -1,30 +1,47 @@
 import React, { useState, useRef, useEffect } from "react";
-import { FaBars } from "react-icons/fa";
-import "bootstrap/dist/css/bootstrap.min.css";
+import { FaBars, FaUser, FaLock, FaSignOutAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import admin from "../images/admin.png";
+import API_BASE from "../../config";
+import "../../shared/styles/ModernUI.css";
 
 const Navbar = ({ toggleSidebar }) => {
   const [open, setOpen] = useState(false);
-  const [userName, setUserName] = useState("Admin");
+  const [profileData, setProfileData] = useState({ name: "Admin", avatar: "" });
   const menuRef = useRef();
   const navigate = useNavigate();
 
-  // Load user name from localStorage
+  const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+  const userId = authUser?.id;
+
+  // Fetch admin profile on mount
   useEffect(() => {
-    const authUserStr = localStorage.getItem("authUser");
-    if (authUserStr) {
-      try {
-        const authUser = JSON.parse(authUserStr);
-        if (authUser.name) {
-          setUserName(authUser.name);
-        }
-      } catch (err) {
-        // Failed to parse authUser from localStorage - using default name
-        console.debug("Could not parse authUser:", err);
-      }
+    if (userId) {
+      fetchProfile();
+    } else {
+      setProfileData({
+        name: authUser?.name || "System Admin",
+        avatar: ""
+      });
     }
-  }, []);
+  }, [userId]);
+
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/api/user/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setProfileData({
+          name: data.name || "Admin",
+          avatar: data.avatar || "",
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching admin profile:", err);
+    }
+  };
 
   // close dropdown on outside click
   useEffect(() => {
@@ -44,69 +61,67 @@ const Navbar = ({ toggleSidebar }) => {
     navigate("/");
   };
 
+  const letter = profileData.name?.trim()?.charAt(0)?.toUpperCase() || "A";
+
   return (
-    <nav className="navbar navbar-dark bg-primary px-3 d-flex justify-content-between align-items-center">
-      {/* left */}
-      <div className="d-flex align-items-center gap-2">
-        <button
-          className="btn btn-outline-light border-0"
-          onClick={toggleSidebar}
-        >
-          <FaBars size={22} />
+    <nav className="modern-navbar">
+      {/* Left section */}
+      <div className="modern-navbar-left">
+        <button className="modern-menu-btn" onClick={toggleSidebar}>
+          <FaBars />
         </button>
-        <h4 className="text-white fw-bold mb-0">One Care Admin</h4>
+        <h1 className="modern-navbar-title">One Care Admin</h1>
       </div>
 
-      {/* right (profile + dropdown) */}
-      <div className="position-relative" ref={menuRef}>
-        <div
-          className="d-flex align-items-center"
-          style={{ cursor: "pointer" }}
-          onClick={() => setOpen(!open)}
-        >
-          <img
-            src={admin}
-            alt="User Avatar"
-            width="35"
-            height="35"
-            className="rounded-circle"
-          />
-          <span className="text-white ms-2 fw-semibold">{userName}</span>
+      {/* Right section */}
+      <div className="modern-navbar-right">
+        {/* Profile dropdown */}
+        <div style={{ position: "relative" }} ref={menuRef}>
+          <button className="modern-profile-btn" onClick={() => setOpen(!open)}>
+            {profileData.avatar ? (
+              <div className="modern-profile-avatar">
+                <img src={profileData.avatar} alt="Avatar" />
+              </div>
+            ) : (
+              <div className="modern-profile-avatar">{letter}</div>
+            )}
+            <span className="modern-profile-name">{profileData.name}</span>
+          </button>
+
+          {open && (
+            <div className="modern-dropdown">
+              <button
+                className="modern-dropdown-item"
+                onClick={() => {
+                  navigate("/admin/profile");
+                  setOpen(false);
+                }}
+              >
+                <FaUser />
+                My Profile
+              </button>
+
+              <button
+                className="modern-dropdown-item"
+                onClick={() => {
+                  navigate("/admin/change-password");
+                  setOpen(false);
+                }}
+              >
+                <FaLock />
+                Change Password
+              </button>
+
+              <button
+                className="modern-dropdown-item danger"
+                onClick={handleLogout}
+              >
+                <FaSignOutAlt />
+                Logout
+              </button>
+            </div>
+          )}
         </div>
-
-        {open && (
-          <div className="admin-dropdown">
-            <button
-              className="dropdown-item d-flex align-items-center gap-2"
-              onClick={() => {
-                navigate("/admin/profile");
-                setOpen(false);
-              }}
-            >
-              <i className="fa fa-user"></i>
-              My Profile
-            </button>
-
-            <button
-              className="dropdown-item d-flex align-items-center gap-2"
-              onClick={() => {
-                navigate("/admin/change-password");
-                setOpen(false);
-              }}
-            >
-              <i className="fa fa-lock"></i>
-              Change Password
-            </button>
-
-            <button
-              className="dropdown-item text-danger d-flex align-items-center gap-2"
-              onClick={handleLogout}
-            >
-              <i className="fa fa-sign-out-alt"></i>
-              Logout
-            </button>
-          </div>
-        )}
       </div>
     </nav>
   );
