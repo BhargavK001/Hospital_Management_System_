@@ -14,7 +14,7 @@ import toast from "react-hot-toast";
 import "../../admin-dashboard/styles/admin-shared.css";
 import API_BASE from "../../config";
 
-export default function SharedEncounterList({ role, doctorId }) {
+export default function SharedEncounterList({ role, doctorId, clinicName: autoClinicName }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const patientIdParam = searchParams.get("patientId");
@@ -42,8 +42,8 @@ export default function SharedEncounterList({ role, doctorId }) {
   // Form State
   const [formData, setFormData] = useState({
     id: null, // For edit mode
-    date: new Date().toISOString().split("T")[0],
-    clinic: currentClinic,
+    date: new Date().toISOString().split('T')[0],
+    clinic: autoClinicName || "", // Auto-fill with clinic name if provided
     doctor: "",
     patient: "", // THIS WILL NOW STORE THE ID (e.g., "64f1a...")
     description: "",
@@ -255,14 +255,14 @@ export default function SharedEncounterList({ role, doctorId }) {
 
   const resetForm = () => {
     setFormData({
-      id: null,
-      date: new Date().toISOString().split("T")[0],
-      clinic: currentClinic,
-      doctor: "",
-      patient: "",
-      description: "",
-      status: "active",
-    });
+        id: null,
+        date: new Date().toISOString().split('T')[0],
+        clinic: autoClinicName || "", // Keep auto-filled clinic
+        doctor: "",
+        patient: "",
+        description: "",
+        status: "active"
+      });
   };
 
   // Delete Logic
@@ -383,17 +383,19 @@ export default function SharedEncounterList({ role, doctorId }) {
               />
             </div>
             <div className="col-md-4">
-              <label className="form-label fw-bold">
-                Clinic <span className="text-danger">*</span>
-              </label>
-              <input
-                type="text"
-                className="form-control bg-light"
-                name="clinic"
-                value={formData.clinic || ""}
-                readOnly
-                tabIndex="-1"
-              />
+              <label className="form-label fw-bold">Clinic {autoClinicName ? "(Auto-detected)" : <span className="text-danger">*</span>}</label>
+              {autoClinicName ? (
+                <input 
+                  className="form-control bg-light" 
+                  value={autoClinicName} 
+                  readOnly 
+                />
+              ) : (
+                <select className="form-select" name="clinic" value={formData.clinic} onChange={handleInputChange} required>
+                  <option value="">Select Clinic</option>
+                  {clinics.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
+                </select>
+              )}
             </div>
 
             {role !== "doctor" && (

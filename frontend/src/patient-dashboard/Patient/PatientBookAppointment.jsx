@@ -3,6 +3,7 @@ import axios from "axios";
 import PatientLayout from "../layouts/PatientLayout";
 import { useNavigate, useLocation } from "react-router-dom";
 import API_BASE from "../../config.js";
+import { trackAppointmentBooked } from "../../utils/gtm";
 
 // --- API Setup with Auth Interceptor ---
 const api = axios.create({ baseURL: API_BASE });
@@ -280,20 +281,23 @@ export default function PatientBookAppointment({ sidebarCollapsed, toggleSidebar
 
   const totalAmount = selectedServiceDetails.reduce((sum, s) => sum + (Number(s.price) || 0), 0);
 
-  // ✅ Calculate Total Tax
-  const totalTaxAmount = selectedServiceDetails.reduce((sum, s) => {
-    // Find matching tax rule for this service and selected doctor
-    const rule = taxes.find(t =>
+  // ✅ Calculate Total Tax - Now supports multiple taxes (e.g., CGST + SGST)
+  const { totalTaxAmount, taxBreakdown } = selectedServiceDetails.reduce((acc, s) => {
+    // Find ALL matching tax rules for this service and selected doctor
+    const matchingTaxes = taxes.filter(t =>
       t.active &&
       (t.doctor === form.doctorLabel) && // Match by Doctor Name
       (t.serviceName === s.name)
     );
 
-    if (rule) {
-      return sum + ((Number(s.price) || 0) * rule.taxRate) / 100;
-    }
-    return sum;
-  }, 0);
+    matchingTaxes.forEach(rule => {
+      const taxAmt = ((Number(s.price) || 0) * rule.taxRate) / 100;
+      acc.totalTaxAmount += taxAmt;
+      acc.taxBreakdown.push(`${rule.name} (${rule.taxRate}%): ₹${taxAmt.toFixed(2)}`);
+    });
+
+    return acc;
+  }, { totalTaxAmount: 0, taxBreakdown: [] });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -341,6 +345,16 @@ export default function PatientBookAppointment({ sidebarCollapsed, toggleSidebar
       };
 
       await api.post(`/appointments`, payload);
+      
+      // GTM: Track appointment booking
+      trackAppointmentBooked({
+        doctorId: form.doctor,
+        doctorName: form.doctorLabel,
+        serviceType: servicesNames,
+        date: form.date,
+        amount: totalAmount + totalTaxAmount,
+      });
+      
       alert("Appointment booked successfully!");
       navigate("/patient/appointments");
     } catch (err) {
@@ -490,7 +504,14 @@ export default function PatientBookAppointment({ sidebarCollapsed, toggleSidebar
               <div className="mb-3">
                 <label className="form-label">Tax</label>
                 <div className="border rounded p-3 text-muted small bg-light">
-                  {totalTaxAmount > 0 ? `Total Tax: ₹${totalTaxAmount.toFixed(2)}` : "No tax applicable."}
+                  {taxBreakdown.length > 0 ? (
+                    <>
+                      <ul className="mb-1 ps-3">
+                        {taxBreakdown.map((tax, idx) => <li key={idx}>{tax}</li>)}
+                      </ul>
+                      <div className="fw-bold border-top pt-1 mt-1">Total Tax: ₹{totalTaxAmount.toFixed(2)}</div>
+                    </>
+                  ) : "No tax applicable."}
                 </div>
               </div>
             </div>
