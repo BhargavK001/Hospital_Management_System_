@@ -33,7 +33,27 @@ const DoctorSchema = new mongoose.Schema({
       year: String,
     },
   ],
+  
+  // Google OAuth Integration
+  googleConnected: { type: Boolean, default: false },
+  googleTokens: {
+    accessToken: String,
+    refreshToken: String,
+    expiresAt: Date,
+    email: String
+  },
+  
+  // Zoom OAuth Integration
+  zoomConnected: { type: Boolean, default: false },
+  zoomTokens: {
+    accessToken: String,
+    refreshToken: String,
+    expiresAt: Date,
+    accountId: String
+  },
+  
   createdAt: { type: Date, default: Date.now },
+
   password: { type: String },
   mustChangePassword: { type: Boolean, default: true },
 });

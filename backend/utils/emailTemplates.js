@@ -30,7 +30,34 @@ function appointmentBookedTemplate({
   date,
   time,
   services,
+  appointmentMode,
+  onlinePlatform,
+  meetingLink,
 }) {
+  // Platform display name
+  const platformName = onlinePlatform === 'google_meet' ? 'Google Meet' : 
+                       onlinePlatform === 'zoom' ? 'Zoom' : '';
+  
+  // Mode display
+  const modeDisplay = appointmentMode === 'online' ? '🖥️ Online Consultation' : 
+                      appointmentMode === 'offline' ? '🏥 In-Clinic Visit' : '';
+  
+  // Meeting link section (only for online appointments)
+  const meetingSection = appointmentMode === 'online' && meetingLink ? `
+    <div style="background: #e7f5ff; padding: 16px; border-radius: 8px; margin: 16px 0; text-align: center;">
+      <p style="margin: 0 0 12px 0; font-weight: bold; color: #1971c2;">
+        📹 Your ${platformName} Meeting Link
+      </p>
+      <a href="${meetingLink}" 
+         style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+        Join Meeting
+      </a>
+      <p style="margin: 12px 0 0 0; font-size: 12px; color: #666;">
+        Or copy this link: <a href="${meetingLink}" style="color: #2563eb;">${meetingLink}</a>
+      </p>
+    </div>
+  ` : '';
+
   return `
     <div style="font-family: Arial, sans-serif; color: #333; font-size: 14px;">
       <h2 style="color:#2563eb;">Your Appointment is Confirmed ✔️</h2>
@@ -43,11 +70,14 @@ function appointmentBookedTemplate({
         <strong>Clinic:</strong> ${clinicName || "OneCare"} <br/>
         <strong>Date:</strong> ${date || "-"} <br/>
         <strong>Time:</strong> ${time || "-"} <br/>
+        ${modeDisplay ? `<strong>Mode:</strong> ${modeDisplay} <br/>` : ""}
         ${services
       ? `<strong>Services:</strong> ${services}`
       : ""
     }
       </p>
+
+      ${meetingSection}
 
       <p>You can view or manage this appointment from your OneCare patient portal.</p>
 
@@ -56,6 +86,7 @@ function appointmentBookedTemplate({
     </div>
   `;
 }
+
 
 module.exports = {
   clinicAddedTemplate,

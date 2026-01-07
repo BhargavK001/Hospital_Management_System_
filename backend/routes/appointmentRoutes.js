@@ -26,6 +26,7 @@ const {
   normalizeDocuments,
 } = require("../utils/populateHelper");
 const { verifyToken } = require("../middleware/auth");
+const { createGoogleMeetEvent, createZoomMeeting, getDoctorPlatforms } = require("../utils/meetingService");
 
 const allowUrlToken = (req, res, next) => {
   if (req.query.token && !req.headers.authorization) {
@@ -154,10 +155,52 @@ router.post("/", verifyToken, async (req, res) => {
       charges: req.body.charges || 0,
       paymentMode: req.body.paymentMode || "",
       status: req.body.status || "upcoming",
+      
+      // Online Appointment Fields
+      appointmentMode: req.body.appointmentMode || null,
+      onlinePlatform: req.body.onlinePlatform || null,
+      meetingLink: null,
+      googleEventId: null,
+      zoomMeetingId: null,
+      
       createdAt: req.body.createdAt ? new Date(req.body.createdAt) : new Date(),
     };
 
+    // Generate meeting link if online appointment
+    if (payload.appointmentMode === 'online' && payload.onlinePlatform && payload.doctorId) {
+      try {
+        if (payload.onlinePlatform === 'google_meet') {
+          const meetResult = await createGoogleMeetEvent(payload.doctorId, {
+            patientName: payload.patientName,
+            patientEmail: payload.patientEmail,
+            date: payload.date,
+            time: payload.time,
+            services: Array.isArray(payload.services) ? payload.services.join(', ') : payload.services,
+            clinicName: payload.clinic
+          });
+          payload.meetingLink = meetResult.meetingLink;
+          payload.googleEventId = meetResult.eventId;
+          logger.info("Google Meet link generated for appointment", { meetingLink: meetResult.meetingLink });
+        } else if (payload.onlinePlatform === 'zoom') {
+          const zoomResult = await createZoomMeeting(payload.doctorId, {
+            patientName: payload.patientName,
+            date: payload.date,
+            time: payload.time,
+            services: Array.isArray(payload.services) ? payload.services.join(', ') : payload.services,
+            clinicName: payload.clinic
+          });
+          payload.meetingLink = zoomResult.meetingLink;
+          payload.zoomMeetingId = zoomResult.meetingId;
+          logger.info("Zoom meeting link generated for appointment", { meetingLink: zoomResult.meetingLink });
+        }
+      } catch (meetingErr) {
+        logger.error("Failed to generate meeting link", { error: meetingErr.message });
+        // Continue with appointment creation even if meeting generation fails
+      }
+    }
+
     const created = await AppointmentModel.create(payload);
+
 
     // Fetch email/phone if missing
     let targetEmail = payload.patientEmail;
@@ -193,7 +236,9 @@ router.post("/", verifyToken, async (req, res) => {
     if (targetEmail) {
       sendEmail({
         to: targetEmail,
-        subject: "Your Appointment is Confirmed | OneCare",
+        subject: payload.appointmentMode === 'online' 
+          ? "Your Online Appointment is Confirmed | OneCare" 
+          : "Your Appointment is Confirmed | OneCare",
         html: appointmentBookedTemplate({
           patientName: payload.patientName,
           doctorName: payload.doctorName,
@@ -201,14 +246,26 @@ router.post("/", verifyToken, async (req, res) => {
           date: formattedDate,
           time: payload.time,
           services: payload.services,
+          appointmentMode: payload.appointmentMode,
+          onlinePlatform: payload.onlinePlatform,
+          meetingLink: created.meetingLink, // Use the saved meeting link
         }),
       });
     }
 
     if (targetPhone) {
-      const whatsappBody = `Hello ${payload.patientName},\n\nYour appointment with Dr. ${payload.doctorName} at ${payload.clinic} is confirmed for ${formattedDate} at ${payload.time}.\n\nThank you for choosing OneCare!`;
+      let whatsappBody = `Hello ${payload.patientName},\n\nYour appointment with Dr. ${payload.doctorName} at ${payload.clinic} is confirmed for ${formattedDate} at ${payload.time}.`;
+      
+      // Add meeting link for online appointments
+      if (payload.appointmentMode === 'online' && created.meetingLink) {
+        const platformName = payload.onlinePlatform === 'google_meet' ? 'Google Meet' : 'Zoom';
+        whatsappBody += `\n\n📹 This is an online appointment via ${platformName}.\nJoin here: ${created.meetingLink}`;
+      }
+      
+      whatsappBody += `\n\nThank you for choosing OneCare!`;
       sendWhatsAppMessage(targetPhone, whatsappBody);
     }
+
 
     // Real-time Notification
     try {

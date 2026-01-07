@@ -17,7 +17,24 @@ const AppointmentSchema = new mongoose.Schema({
   charges: Number,
   paymentMode: String,
   status: { type: String, default: "upcoming" },
+  
+  // Appointment Mode (Online/Offline)
+  appointmentMode: { 
+    type: String, 
+    enum: ['online', 'offline', null], 
+    default: null  // null for backward compatibility
+  },
+  onlinePlatform: { 
+    type: String, 
+    enum: ['google_meet', 'zoom', null], 
+    default: null 
+  },
+  meetingLink: { type: String, default: null },
+  googleEventId: { type: String, default: null },
+  zoomMeetingId: { type: String, default: null },
+  
   createdAt: { type: Date, default: Date.now },
+
 });
 
 // Database Indexes for improved query performance

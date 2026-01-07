@@ -120,6 +120,7 @@ const Holidays = lazy(() => import("./doctor-dashboard/doctor/Settings/Holidays"
 const DoctorSessions = lazy(() => import("./doctor-dashboard/doctor/Settings/DoctorSessions"));
 const Listings = lazy(() => import("./doctor-dashboard/doctor/Settings/Listings"));
 const GoogleMeetIntegration = lazy(() => import("./doctor-dashboard/doctor/Settings/GoogleMeetIntegration"));
+const ZoomIntegration = lazy(() => import("./doctor-dashboard/doctor/Settings/ZoomIntegration"));
 
 /* Receptionist Components */
 const ReceptionistChangePassword = lazy(() => import("./receptionist/ReceptionistChangePassword"));
@@ -440,6 +441,7 @@ function App() {
             <Route path="sessions" element={<DoctorSessions />} />
             <Route path="listings" element={<Listings />} />
             <Route path="integration" element={<GoogleMeetIntegration />} />
+            <Route path="zoom" element={<ZoomIntegration />} />
           </Route>
 
           {/* ==================== PATIENT SECTION ==================== */}

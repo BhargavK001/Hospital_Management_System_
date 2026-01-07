@@ -45,6 +45,10 @@ const listingRoutes = require("./routes/listingRoutes");
 const settingsRoutes = require("./routes/settingsRoutes");
 const approvalRoutes = require("./routes/approvalRoutes");
 
+// OAuth Routes for Doctor Integrations
+const googleOAuthRoutes = require("./routes/googleOAuthRoutes");
+const zoomOAuthRoutes = require("./routes/zoomOAuthRoutes");
+
 // Import Interface for Socket.io
 const { initSocket } = require("./utils/socketServer");
 
@@ -147,6 +151,10 @@ app.use("/holidays", holidayRoutes);
 app.use("/listings", listingRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/approvals", approvalRoutes);
+
+// OAuth Routes for Doctor Integrations
+app.use("/api/auth/google/doctor", googleOAuthRoutes);
+app.use("/api/auth/zoom/doctor", zoomOAuthRoutes);
 
 
 // --- 404 Handler (Must be after all routes) ---

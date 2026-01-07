@@ -4,6 +4,8 @@ import PatientLayout from "../layouts/PatientLayout";
 import { useNavigate, useLocation } from "react-router-dom";
 import API_BASE from "../../config.js";
 import { trackAppointmentBooked } from "../../utils/gtm";
+import { FaHospital, FaLaptop, FaVideo } from "react-icons/fa";
+import { FcGoogle } from "react-icons/fc";
 
 // --- API Setup with Auth Interceptor ---
 const api = axios.create({ baseURL: API_BASE });
@@ -70,6 +72,12 @@ export default function PatientBookAppointment({ sidebarCollapsed, toggleSidebar
 
   const [loadingData, setLoadingData] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  
+  // Appointment Mode State
+  const [appointmentMode, setAppointmentMode] = useState('offline'); // 'online' or 'offline'
+  const [onlinePlatform, setOnlinePlatform] = useState(null); // 'google_meet' or 'zoom'
+  const [doctorPlatforms, setDoctorPlatforms] = useState({ google_meet: false, zoom: false });
+  const [loadingPlatforms, setLoadingPlatforms] = useState(false);
 
   const [form, setForm] = useState({
     clinic: "",
@@ -253,11 +261,47 @@ export default function PatientBookAppointment({ sidebarCollapsed, toggleSidebar
 
   }, [form.doctor, form.date, allDoctors, allServices]);
 
+  // --- 4. Fetch Doctor's Connected Platforms when Doctor Changes ---
+  useEffect(() => {
+    const fetchDoctorPlatforms = async () => {
+      if (!form.doctor) {
+        setDoctorPlatforms({ google_meet: false, zoom: false });
+        setAppointmentMode('offline');
+        setOnlinePlatform(null);
+        return;
+      }
+      
+      try {
+        setLoadingPlatforms(true);
+        const res = await api.get(`/doctors/${form.doctor}`);
+        const doc = res.data;
+        setDoctorPlatforms({
+          google_meet: doc.googleConnected || false,
+          zoom: doc.zoomConnected || false
+        });
+        
+        // Reset online settings if doctor has no platforms
+        if (!doc.googleConnected && !doc.zoomConnected) {
+          setAppointmentMode('offline');
+          setOnlinePlatform(null);
+        }
+      } catch (err) {
+        console.error("Failed to fetch doctor platforms", err);
+        setDoctorPlatforms({ google_meet: false, zoom: false });
+      } finally {
+        setLoadingPlatforms(false);
+      }
+    };
+    
+    fetchDoctorPlatforms();
+  }, [form.doctor]);
+
   // --- Handlers ---
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === "clinic") {
       setForm(prev => ({ ...prev, clinic: value, doctor: "", doctorLabel: "" }));
+      setDoctorPlatforms({ google_meet: false, zoom: false });
     } else if (name === "doctor") {
       const docObj = allDoctors.find(d => (d._id || d.id) === value);
       const label = docObj ? `${docObj.firstName} ${docObj.lastName}` : "";
@@ -266,6 +310,9 @@ export default function PatientBookAppointment({ sidebarCollapsed, toggleSidebar
       setForm(prev => ({ ...prev, [name]: value }));
     }
   };
+  
+  // Check if online mode is available
+  const hasAnyPlatform = doctorPlatforms.google_meet || doctorPlatforms.zoom;
 
   const toggleService = (id) => {
     setSelectedServices(prev => prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]);
@@ -338,9 +385,11 @@ export default function PatientBookAppointment({ sidebarCollapsed, toggleSidebar
         services: servicesNames,
         status: "booked",
         servicesDetail: servicesDetailText,
-        charges: totalAmount + totalTaxAmount, // Total includes tax
-        taxAmount: totalTaxAmount, // Send tax amount separately
+        charges: totalAmount + totalTaxAmount,
+        taxAmount: totalTaxAmount,
         paymentMode: "Manual",
+        appointmentMode: appointmentMode,
+        onlinePlatform: appointmentMode === 'online' ? onlinePlatform : null,
         createdAt: new Date(),
       };
 
@@ -446,7 +495,89 @@ export default function PatientBookAppointment({ sidebarCollapsed, toggleSidebar
                 <label className="form-label">Appointment Date <span className="text-danger">*</span></label>
                 <input name="date" type="date" className="form-control" value={form.date} onChange={handleChange} required />
               </div>
+
+              {/* Appointment Mode Selection */}
+              <div className="mb-3">
+                <label className="form-label">Appointment Mode <span className="text-danger">*</span></label>
+                <div className="d-flex gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    className={`btn flex-fill d-flex align-items-center justify-content-center gap-2 ${appointmentMode === 'offline' ? 'btn-primary' : 'btn-outline-primary'}`}
+                    onClick={() => { setAppointmentMode('offline'); setOnlinePlatform(null); }}
+                    style={{ minWidth: '120px' }}
+                  >
+                    <FaHospital size={16} /> In-Clinic
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn flex-fill d-flex align-items-center justify-content-center gap-2 ${appointmentMode === 'online' ? 'btn-primary' : 'btn-outline-primary'}`}
+                    onClick={() => setAppointmentMode('online')}
+                    style={{ minWidth: '120px' }}
+                    disabled={!form.doctor || !hasAnyPlatform}
+                    title={!hasAnyPlatform ? 'This doctor has not set up online consultations' : ''}
+                  >
+                    <FaLaptop size={16} /> Online
+                    {form.doctor && !hasAnyPlatform && <span className="badge bg-secondary ms-1" style={{ fontSize: '9px' }}>N/A</span>}
+                  </button>
+                </div>
+                
+                {/* Show message if doctor has no online platforms */}
+                {form.doctor && !hasAnyPlatform && (
+                  <small className="text-muted d-block mt-1">
+                    ℹ️ This doctor has not enabled online consultations yet.
+                  </small>
+                )}
+                
+                {appointmentMode === 'online' && (
+                  <div className="mt-2">
+                    <label className="form-label small text-muted">Select Platform</label>
+                    <div className="d-flex gap-2">
+                      {/* Google Meet - Only show if connected */}
+                      {doctorPlatforms.google_meet && (
+                        <button
+                          type="button"
+                          className={`btn flex-fill d-flex align-items-center justify-content-center gap-2 ${onlinePlatform === 'google_meet' ? 'btn-success' : 'btn-outline-secondary'}`}
+                          onClick={() => setOnlinePlatform('google_meet')}
+                        >
+                          <FcGoogle size={20} />
+                          <span>Meet</span>
+                        </button>
+                      )}
+                      
+                      {/* Zoom - Only show if connected */}
+                      {doctorPlatforms.zoom && (
+                        <button
+                          type="button"
+                          className={`btn flex-fill d-flex align-items-center justify-content-center gap-2 ${onlinePlatform === 'zoom' ? 'btn-info' : 'btn-outline-secondary'}`}
+                          onClick={() => setOnlinePlatform('zoom')}
+                        >
+                          <span 
+                            style={{ 
+                              background: onlinePlatform === 'zoom' ? '#fff' : '#2D8CFF',
+                              color: onlinePlatform === 'zoom' ? '#2D8CFF' : '#fff',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              fontSize: '11px',
+                              fontWeight: 'bold',
+                              letterSpacing: '0.5px'
+                            }}
+                          >
+                            zoom
+                          </span>
+                        </button>
+                      )}
+                    </div>
+                    <small className="text-muted mt-1 d-block">
+                      A meeting link will be automatically generated and sent to you.
+                    </small>
+                  </div>
+                )}
+              </div>
+
+
+
             </div>
+
 
             {/* RIGHT COLUMN */}
             <div className="col-lg-6">

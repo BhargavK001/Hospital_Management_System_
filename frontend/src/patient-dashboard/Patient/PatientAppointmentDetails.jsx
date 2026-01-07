@@ -155,6 +155,47 @@ const PatientAppointmentDetails = ({ sidebarCollapsed, toggleSidebar }) => {
                 </div>
             </div>
 
+            {/* 🆕 Appointment Mode Section */}
+            {appointment.appointmentMode && (
+              <div className="mb-4 p-3 rounded" style={{ 
+                background: appointment.appointmentMode === 'online' ? '#e7f5ff' : '#f8f9fa',
+                border: `1px solid ${appointment.appointmentMode === 'online' ? '#74c0fc' : '#dee2e6'}`
+              }}>
+                <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                  <div>
+                    <span className={`badge ${appointment.appointmentMode === 'online' ? 'bg-info' : 'bg-secondary'} mb-2`}>
+                      {appointment.appointmentMode === 'online' ? '🖥️ Online Consultation' : '🏥 In-Clinic Visit'}
+                    </span>
+                    {appointment.appointmentMode === 'online' && appointment.onlinePlatform && (
+                      <p className="mb-0 small text-muted">
+                        Platform: <strong>{appointment.onlinePlatform === 'google_meet' ? 'Google Meet' : 'Zoom'}</strong>
+                      </p>
+                    )}
+                  </div>
+                  {appointment.appointmentMode === 'online' && appointment.meetingLink && (
+                    <a 
+                      href={appointment.meetingLink} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="btn btn-primary d-flex align-items-center gap-2"
+                    >
+                      📹 Join Meeting
+                    </a>
+                  )}
+                </div>
+                {appointment.meetingLink && (
+                  <div className="mt-2">
+                    <small className="text-muted">
+                      Link: <a href={appointment.meetingLink} target="_blank" rel="noopener noreferrer" className="text-primary">
+                        {appointment.meetingLink}
+                      </a>
+                    </small>
+                  </div>
+                )}
+              </div>
+            )}
+
+
             {/* Services Table */}
             <div className="table-responsive mb-4 border rounded">
               <table className="table table-borderless mb-0">

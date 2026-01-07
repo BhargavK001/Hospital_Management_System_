@@ -145,6 +145,34 @@ router.get("/", verifyToken, async (req, res) => {
   }
 });
 
+// Get single doctor by ID (includes platform connection status)
+router.get("/:id", verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const doctor = await DoctorModel.findById(id).select("-password -passwordPlain");
+    
+    if (!doctor) {
+      return res.status(404).json({ message: "Doctor not found" });
+    }
+    
+    // Return doctor with platform connection status
+    res.json({
+      _id: doctor._id,
+      firstName: doctor.firstName,
+      lastName: doctor.lastName,
+      email: doctor.email,
+      specialization: doctor.specialization,
+      clinic: doctor.clinic,
+      clinicId: doctor.clinicId,
+      googleConnected: doctor.googleConnected || false,
+      zoomConnected: doctor.zoomConnected || false
+    });
+  } catch (err) {
+    console.error("Error fetching doctor:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 // Delete doctor
 router.delete("/:id", verifyToken, async (req, res) => {
   try {

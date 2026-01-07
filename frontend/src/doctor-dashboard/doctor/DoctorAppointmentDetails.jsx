@@ -137,12 +137,52 @@ export default function DoctorAppointmentDetails() {
                     {a.status || "Scheduled"}
                 </span>
             </div>
+            
+            {/* 🆕 Appointment Mode */}
+            {a.appointmentMode && (
+              <div className="col-12">
+                <p className="mb-1 text-muted small">Mode</p>
+                <div className="p-3 rounded" style={{ 
+                  background: a.appointmentMode === 'online' ? '#e7f5ff' : '#f8f9fa',
+                  border: `1px solid ${a.appointmentMode === 'online' ? '#74c0fc' : '#dee2e6'}`
+                }}>
+                  <div className="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                      <span className={`badge ${a.appointmentMode === 'online' ? 'bg-info' : 'bg-secondary'} me-2`}>
+                        {a.appointmentMode === 'online' ? '🖥️ Online' : '🏥 In-Clinic'}
+                      </span>
+                      {a.onlinePlatform && (
+                        <span className="small text-muted">
+                          via {a.onlinePlatform === 'google_meet' ? 'Google Meet' : 'Zoom'}
+                        </span>
+                      )}
+                    </div>
+                    {a.meetingLink && (
+                      <div className="d-flex gap-2">
+                        <a href={a.meetingLink} target="_blank" rel="noopener noreferrer" 
+                           className="btn btn-primary btn-sm">
+                          📹 Join Meeting
+                        </a>
+                        <button 
+                          className="btn btn-outline-secondary btn-sm"
+                          onClick={() => { navigator.clipboard.writeText(a.meetingLink); alert('Link copied!'); }}
+                        >
+                          📋 Copy Link
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div className="col-12">
                 <p className="mb-1 text-muted small">Notes</p>
                 <div className="p-2 bg-light rounded">
                     {a.notes || "No additional notes."}
                 </div>
             </div>
+
           </div>
         </div>
 

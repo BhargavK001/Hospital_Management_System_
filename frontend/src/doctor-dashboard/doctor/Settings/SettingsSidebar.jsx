@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { FaHome, FaCalendarAlt, FaList, FaVideo } from 'react-icons/fa';
+import { SiZoom } from 'react-icons/si';
 
 const SettingsSidebar = () => {
   const sidebarItems = [
@@ -8,7 +9,9 @@ const SettingsSidebar = () => {
     { name: 'Doctor Sessions', path: '/doctor/settings/sessions', icon: <FaCalendarAlt /> },
     { name: 'Listings', path: '/doctor/settings/listings', icon: <FaList /> },
     { name: 'Google Meet', path: '/doctor/settings/integration', icon: <FaVideo /> },
+    { name: 'Zoom', path: '/doctor/settings/zoom', icon: <SiZoom /> },
   ];
+
 
   return (
     <div className="bg-white rounded shadow-sm">
