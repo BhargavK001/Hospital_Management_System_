@@ -14,7 +14,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import API_BASE from "../../config";
 
-export default function PatientAppointments({ sidebarCollapsed, toggleSidebar }) {
+export default function PatientAppointments() {
   const navigate = useNavigate();
 
   const token =
@@ -239,10 +239,7 @@ export default function PatientAppointments({ sidebarCollapsed, toggleSidebar })
   );
 
   return (
-    <PatientLayout
-      sidebarCollapsed={sidebarCollapsed}   // added
-      toggleSidebar={toggleSidebar}         // added
-    >
+    <PatientLayout>
       <div className="container-fluid py-4">
         {/* Filters card */}
         <div className="card shadow-sm p-3 mb-4">
