@@ -1,73 +1,32 @@
-/* =========================================
-   Receptionist Layout - Side-by-Side (SS2)
-   ========================================= */
+.mobile-drawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 2050; /* Above everything */
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
 
-/* Main Wrapper */
-.reception-layout-wrapper {
-  display: flex;
-  width: 100%;
-  min-height: 100vh;
-  background-color: #f6f7fb;
-}
-
-/* 1. Sidebar Styling */
-.layout-sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 100vh;
-  width: 260px; /* Default expanded width */
-  z-index: 1001;
-  background-color: #fff;
-  border-right: 1px solid #e2e8f0;
-  transition: width 0.3s ease;
-}
-
-.layout-sidebar.collapsed {
-  width: 72px; /* Collapsed width */
-}
-
-/* 2. Main Content Styling */
-.layout-main {
-  margin-left: 260px; /* Push content to the right matching sidebar width */
-  width: calc(100% - 260px); /* Remaining width */
-  display: flex;
-  flex-direction: column;
-  transition: margin-left 0.3s ease, width 0.3s ease;
-  min-height: 100vh;
-}
-
-.layout-main.collapsed {
-  margin-left: 72px;
-  width: calc(100% - 72px);
-}
-
-/* 3. Navbar Positioning */
-/* Important: This overrides fixed positioning if it was set globally */
-.modern-navbar {
-  position: sticky;
-  top: 0;
-  width: 100%;
-  z-index: 1000;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.06);
-}
-
-/* 4. Content Area */
-.layout-content {
-  flex-grow: 1;
-  /* Add margin-top if navbar is fixed, otherwise flex handles it */
-}
-
-/* Mobile Responsiveness */
-@media (max-width: 768px) {
-  .layout-sidebar {
-    left: -260px; /* Hide sidebar off-screen */
+    width: 260px; 
   }
   
-  .layout-main {
-    margin-left: 0;
-    width: 100%;
+  .mobile-drawer.open {
+    transform: translateX(0);
   }
   
-  /* You would need additional logic or a backdrop for mobile toggle */
-}
+  /* --- Backdrop --- */
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 2040; /* Below Drawer, Above Content */
+  }
+  
+  .backdrop.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  

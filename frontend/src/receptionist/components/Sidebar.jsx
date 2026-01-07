@@ -1,5 +1,5 @@
 // src/receptionist-dashboard/components/ReceptionistSidebar.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Collapse } from "react-bootstrap";
 import { IoMdSettings } from "react-icons/io";
 import {
@@ -13,10 +13,11 @@ import {
   FaFileInvoice,
   FaListAlt,
   FaUserMd, 
-  FaList, // Added for Services to match the screenshot
+  FaList, 
   FaRegCalendarAlt 
 } from "react-icons/fa";
 import { NavLink } from "react-router-dom";
+import axios from "axios";
 
 // Import Shared Modern Styles
 import "../../shared/styles/ModernUI.css";
@@ -33,17 +34,45 @@ export default function Sidebar({ collapsed = false }) {
   const [isPatientsOpen, setIsPatientsOpen] = useState(false);
   const [isEncountersOpen, setIsEncountersOpen] = useState(false);
 
+  // State for clinic details
+  const [clinicDetails, setClinicDetails] = useState({
+    name: "Clinic",
+    logo: defaultLogo
+  });
+
   // Helper for active class based on ModernUI.css
   const linkClass = ({ isActive }) =>
     `modern-nav-link ${isActive ? "active" : ""}`;
 
   const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
-  const receptionist = JSON.parse(localStorage.getItem("receptionist") || "{}");
-  const clinicName = authUser.clinicName || receptionist.clinic || "Clinic";
-  const clinicLogo = authUser.clinicLogo || receptionist.clinicLogo;
-
+  // Get API Base URL
   const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
-  const logoSrc = clinicLogo ? `${API_BASE}/uploads/${clinicLogo}` : defaultLogo;
+
+  useEffect(() => {
+    const fetchReceptionistDetails = async () => {
+      try {
+        if (!authUser.id) return;
+        
+        const token = localStorage.getItem("token");
+        const res = await axios.get(`${API_BASE}/api/receptionists/${authUser.id}`, {
+             headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const data = res.data.data;
+        if (data && data.clinicIds && data.clinicIds.length > 0) {
+            const clinic = data.clinicIds[0];
+            setClinicDetails({
+                name: clinic.name || "Clinic",
+                logo: clinic.clinicLogo ? `${API_BASE}/uploads/${clinic.clinicLogo}` : defaultLogo
+            });
+        }
+      } catch (err) {
+        console.error("Error fetching receptionist clinic details:", err);
+      }
+    };
+
+    fetchReceptionistDetails();
+  }, [authUser.id, API_BASE]);
 
   return (
     <div
@@ -56,17 +85,17 @@ export default function Sidebar({ collapsed = false }) {
         bottom: 0,
         transition: "width 200ms cubic-bezier(0.4, 0, 0.2, 1)",
         overflow: "hidden",
-        zIndex: 1000,
-        marginTop: "64px" 
+        zIndex: 1000
       }}
     >
       {/* Logo / Title */}
       <div className="modern-sidebar-logo">
         <img 
-          src={logoSrc} 
+          src={clinicDetails.logo} 
           alt="Clinic Logo" 
+          style={{ width: "40px", height: "40px", borderRadius: "8px", objectFit: "cover" }}
         />
-        {!collapsed && <h4>{clinicName}</h4>}
+        {!collapsed && <h4 className="text-truncate" style={{maxWidth: "180px"}}>{clinicDetails.name}</h4>}
       </div>
 
       {/* Menu Items */}
@@ -240,7 +269,7 @@ export default function Sidebar({ collapsed = false }) {
 
       {/* Footer */}
       <div className="modern-sidebar-footer">
-        {!collapsed ? "© 2026 One Care" : "©"}
+        {!collapsed ? `© 2026 ${clinicDetails.name}` : "©"}
       </div>
     </div>
   );

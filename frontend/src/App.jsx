@@ -125,7 +125,7 @@ const GoogleMeetIntegration = lazy(() => import("./doctor-dashboard/doctor/Setti
 const ReceptionistChangePassword = lazy(() => import("./receptionist/ReceptionistChangePassword"));
 const ReceptionistChangePasswordPage = lazy(() => import("./receptionist/ReceptionistChangePasswordPage"));
 const ReceptionistProfile = lazy(() => import("./receptionist/ReceptionistProfile"));
-const ReptionistDashboard = lazy(() => import("./receptionist/ReptionistDashboard"));
+const ReceptionistDashboard = lazy(() => import("./receptionist/ReceptionistDashboard"));
 
 
 /* PDF Editor */
@@ -465,7 +465,7 @@ function App() {
           <Route path="/patient/appointments/:id" element={<AppointmentDetails />} />
 
           {/* ==================== RECEPTIONIST SECTION ==================== */}
-          <Route path="/reception-dashboard" element={<ReptionistDashboard />} />
+          <Route path="/reception-dashboard" element={<ReceptionistDashboard />} />
           <Route path="/receptionist/change-password" element={<ReceptionistChangePassword />} />
           <Route path="/reception/change-password" element={<ReceptionistChangePasswordPage />} />
           <Route path="/receptionist/profile" element={
