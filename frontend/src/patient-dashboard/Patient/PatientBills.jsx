@@ -101,8 +101,19 @@ export default function PatientBills({ sidebarCollapsed, toggleSidebar }) {
   const handleFilter = (key, val) => setFilters(prev => ({ ...prev, [key]: val }));
 
   // Handle PDF Function
-  const handlePdf = (id) => {
-    window.open(`${API_BASE}/bills/${id}/pdf`, "_blank");
+  const handlePdf = async (id) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await api.get(`/bills/${id}/pdf`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+      });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (err) {
+      console.error("Error generating PDF:", err);
+    }
   };
 
   useEffect(() => {

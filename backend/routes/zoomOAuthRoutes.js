@@ -8,7 +8,8 @@ const logger = require("../utils/logger");
 // Zoom OAuth Configuration
 const ZOOM_CLIENT_ID = process.env.ZOOM_CLIENT_ID;
 const ZOOM_CLIENT_SECRET = process.env.ZOOM_CLIENT_SECRET;
-const ZOOM_REDIRECT_URI = process.env.ZOOM_REDIRECT_URI || `${process.env.BACKEND_URL || 'http://localhost:3001'}/api/auth/zoom/doctor/callback`;
+const ZOOM_REDIRECT_URI = process.env.ZOOM_REDIRECT_URI || `${process.env.BACKEND_URL}/api/auth/zoom/doctor/callback`;
+const FRONTEND_URL = process.env.FRONTEND_URL;
 
 // ==========================================
 // GET OAuth URL for Doctor
@@ -19,6 +20,12 @@ router.get("/url", verifyToken, async (req, res) => {
     
     // State parameter to verify callback
     const state = Buffer.from(JSON.stringify({ doctorId })).toString('base64');
+    
+    // Log the redirect URI being used
+    logger.info("Generating Zoom OAuth URL", { 
+      redirectUri: ZOOM_REDIRECT_URI,
+      clientId: ZOOM_CLIENT_ID ? 'SET' : 'NOT_SET'
+    });
     
     const authUrl = `https://zoom.us/oauth/authorize?response_type=code&client_id=${ZOOM_CLIENT_ID}&redirect_uri=${encodeURIComponent(ZOOM_REDIRECT_URI)}&state=${state}`;
     
@@ -37,7 +44,7 @@ router.get("/callback", async (req, res) => {
     const { code, state } = req.query;
     
     if (!code || !state) {
-      return res.redirect(`${process.env.FRONTEND_URL}/doctor/settings/zoom?error=missing_params`);
+      return res.redirect(`${FRONTEND_URL}/doctor/settings/zoom?error=missing_params`);
     }
     
     // Decode state to get doctorId
@@ -45,11 +52,18 @@ router.get("/callback", async (req, res) => {
     try {
       stateData = JSON.parse(Buffer.from(state, 'base64').toString());
     } catch (e) {
-      return res.redirect(`${process.env.FRONTEND_URL}/doctor/settings/zoom?error=invalid_state`);
+      return res.redirect(`${FRONTEND_URL}/doctor/settings/zoom?error=invalid_state`);
     }
     
     const { doctorId } = stateData;
     
+    // Log what we're sending to Zoom
+    logger.info("Zoom OAuth token exchange attempt", { 
+      redirectUri: ZOOM_REDIRECT_URI,
+      hasCode: !!code,
+      doctorId
+    });
+
     // Exchange code for tokens
     const tokenResponse = await axios.post('https://zoom.us/oauth/token', null, {
       params: {
@@ -88,10 +102,10 @@ router.get("/callback", async (req, res) => {
     logger.info("Doctor connected Zoom account", { doctorId, accountId });
     
     // Redirect back to settings with success
-    res.redirect(`${process.env.FRONTEND_URL}/doctor/settings/zoom?success=true`);
+    res.redirect(`${FRONTEND_URL}/doctor/settings/zoom?success=true`);
   } catch (err) {
     logger.error("Zoom OAuth callback error", { error: err.message, details: err.response?.data });
-    res.redirect(`${process.env.FRONTEND_URL}/doctor/settings/zoom?error=oauth_failed`);
+    res.redirect(`${FRONTEND_URL}/doctor/settings/zoom?error=oauth_failed`);
   }
 });
 

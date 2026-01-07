@@ -280,6 +280,23 @@ export default function BillingRecords({ sidebarCollapsed = false, toggleSidebar
     }
   };
 
+  // --- PDF HANDLER ---
+  const handlePdf = async (billId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(`${API_BASE}/bills/${billId}/pdf`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+      });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (err) {
+      console.error("Error generating PDF:", err);
+      toast.error("Failed to generate PDF");
+    }
+  };
+
   // --- HELPERS ---
   const handleFilterChange = (key, value) => {
     setFilter((prev) => ({ ...prev, [key]: value }));
@@ -457,9 +474,9 @@ export default function BillingRecords({ sidebarCollapsed = false, toggleSidebar
                             <FaTrash size={14} />
                           </button>
 
-                          <a href={`${API_BASE}/bills/${bill._id}/pdf`} target="_blank" rel="noopener noreferrer" className="pdf-link">
+                          <button className="pdf-link" onClick={() => handlePdf(bill._id)} style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}>
                             <FaFilePdf /> PDF
-                          </a>
+                          </button>
                         </div>
                       </td>
                     </tr>
