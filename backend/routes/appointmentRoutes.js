@@ -10,6 +10,7 @@ const AppointmentModel = require("../models/Appointment");
 const PatientModel = require("../models/Patient");
 const DoctorModel = require("../models/Doctor");
 const HolidayModel = require("../models/Holiday");
+const DoctorSessionModel = require("../models/DoctorSession");
 const { sendEmail } = require("../utils/emailService");
 const { appointmentBookedTemplate } = require("../utils/emailTemplates");
 const { sendWhatsAppMessage } = require("../utils/whatsappService");
@@ -54,8 +55,23 @@ const generateTimeSlots = (startStr, endStr, intervalMins) => {
 };
 
 // ==========================================
-// GET AVAILABLE SLOTS
+// GET AVAILABLE SLOTS (Dynamic from Doctor Session)
 // ==========================================
+
+// Helper: Parse "HH:MM" time string to Date object for a specific date
+const parseSessionTime = (timeStr, dateStr) => {
+  if (!timeStr) return null;
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dateObj = new Date(y, m - 1, d);
+  const [hours, minutes] = timeStr.split(":").map(Number);
+  dateObj.setHours(hours, minutes, 0, 0);
+  return dateObj;
+};
+
+// Helper: Format Date to "10:00 AM" style
+const formatSlotTime = (date) =>
+  date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+
 router.get("/slots", verifyToken, async (req, res) => {
   try {
     const { doctorId, date } = req.query;
@@ -66,6 +82,7 @@ router.get("/slots", verifyToken, async (req, res) => {
         .json({ message: "Doctor ID and Date are required" });
     }
 
+    // 1. Check for Holidays first
     const requestDate = new Date(date);
     const holiday = await HolidayModel.findOne({
       doctorId: doctorId,
@@ -75,25 +92,111 @@ router.get("/slots", verifyToken, async (req, res) => {
 
     if (holiday) {
       return res.json({
-        message: "Doctor is on holiday",
+        message: `Doctor is on holiday: ${holiday.reason || 'Holiday'}`,
         slots: [],
+        morningSlots: [],
+        eveningSlots: [],
         isHoliday: true,
       });
     }
 
-    const allSlots = generateTimeSlots("09:00:00", "17:00:00", 30);
+    // 2. Fetch Doctor's Session Settings
+    const session = await DoctorSessionModel.findOne({ doctorId });
+    
+    if (!session) {
+      // No session configured - return empty with message
+      return res.json({
+        message: "Doctor has not configured their session timings",
+        slots: [],
+        morningSlots: [],
+        eveningSlots: [],
+        isHoliday: false,
+      });
+    }
+
+    // 3. Check if doctor works on this day
+    const [y, m, d] = date.split('-').map(Number);
+    const inputDate = new Date(y, m - 1, d);
+    const daysMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const longDay = daysMap[inputDate.getDay()];
+    const shortDay = longDay.substring(0, 3);
+
+    const isWorkingDay = (session.days || []).some((day) => {
+      const cleanDay = String(day || "").trim().toLowerCase();
+      return cleanDay === longDay.toLowerCase() || cleanDay === shortDay.toLowerCase();
+    });
+
+    if (!isWorkingDay) {
+      return res.json({
+        message: `Doctor does not work on ${longDay}s`,
+        slots: [],
+        morningSlots: [],
+        eveningSlots: [],
+        isHoliday: false,
+      });
+    }
+
+    // 4. Generate Slots for Morning and Evening Sessions
+    const interval = parseInt(session.timeSlotMinutes, 10) || 30;
+    const morningSlots = [];
+    const eveningSlots = [];
+
+    // Morning Session
+    if (session.morningStart && session.morningEnd && session.morningStart !== "-" && session.morningEnd !== "-") {
+      let current = parseSessionTime(session.morningStart, date);
+      const endTime = parseSessionTime(session.morningEnd, date);
+
+      if (current && endTime && current < endTime) {
+        while (current < endTime) {
+          morningSlots.push(formatSlotTime(current));
+          current.setMinutes(current.getMinutes() + interval);
+        }
+      }
+    }
+
+    // Evening Session
+    if (session.eveningStart && session.eveningEnd && session.eveningStart !== "-" && session.eveningEnd !== "-") {
+      let current = parseSessionTime(session.eveningStart, date);
+      const endTime = parseSessionTime(session.eveningEnd, date);
+
+      if (current && endTime && current < endTime) {
+        while (current < endTime) {
+          eveningSlots.push(formatSlotTime(current));
+          current.setMinutes(current.getMinutes() + interval);
+        }
+      }
+    }
+
+    // 5. Filter out Booked Slots
     const bookedAppointments = await AppointmentModel.find({
       doctorId: doctorId,
       date: date,
       status: { $ne: "cancelled" },
     }).select("time");
 
-    const bookedTimes = bookedAppointments.map((a) => a.time);
-    const availableSlots = allSlots.filter(
-      (time) => !bookedTimes.includes(time)
+    const bookedTimes = bookedAppointments.map((a) => (a.time || "").toLowerCase());
+
+    const availableMorningSlots = morningSlots.filter(
+      (slot) => !bookedTimes.includes(slot.toLowerCase())
+    );
+    const availableEveningSlots = eveningSlots.filter(
+      (slot) => !bookedTimes.includes(slot.toLowerCase())
     );
 
-    res.json({ slots: availableSlots, isHoliday: false });
+    // Combined slots for backward compatibility
+    const allSlots = [...availableMorningSlots, ...availableEveningSlots];
+
+    res.json({
+      slots: allSlots,
+      morningSlots: availableMorningSlots,
+      eveningSlots: availableEveningSlots,
+      isHoliday: false,
+      sessionInfo: {
+        slotDuration: interval,
+        morningSession: session.morningStart && session.morningEnd ? `${session.morningStart} - ${session.morningEnd}` : null,
+        eveningSession: session.eveningStart && session.eveningEnd ? `${session.eveningStart} - ${session.eveningEnd}` : null,
+      }
+    });
   } catch (err) {
     console.error("Error fetching slots:", err.message);
     res.status(500).json({ message: "Server error checking slots" });

@@ -129,8 +129,7 @@ const ReceptionistProfile = lazy(() => import("./receptionist/ReceptionistProfil
 const ReceptionistDashboard = lazy(() => import("./receptionist/ReceptionistDashboard"));
 
 
-/* PDF Editor */
-const PdfEditor = lazy(() => import("./pdf-editor/PdfEditor"));
+
 
 // ============================================
 // APP COMPONENT
@@ -474,8 +473,7 @@ function App() {
             <ReceptionistProfile sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
           } />
 
-          {/* ==================== OTHER ==================== */}
-          <Route path="/pdf-editor" element={<PdfEditor />} />
+
 
           {/* ==================== AUTH ==================== */}
           <Route path="/" element={<Login />} />

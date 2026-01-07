@@ -11,7 +11,7 @@ import {
 import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
-import "../../admin-dashboard/styles/admin-shared.css";
+import "../../shared/styles/shared-components.css";
 import API_BASE from "../../config";
 
 export default function SharedEncounterList({ role, doctorId, clinicName: autoClinicName }) {

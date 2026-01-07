@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import "../styles/admin-shared.css";
+import "../../shared/styles/shared-components.css";
 import { FaEdit, FaTrash, FaUpload, FaPlus } from "react-icons/fa";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
