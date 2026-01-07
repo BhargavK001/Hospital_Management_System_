@@ -157,8 +157,18 @@ export default function PatientAppointments({ sidebarCollapsed, toggleSidebar })
     }
   };
 
-  const handlePdf = (id) => {
-    window.open(`${API_BASE}/appointments/${id}/pdf`, "_blank");
+  const handlePdf = async (id) => {
+    try {
+      const response = await axios.get(`${API_BASE}/appointments/${id}/pdf`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        responseType: 'blob'
+      });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (err) {
+      console.error("Error generating PDF:", err);
+    }
   };
 
   // --------- Date + Time helpers ----------

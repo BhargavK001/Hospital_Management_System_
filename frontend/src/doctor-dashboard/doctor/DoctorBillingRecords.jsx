@@ -97,6 +97,23 @@ export default function DoctorBillingRecords() {
     }
   };
 
+  // --- PDF HANDLER ---
+  const handlePdf = async (billId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(`${BASE}/bills/${billId}/pdf`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+      });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (err) {
+      console.error("Error generating PDF:", err);
+      toast.error("Failed to generate PDF");
+    }
+  };
+
   // --- HELPERS ---
   const handleFilterChange = (key, value) => {
     setFilter((prev) => ({ ...prev, [key]: value }));
@@ -448,14 +465,12 @@ export default function DoctorBillingRecords() {
                             >
                               <FaTrash />
                             </button>
-                            <a
-                              href={`${BASE}/bills/${bill._id}/pdf`}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                            <button
                               className="btn btn-sm btn-link text-success p-0"
+                              onClick={() => handlePdf(bill._id)}
                             >
                               <FaFilePdf />
-                            </a>
+                            </button>
                           </div>
                         </td>
 
@@ -544,14 +559,12 @@ export default function DoctorBillingRecords() {
                               >
                                 <FaEdit /> <small>Edit</small>
                               </button>
-                              <a
-                                href={`${BASE}/bills/${bill._id}/pdf`}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                              <button
                                 className="btn btn-link p-0 text-success d-flex align-items-center gap-1 text-decoration-none"
+                                onClick={() => handlePdf(bill._id)}
                               >
                                 <FaFilePdf /> <small>PDF</small>
-                              </a>
+                              </button>
                             </div>
                             <button
                               className="btn btn-link p-0 text-danger"
