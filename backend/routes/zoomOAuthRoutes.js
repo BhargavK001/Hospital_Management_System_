@@ -21,6 +21,12 @@ router.get("/url", verifyToken, async (req, res) => {
     // State parameter to verify callback
     const state = Buffer.from(JSON.stringify({ doctorId })).toString('base64');
     
+    // Log the redirect URI being used
+    logger.info("Generating Zoom OAuth URL", { 
+      redirectUri: ZOOM_REDIRECT_URI,
+      clientId: ZOOM_CLIENT_ID ? 'SET' : 'NOT_SET'
+    });
+    
     const authUrl = `https://zoom.us/oauth/authorize?response_type=code&client_id=${ZOOM_CLIENT_ID}&redirect_uri=${encodeURIComponent(ZOOM_REDIRECT_URI)}&state=${state}`;
     
     res.json({ url: authUrl });
@@ -51,6 +57,13 @@ router.get("/callback", async (req, res) => {
     
     const { doctorId } = stateData;
     
+    // Log what we're sending to Zoom
+    logger.info("Zoom OAuth token exchange attempt", { 
+      redirectUri: ZOOM_REDIRECT_URI,
+      hasCode: !!code,
+      doctorId
+    });
+
     // Exchange code for tokens
     const tokenResponse = await axios.post('https://zoom.us/oauth/token', null, {
       params: {
