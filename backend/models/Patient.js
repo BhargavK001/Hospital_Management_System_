@@ -2,8 +2,8 @@ const mongoose = require("mongoose");
 const Counter = require("./Counter");
 
 const PatientSchema = new mongoose.Schema({
-  // Unique Health ID (auto-generated on creation)
-  uhid: {
+  // Patient ID (auto-generated on creation) - formerly UHID
+  pid: {
     type: String,
     unique: true,
     sparse: true,  // Allows null for existing patients temporarily
@@ -24,11 +24,11 @@ const PatientSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-// Pre-save hook to auto-generate UHID for new patients
+// Pre-save hook to auto-generate PID for new patients
 PatientSchema.pre('save', async function(next) {
-  if (this.isNew && !this.uhid) {
+  if (this.isNew && !this.pid) {
     try {
-      this.uhid = await Counter.getNextSequence("patient_uhid", "UHID-", null, 5);
+      this.pid = await Counter.getNextSequence("patient_pid", "PID-", null, 5);
     } catch (error) {
       return next(error);
     }

@@ -395,7 +395,7 @@ router.get("/:id/pdf", verifyToken, async (req, res) => {
 
     const patientUser = bill.patientId?.userId;
     const pName = patientUser?.name || bill.patientName || "N/A";
-    const pUHID = bill.patientId?.uhid || "N/A";
+    const pPID = bill.patientId?.pid || "N/A";
     let pAge = "";
     if (patientUser?.dob) {
       const dob = new Date(patientUser.dob);
@@ -412,7 +412,7 @@ router.get("/:id/pdf", verifyToken, async (req, res) => {
 
     // Row 1
     const r1Y = gridTop - gridPad;
-    [[0, "PATIENT NAME", pName], [1, "PATIENT ID", pUHID], [2, "AGE / GENDER", ageGender]].forEach(([i, label, value]) => {
+    [[0, "PATIENT NAME", pName], [1, "PATIENT ID", pPID], [2, "AGE / GENDER", ageGender]].forEach(([i, label, value]) => {
       const cx = margin + i * colW + gridPad;
       page.drawText(label, { x: cx, y: r1Y, size: 8, font: fontBold, color: secondary });
       page.drawText(value, { x: cx, y: r1Y - 12, size: 10, font: fontBold, color: primary });

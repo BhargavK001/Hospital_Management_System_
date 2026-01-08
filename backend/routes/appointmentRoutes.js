@@ -5,6 +5,10 @@ const path = require("path");
 const csv = require("csv-parser");
 const { PDFDocument, StandardFonts, rgb } = require("pdf-lib");
 const mongoose = require("mongoose");
+// const puppeteer = require("puppeteer"); // Removed in favor of singleton service
+const QRCode = require("qrcode");
+const { generateAppointmentHtml } = require("../utils/appointmentPdfTemplate");
+const { generatePdf } = require("../utils/pdfGenerator");
 
 const AppointmentModel = require("../models/Appointment");
 const PatientModel = require("../models/Patient");
@@ -266,8 +270,43 @@ router.post("/", verifyToken, async (req, res) => {
       googleEventId: null,
       zoomMeetingId: null,
       
+      // Queue Token and Department - will be populated below
+      queueToken: null,
+      department: null,
+      
       createdAt: req.body.createdAt ? new Date(req.body.createdAt) : new Date(),
     };
+
+    // Auto-generate Queue Token (sequential per doctor per day)
+    if (payload.doctorId && payload.date) {
+      const apptDate = new Date(payload.date);
+      // Get start and end of the day for the appointment
+      const startOfDay = new Date(apptDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(apptDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      // Count existing appointments for this doctor on this day
+      const existingCount = await AppointmentModel.countDocuments({
+        doctorId: payload.doctorId,
+        date: { $gte: startOfDay, $lte: endOfDay },
+        status: { $ne: 'cancelled' }
+      });
+
+      payload.queueToken = existingCount + 1;
+    }
+
+    // Auto-populate Department from Doctor's Specialization
+    if (payload.doctorId) {
+      try {
+        const doctor = await DoctorModel.findById(payload.doctorId);
+        if (doctor && doctor.specialization) {
+          payload.department = doctor.specialization;
+        }
+      } catch (docErr) {
+        logger.debug("Could not fetch doctor specialization for department", { error: docErr.message });
+      }
+    }
 
     // Generate meeting link if online appointment
     if (payload.appointmentMode === 'online' && payload.onlinePlatform && payload.doctorId) {
@@ -864,370 +903,149 @@ router.post("/import", verifyToken, upload.single("file"), async (req, res) => {
 });
 
 // PDF Generation
+// PDF Generation (New HTML/CSS Template)
 router.get("/:id/pdf", allowUrlToken, verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const appt = await AppointmentModel.findById(id);
-    if (!appt)
+    
+    // Fetch Appointment with populated fields
+    const appt = await AppointmentModel.findById(id)
+      .populate({
+        path: "patientId",
+        populate: { path: "userId", model: "User" } // Get full user details for patient
+      })
+      .populate("doctorId")
+      .populate("clinicId");
+
+    if (!appt) {
       return res.status(404).json({ message: "Appointment not found" });
-
-    let doctor = null;
-    if (appt.doctorName) {
-      const parts = appt.doctorName.split(" ");
-      const first = parts[0];
-      const last = parts.slice(1).join(" ");
-      doctor = await DoctorModel.findOne({ firstName: first, lastName: last });
     }
 
-    const clinicName = appt.clinic || doctor?.clinic || "Valley Clinic";
-    const clinicEmail = doctor?.email || "info@medicalcenter.com";
-    const clinicPhone = doctor?.phone || "+1 234 567 890";
-    const rawAddress =
-      doctor?.address || "123 Health Street\nMedical District, City, 000000";
-    const addressLines = String(rawAddress).split(/\r?\n/).slice(0, 2);
-    const patientName = appt.patientName || "N/A";
+    // --- DATA PREPARATION ---
 
-    const todayFormatted = new Date().toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-    const apptDateObj = appt.date ? new Date(appt.date) : null;
-    const apptDateFormatted = apptDateObj
-      ? apptDateObj.toLocaleDateString("en-US", {
-          weekday: "short",
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        })
-      : "N/A";
-    const generatedDate = new Date().toLocaleString("en-US", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
-    const apptId = String(appt._id).substring(0, 8).toUpperCase();
-    const apptTime = appt.slot || appt.time || "N/A";
-    const apptStatus = (appt.status || "Booked").toUpperCase();
-    const paymentMode = appt.paymentMode || "Manual";
-    const serviceText = Array.isArray(appt.services)
-      ? appt.services.join(", ")
-      : appt.services || "General Consultation";
-    const totalBill = appt.charges ? `Rs. ${appt.charges}/-` : "Rs. 0/-";
-
-    const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([595, 842]);
-    const { width, height } = page.getSize();
-    const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-
-    const primaryColor = rgb(0, 0.53, 0.71);
-    const black = rgb(0, 0, 0);
-    const gray = rgb(0.4, 0.4, 0.4);
-    const lightGray = rgb(0.92, 0.92, 0.92);
-
-    let cursorY = height - 50;
-    const margin = 50;
-
-    // Logo
-    try {
-      const logoPath = path.join(__dirname, "../assets", "logo.png");
-      if (fs.existsSync(logoPath)) {
-        const logoBytes = fs.readFileSync(logoPath);
-        const logoImg = await pdfDoc.embedPng(logoBytes);
-        const logoDims = logoImg.scale(0.25);
-        page.drawImage(logoImg, {
-          x: margin,
-          y: cursorY - logoDims.height + 10,
-          width: logoDims.width,
-          height: logoDims.height,
-        });
-      }
-    } catch (e) {
-      logger.debug("Could not embed logo in PDF", { error: e.message });
-    }
-
-    const textStartX = 180;
-    page.drawText(clinicName.toUpperCase(), {
-      x: textStartX,
-      y: cursorY,
-      size: 18,
-      font: fontBold,
-      color: primaryColor,
-    });
-
-    page.drawText(`Date: ${todayFormatted}`, {
-      x: width - margin - 130,
-      y: cursorY,
-      size: 10,
-      font: fontRegular,
-      color: black,
-    });
-    page.drawText(`Booking ID: #${apptId}`, {
-      x: width - margin - 130,
-      y: cursorY - 15,
-      size: 10,
-      font: fontBold,
-      color: black,
-    });
-
-    let detailsY = cursorY - 18;
-    page.drawText(addressLines.join(", "), {
-      x: textStartX,
-      y: detailsY,
-      size: 10,
-      font: fontRegular,
-      color: gray,
-    });
-    detailsY -= 12;
-    page.drawText(`Phone: ${clinicPhone}`, {
-      x: textStartX,
-      y: detailsY,
-      size: 10,
-      font: fontRegular,
-      color: gray,
-    });
-    detailsY -= 12;
-    page.drawText(`Email: ${clinicEmail}`, {
-      x: textStartX,
-      y: detailsY,
-      size: 10,
-      font: fontRegular,
-      color: gray,
-    });
-
-    cursorY -= 80;
-    page.drawRectangle({
-      x: 0,
-      y: cursorY - 10,
-      width: width,
-      height: 30,
-      color: primaryColor,
-    });
-    const titleText = "APPOINTMENT CONFIRMATION";
-    const titleWidth = fontBold.widthOfTextAtSize(titleText, 14);
-    page.drawText(titleText, {
-      x: (width - titleWidth) / 2,
-      y: cursorY,
-      size: 14,
-      font: fontBold,
-      color: rgb(1, 1, 1),
-    });
-
-    cursorY -= 50;
-    const col1 = margin;
-    const col2 = 320;
-
-    page.drawText("PATIENT DETAILS", {
-      x: col1,
-      y: cursorY + 15,
-      size: 10,
-      font: fontBold,
-      color: gray,
-    });
-    cursorY -= 15;
-    page.drawText(patientName, {
-      x: col1,
-      y: cursorY + 15,
-      size: 14,
-      font: fontBold,
-      color: black,
-    });
-
-    const sectionTopY = cursorY + 30;
-    page.drawText("DOCTOR DETAILS", {
-      x: col2,
-      y: sectionTopY,
-      size: 10,
-      font: fontBold,
-      color: gray,
-    });
-    page.drawText(`Dr. ${appt.doctorName}`, {
-      x: col2,
-      y: sectionTopY - 15,
-      size: 14,
-      font: fontBold,
-      color: black,
-    });
-    page.drawText("General Physician", {
-      x: col2,
-      y: sectionTopY - 30,
-      size: 10,
-      font: fontRegular,
-      color: black,
-    });
-
-    cursorY -= 40;
-    page.drawLine({
-      start: { x: margin, y: cursorY },
-      end: { x: width - margin, y: cursorY },
-      thickness: 1,
-      color: lightGray,
-    });
-    cursorY -= 30;
-
-    page.drawText("APPOINTMENT DETAILS", {
-      x: margin,
-      y: cursorY,
-      size: 12,
-      font: fontBold,
-      color: primaryColor,
-    });
-    cursorY -= 20;
-
-    const drawDetailRow = (label, value, xPos, yPos) => {
-      page.drawText(label, {
-        x: xPos,
-        y: yPos,
-        size: 9,
-        font: fontRegular,
-        color: gray,
-      });
-      page.drawText(value, {
-        x: xPos,
-        y: yPos - 12,
-        size: 11,
-        font: fontBold,
-        color: black,
-      });
+    // 1. Clinic Info
+    // Prioritize linked clinic, then try doctor's clinic info, then fallback
+    const clinicName = appt.clinicId?.name || appt.doctorId?.clinic || appt.clinic || "OneCare Medical Center";
+    const clinicAddress = appt.clinicId?.address?.full || appt.doctorId?.clinicAddress || "123 Health Street, Medical District";
+    
+    const clinic = {
+      name: clinicName,
+      address: clinicAddress,
+      contact: appt.clinicId?.contact || "+91 12345 67890",
+      email: appt.clinicId?.email || "contact@onecare.com",
+      gstin: appt.clinicId?.gstin || "N/A",
+      logo: null
     };
 
-    drawDetailRow("Date", apptDateFormatted, margin, cursorY);
-    drawDetailRow("Time", apptTime, margin + 180, cursorY);
+    // Handle Logo
+    try {
+      if (appt.clinicId?.clinicLogo) {
+        const logoPath = path.join(__dirname, "../uploads", appt.clinicId.clinicLogo);
+        if (fs.existsSync(logoPath)) {
+          const logoData = fs.readFileSync(logoPath).toString("base64");
+          const ext = path.extname(logoPath).substring(1);
+          clinic.logo = `data:image/${ext};base64,${logoData}`;
+        }
+      }
+    } catch (e) {
+      logger.debug("Logo processing failed", { error: e.message });
+    }
 
-    let statusColor = black;
-    if (apptStatus === "BOOKED" || apptStatus === "CONFIRMED")
-      statusColor = rgb(0, 0.6, 0);
-    if (apptStatus === "CANCELLED") statusColor = rgb(0.8, 0, 0);
-    page.drawText("Status", {
-      x: width - margin - 80,
-      y: cursorY,
-      size: 9,
-      font: fontRegular,
-      color: gray,
-    });
-    page.drawText(apptStatus, {
-      x: width - margin - 80,
-      y: cursorY - 12,
-      size: 11,
-      font: fontBold,
-      color: statusColor,
-    });
+    // 2. Patient Info
+    // Handle both populated Patient model and legacy string fields
+    const patientUser = appt.patientId?.userId || {};
+    const patientDetails = appt.patientId || {};
+    
+    const dobObj = patientUser.dob ? new Date(patientUser.dob) : null;
+    let age = "N/A";
+    if (dobObj) {
+      const diffMs = Date.now() - dobObj.getTime();
+      const ageDt = new Date(diffMs);
+      age = Math.abs(ageDt.getUTCFullYear() - 1970) + " Years";
+    }
 
-    cursorY -= 50;
-    page.drawRectangle({
-      x: margin,
-      y: cursorY,
-      width: width - margin * 2,
-      height: 25,
-      color: lightGray,
-    });
-    page.drawText("Service / Description", {
-      x: margin + 10,
-      y: cursorY + 7,
-      size: 10,
-      font: fontBold,
-      color: black,
-    });
-    page.drawText("Amount", {
-      x: width - margin - 70,
-      y: cursorY + 7,
-      size: 10,
-      font: fontBold,
-      color: black,
-    });
+    const patient = {
+      firstName: patientUser.name?.split(" ")[0] || appt.patientName?.split(" ")[0] || "",
+      lastName: patientUser.name?.split(" ").slice(1).join(" ") || appt.patientName?.split(" ").slice(1).join(" ") || "",
+      pid: patientDetails.pid || patientDetails.uhid || "N/A",
+      dob: dobObj ? dobObj.toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' }) : "N/A",
+      gender: patientUser.gender || "N/A",
+      bloodGroup: patientUser.bloodGroup || "N/A",
+      contact: patientUser.phone || appt.patientPhone || "N/A",
+      email: patientUser.email || appt.patientEmail || "N/A",
+      age: age,
+      address: patientUser.addressLine1 || "N/A",
+      city: patientUser.city || "N/A",
+      postalCode: patientUser.postalCode || "N/A",
+      country: "India" // Default as per template, or fetch if available
+    };
 
-    cursorY -= 25;
-    page.drawText(serviceText, {
-      x: margin + 10,
-      y: cursorY + 8,
-      size: 10,
-      font: fontRegular,
-      color: black,
-    });
-    page.drawText(totalBill, {
-      x: width - margin - 70,
-      y: cursorY + 8,
-      size: 10,
-      font: fontRegular,
-      color: black,
-    });
-    page.drawLine({
-      start: { x: margin, y: cursorY },
-      end: { x: width - margin, y: cursorY },
-      thickness: 1,
-      color: lightGray,
-    });
+    // 3. Doctor Info
+    const doctor = {
+      name: appt.doctorId?.firstName ? `${appt.doctorId.firstName} ${appt.doctorId.lastName || ""}` : appt.doctorName || "Doctor",
+      qualification: appt.doctorId?.qualification || appt.doctorId?.specialization || "Specialist",
+      clinicName: appt.clinic || "Main Wing",
+      location: `${appt.doctorId?.cabin || 'N/A'}, ${appt.doctorId?.floor || 'N/A'}`
+    };
 
-    cursorY -= 35;
-    page.drawText("Total Amount:", {
-      x: width - margin - 150,
-      y: cursorY,
-      size: 12,
-      font: fontBold,
-      color: black,
-    });
-    page.drawText(totalBill, {
-      x: width - margin - 70,
-      y: cursorY,
-      size: 12,
-      font: fontBold,
-      color: primaryColor,
-    });
+    // 4. Appointment Info
+    const apptDateObj = appt.date ? new Date(appt.date) : new Date();
+    const formattedDate = apptDateObj.toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' });
+    
+    // Determine Visit Category (Logic: check if previous appointments exist, or just use services)
+    // For now, mapping 'services' string or default
+    let visitCat = "General Consultation";
+    if (Array.isArray(appt.services) && appt.services.length > 0) {
+        visitCat = appt.services[0];
+    } else if (appt.services) {
+        visitCat = appt.services;
+    }
 
-    cursorY -= 15;
-    page.drawText(`Payment Mode: ${paymentMode}`, {
-      x: width - margin - 150,
-      y: cursorY,
-      size: 9,
-      font: fontRegular,
-      color: gray,
-    });
+    // Generate Audit-Friendly ID: APT-{YYYYMMDD}-{Last4Hex}
+    const dateStr = apptDateObj.toISOString().slice(0,10).replace(/-/g, ""); // 20260108
+    const uniqueAndUnique = appt._id.toString().slice(-4).toUpperCase();
+    const auditId = `APT-${dateStr}-${uniqueAndUnique}`;
 
-    const footerY = 50;
-    page.drawText("Note:", {
-      x: margin,
-      y: footerY + 45,
-      size: 9,
-      font: fontBold,
-      color: black,
-    });
-    page.drawText(
-      "Please arrive 15 minutes prior to your appointment time. If you need to reschedule, contact us 24 hours in advance.",
-      { x: margin, y: footerY + 33, size: 9, font: fontRegular, color: black }
-    );
+    const appointment = {
+      id: auditId, // Structured Audit ID
+      queueToken: appt.queueToken || "N/A",
+      date: formattedDate,
+      time: appt.time || "N/A",
+      department: appt.department || appt.doctorId?.specialization || "General",
+      visitCategory: visitCat,
+      type: appt.appointmentMode === 'online' ? "Online Video Consultation" : "Physical / In-Person"
+    };
 
-    page.drawLine({
-      start: { x: margin, y: footerY + 15 },
-      end: { x: width - margin, y: footerY + 15 },
-      thickness: 1,
-      color: lightGray,
-    });
-    page.drawText(`Generated on: ${generatedDate}`, {
-      x: margin,
-      y: footerY,
-      size: 8,
-      font: fontRegular,
-      color: gray,
-    });
-    page.drawText(
-      "This is a computer-generated document. No signature is required.",
-      { x: margin, y: footerY - 10, size: 8, font: fontRegular, color: gray }
-    );
+    // 5. Meta & QR
+    const generatedDate = new Date().toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' });
+    const qrData = `APT:${appointment.id}-PID:${patient.pid}-TOK:${appointment.queueToken}`;
+    const qrCodeDataUrl = await QRCode.toDataURL(qrData, { margin: 1, width: 100 });
 
-    const pdfBytes = await pdfDoc.save();
+    const templateData = {
+      clinic,
+      patient,
+      doctor,
+      appointment,
+      meta: {
+        generatedDate,
+        qrCodeDataUrl
+      }
+    };
+
+    // --- HTML GENERATION ---
+    const htmlContent = generateAppointmentHtml(templateData);
+
+    // --- PDF GENERATION (Optimized) ---
+    const pdfBuffer = await generatePdf(htmlContent);
+
+    // Send Response
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader(
-      "Content-Disposition",
-      `inline; filename=Appointment_${apptId}.pdf`
-    );
-    res.send(Buffer.from(pdfBytes));
+    res.setHeader("Content-Disposition", `inline; filename=Appointment_${appointment.id}.pdf`);
+    res.send(pdfBuffer);
+
   } catch (err) {
-    console.error("Appointment PDF error:", err.message);
-    res.status(500).json({ message: "PDF generation failed" });
+    logger.error("Appointment PDF Generation failed", { error: err.message, stack: err.stack });
+    res.status(500).json({ message: "Failed to generate appointment PDF. Please try again." });
   }
 });
 

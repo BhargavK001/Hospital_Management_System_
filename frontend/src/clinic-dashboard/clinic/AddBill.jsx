@@ -132,7 +132,7 @@ const AddBill = () => {
         });
     } else {
       setEncounters([]);
-      setForm(prev => ({ ...prev, encounterId: "", doctorId: "", doctorName: "" }));
+      setForm(prev => ({ ...prev, encounterId: "" }));
     }
   }, [form.patientId]);
 

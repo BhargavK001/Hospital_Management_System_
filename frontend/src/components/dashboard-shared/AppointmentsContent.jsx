@@ -138,7 +138,7 @@ const AppointmentsContent = ({ basePath = "/admin", sidebarCollapsed }) => {
             axios.get(`${API_BASE}/services`, config),
             axios.get(`${API_BASE}/patients`, config),
             axios.get(`${API_BASE}/api/clinics`, config),
-            axios.get(`${API_BASE}/taxes`, config),
+            axios.get(`${API_BASE}/api/taxes`, config),
           ]);
 
         setDoctors(Array.isArray(docRes.data) ? docRes.data : docRes.data.data || []);

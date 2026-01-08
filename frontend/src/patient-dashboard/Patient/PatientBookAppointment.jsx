@@ -119,7 +119,7 @@ export default function PatientBookAppointment() {
           : (servRes.data?.data || servRes.data?.services || servRes.data?.rows || []);
 
         // D. Fetch Taxes
-        const taxRes = await api.get(`/taxes`);
+        const taxRes = await api.get(`/api/taxes`);
         const taxData = Array.isArray(taxRes.data) ? taxRes.data : [];
 
         if (mounted) {
