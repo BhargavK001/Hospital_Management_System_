@@ -7,8 +7,7 @@ const { PDFDocument, StandardFonts, rgb } = require("pdf-lib");
 const mongoose = require("mongoose");
 // const puppeteer = require("puppeteer"); // Removed in favor of singleton service
 const QRCode = require("qrcode");
-const { generateAppointmentHtml } = require("../utils/appointmentPdfTemplate");
-const { generatePdf } = require("../utils/pdfGenerator");
+// PDF generation using pdf-lib (no Puppeteer dependency)
 
 const AppointmentModel = require("../models/Appointment");
 const PatientModel = require("../models/Patient");
@@ -902,17 +901,68 @@ router.post("/import", verifyToken, upload.single("file"), async (req, res) => {
   }
 });
 
-// PDF Generation
-// PDF Generation (New HTML/CSS Template)
+// Public Verification Endpoint (No Auth Required - for QR code scans)
+router.get("/:id/verify", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid appointment ID" });
+    }
+
+    const appt = await AppointmentModel.findById(id)
+      .populate({
+        path: "patientId",
+        populate: { path: "userId", model: "User", select: "name" }
+      })
+      .populate("doctorId", "firstName lastName specialization");
+
+    if (!appt) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
+
+    // Return limited info for verification (no sensitive data)
+    const patientName = appt.patientId?.userId?.name || appt.patientName || "N/A";
+    const patientPid = appt.patientId?.pid || appt.patientId?.uhid || "N/A";
+    const doctorName = appt.doctorId?.firstName 
+      ? `Dr. ${appt.doctorId.firstName} ${appt.doctorId.lastName || ""}`.trim()
+      : (appt.doctorName || "N/A");
+    
+    // Format appointment ID like in PDF
+    const uniqueId = appt._id.toString().slice(-5).toUpperCase();
+    const appointmentId = `APT-${uniqueId}`;
+
+    res.json({
+      id: appt._id,
+      appointmentId,
+      date: appt.date,
+      time: appt.time,
+      patientName,
+      patientPid,
+      doctorName,
+      department: appt.department || appt.doctorId?.specialization || "General",
+      status: appt.status,
+      appointmentMode: appt.appointmentMode,
+      verified: true
+    });
+
+  } catch (err) {
+    logger.error("Appointment verification failed", { error: err.message });
+    res.status(500).json({ message: "Verification failed" });
+  }
+});
+
+// PDF Generation (pdf-lib based - matches HTML template exactly)
 router.get("/:id/pdf", allowUrlToken, verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Fetch Appointment with populated fields
+    // Fetch Appointment with all populated fields
     const appt = await AppointmentModel.findById(id)
       .populate({
         path: "patientId",
-        populate: { path: "userId", model: "User" } // Get full user details for patient
+        populate: { path: "userId", model: "User" }
       })
       .populate("doctorId")
       .populate("clinicId");
@@ -921,127 +971,325 @@ router.get("/:id/pdf", allowUrlToken, verifyToken, async (req, res) => {
       return res.status(404).json({ message: "Appointment not found" });
     }
 
-    // --- DATA PREPARATION ---
-
-    // 1. Clinic Info
-    // Prioritize linked clinic, then try doctor's clinic info, then fallback
-    const clinicName = appt.clinicId?.name || appt.doctorId?.clinic || appt.clinic || "OneCare Medical Center";
-    const clinicAddress = appt.clinicId?.address?.full || appt.doctorId?.clinicAddress || "123 Health Street, Medical District";
+    // === DATA PREPARATION ===
     
-    const clinic = {
-      name: clinicName,
-      address: clinicAddress,
-      contact: appt.clinicId?.contact || "+91 12345 67890",
-      email: appt.clinicId?.email || "contact@onecare.com",
-      gstin: appt.clinicId?.gstin || "N/A",
-      logo: null
-    };
-
-    // Handle Logo
-    try {
-      if (appt.clinicId?.clinicLogo) {
-        const logoPath = path.join(__dirname, "../uploads", appt.clinicId.clinicLogo);
-        if (fs.existsSync(logoPath)) {
-          const logoData = fs.readFileSync(logoPath).toString("base64");
-          const ext = path.extname(logoPath).substring(1);
-          clinic.logo = `data:image/${ext};base64,${logoData}`;
-        }
-      }
-    } catch (e) {
-      logger.debug("Logo processing failed", { error: e.message });
+    // 1. Clinic/Hospital Info
+    const hospitalName = appt.clinicId?.name || appt.doctorId?.clinic || appt.clinic || "OneCare Medical Center";
+    let hospitalAddress = "";
+    if (appt.clinicId?.address?.full) {
+      hospitalAddress = appt.clinicId.address.full;
+      if (appt.clinicId.address.city) hospitalAddress += ", " + appt.clinicId.address.city;
+      if (appt.clinicId.address.state) hospitalAddress += ", " + appt.clinicId.address.state;
+      if (appt.clinicId.address.postalCode) hospitalAddress += " - " + appt.clinicId.address.postalCode;
     }
-
+    const hospitalContact = appt.clinicId?.contact || "";
+    const hospitalEmail = appt.clinicId?.email || "";
+    const hospitalGstin = appt.clinicId?.gstin || "";
+    
     // 2. Patient Info
-    // Handle both populated Patient model and legacy string fields
     const patientUser = appt.patientId?.userId || {};
     const patientDetails = appt.patientId || {};
     
+    const nameParts = (patientUser.name || appt.patientName || "").split(" ");
+    const firstName = nameParts[0] || "N/A";
+    const lastName = nameParts.slice(1).join(" ") || "";
+    const patientPid = patientDetails.pid || patientDetails.uhid || "N/A";
+    
     const dobObj = patientUser.dob ? new Date(patientUser.dob) : null;
-    let age = "N/A";
+    const dobFormatted = dobObj ? dobObj.toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' }) : "N/A";
+    
+    let ageYears = "N/A";
     if (dobObj) {
-      const diffMs = Date.now() - dobObj.getTime();
-      const ageDt = new Date(diffMs);
-      age = Math.abs(ageDt.getUTCFullYear() - 1970) + " Years";
+      const now = new Date();
+      let age = now.getFullYear() - dobObj.getFullYear();
+      if (now.getMonth() < dobObj.getMonth() || (now.getMonth() === dobObj.getMonth() && now.getDate() < dobObj.getDate())) age--;
+      if (!isNaN(age) && age >= 0) ageYears = `${age} Years`;
     }
-
-    const patient = {
-      firstName: patientUser.name?.split(" ")[0] || appt.patientName?.split(" ")[0] || "",
-      lastName: patientUser.name?.split(" ").slice(1).join(" ") || appt.patientName?.split(" ").slice(1).join(" ") || "",
-      pid: patientDetails.pid || patientDetails.uhid || "N/A",
-      dob: dobObj ? dobObj.toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' }) : "N/A",
-      gender: patientUser.gender || "N/A",
-      bloodGroup: patientUser.bloodGroup || "N/A",
-      contact: patientUser.phone || appt.patientPhone || "N/A",
-      email: patientUser.email || appt.patientEmail || "N/A",
-      age: age,
-      address: patientUser.addressLine1 || "N/A",
-      city: patientUser.city || "N/A",
-      postalCode: patientUser.postalCode || "N/A",
-      country: "India" // Default as per template, or fetch if available
-    };
+    
+    const patientGender = patientUser.gender || "N/A";
+    const patientBloodGroup = patientUser.bloodGroup || "N/A";
+    const patientContact = patientUser.phone || appt.patientPhone || "N/A";
+    const patientEmail = patientUser.email || appt.patientEmail || "N/A";
+    const patientAddress = patientUser.addressLine1 || "N/A";
+    const patientCity = patientUser.city || "N/A";
+    const patientPostalCode = patientUser.postalCode || "N/A";
+    const patientCountry = patientUser.country || "India";
 
     // 3. Doctor Info
-    const doctor = {
-      name: appt.doctorId?.firstName ? `${appt.doctorId.firstName} ${appt.doctorId.lastName || ""}` : appt.doctorName || "Doctor",
-      qualification: appt.doctorId?.qualification || appt.doctorId?.specialization || "Specialist",
-      clinicName: appt.clinic || "Main Wing",
-      location: `${appt.doctorId?.cabin || 'N/A'}, ${appt.doctorId?.floor || 'N/A'}`
-    };
-
+    const doctorFullName = appt.doctorId?.firstName 
+      ? `Dr. ${appt.doctorId.firstName} ${appt.doctorId.lastName || ""}`.trim() 
+      : (appt.doctorName ? `Dr. ${appt.doctorName}` : "Doctor");
+    const doctorQualification = appt.doctorId?.qualification || appt.doctorId?.specialization || "Specialist";
+    const doctorCabin = appt.doctorId?.cabin || "N/A";
+    const doctorFloor = appt.doctorId?.floor || "N/A";
+    const doctorLocation = `${doctorCabin}, ${doctorFloor}`;
+    const doctorClinicWing = appt.clinic || "Main Diagnostic Wing";
+    
     // 4. Appointment Info
     const apptDateObj = appt.date ? new Date(appt.date) : new Date();
-    const formattedDate = apptDateObj.toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' });
+    const apptDateFormatted = apptDateObj.toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' });
+    const apptTime = appt.time || "N/A";
+    const apptDepartment = appt.department || appt.doctorId?.specialization || "General";
+    const queueToken = appt.queueToken ? `#${appt.queueToken}` : "N/A";
     
-    // Determine Visit Category (Logic: check if previous appointments exist, or just use services)
-    // For now, mapping 'services' string or default
-    let visitCat = "General Consultation";
+    let visitCategory = "General Consultation";
     if (Array.isArray(appt.services) && appt.services.length > 0) {
-        visitCat = appt.services[0];
+      visitCategory = appt.services[0];
     } else if (appt.services) {
-        visitCat = appt.services;
+      visitCategory = appt.services;
+    }
+    
+    const apptType = appt.appointmentMode === 'online' ? "Online Consultation" : "Physical / In-Person";
+    
+    // Generate Appointment ID
+    const uniqueId = appt._id.toString().slice(-5).toUpperCase();
+    const appointmentId = `APT-${uniqueId}`;
+    
+    const generatedDate = new Date().toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' });
+
+    // === PDF CREATION (A4: 595.28 x 841.89 pts) ===
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage([595.28, 841.89]);
+    const { width, height } = page.getSize();
+    
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+    // Colors matching the HTML template
+    const brandColor = rgb(0.059, 0.090, 0.165);     // #0f172a
+    const accentBlue = rgb(0.145, 0.388, 0.922);     // #2563eb
+    const primaryText = rgb(0.118, 0.161, 0.231);    // #1e293b
+    const secondaryText = rgb(0.392, 0.455, 0.545);  // #64748b
+    const borderColor = rgb(0.886, 0.910, 0.941);    // #e2e8f0
+    const bgSoft = rgb(0.973, 0.980, 0.988);         // #f8fafc
+    const white = rgb(1, 1, 1);
+
+    const margin = 42; // ~15mm
+    let y = height - margin;
+
+    // =============================================
+    // 1. HOSPITAL BRAND HEADER
+    // =============================================
+    const headerStartY = y;
+    const logoSize = 60;
+    
+    // Logo/Initials box
+    let logoDrawn = false;
+    try {
+      if (appt.clinicId?.clinicLogo) {
+        const logoPath = path.join(__dirname, "..", "uploads", appt.clinicId.clinicLogo);
+        if (fs.existsSync(logoPath)) {
+          const logoBytes = fs.readFileSync(logoPath);
+          const ext = appt.clinicId.clinicLogo.toLowerCase();
+          const logoImg = ext.endsWith('.png') ? await pdfDoc.embedPng(logoBytes) : await pdfDoc.embedJpg(logoBytes);
+          if (logoImg) {
+            page.drawImage(logoImg, { x: margin, y: y - logoSize, width: logoSize, height: logoSize });
+            logoDrawn = true;
+          }
+        }
+      }
+    } catch (e) {}
+
+    if (!logoDrawn) {
+      // Draw placeholder box with initials
+      const initials = hospitalName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+      page.drawRectangle({ x: margin, y: y - logoSize, width: logoSize, height: logoSize, color: brandColor });
+      const iw = fontBold.widthOfTextAtSize(initials, 22);
+      page.drawText(initials, { x: margin + (logoSize - iw) / 2, y: y - logoSize + 22, size: 22, font: fontBold, color: white });
     }
 
-    // Generate Audit-Friendly ID: APT-{YYYYMMDD}-{Last4Hex}
-    const dateStr = apptDateObj.toISOString().slice(0,10).replace(/-/g, ""); // 20260108
-    const uniqueAndUnique = appt._id.toString().slice(-4).toUpperCase();
-    const auditId = `APT-${dateStr}-${uniqueAndUnique}`;
+    // Hospital identity (left of logo)
+    const textX = margin + logoSize + 15;
+    page.drawText(hospitalName.toUpperCase(), { x: textX, y: y - 18, size: 20, font: fontBold, color: brandColor });
+    
+    let lineY = y - 34;
+    if (hospitalAddress) {
+      page.drawText(hospitalAddress, { x: textX, y: lineY, size: 9, font, color: secondaryText });
+      lineY -= 12;
+    }
+    if (hospitalContact || hospitalEmail) {
+      let contactLine = "";
+      if (hospitalContact) contactLine += `Contact: ${hospitalContact}`;
+      if (hospitalEmail) contactLine += (contactLine ? " | " : "") + `Email: ${hospitalEmail}`;
+      page.drawText(contactLine, { x: textX, y: lineY, size: 9, font, color: secondaryText });
+      lineY -= 12;
+    }
+    if (hospitalGstin) {
+      page.drawText(`GSTIN: ${hospitalGstin}`, { x: textX, y: lineY, size: 8, font, color: secondaryText });
+    }
 
-    const appointment = {
-      id: auditId, // Structured Audit ID
-      queueToken: appt.queueToken || "N/A",
-      date: formattedDate,
-      time: appt.time || "N/A",
-      department: appt.department || appt.doctorId?.specialization || "General",
-      visitCategory: visitCat,
-      type: appt.appointmentMode === 'online' ? "Online Video Consultation" : "Physical / In-Person"
-    };
+    // Appointment label (right side)
+    const rightEdge = width - margin;
+    const slipTitle = "APPOINTMENT SLIP";
+    page.drawText(slipTitle, { x: rightEdge - fontBold.widthOfTextAtSize(slipTitle, 14), y: y - 12, size: 14, font: fontBold, color: accentBlue });
+    
+    // ID Badge
+    const idBadgeText = `ID: #${appointmentId}`;
+    const idBadgeW = fontBold.widthOfTextAtSize(idBadgeText, 10) + 16;
+    const idBadgeX = rightEdge - idBadgeW;
+    page.drawRectangle({ x: idBadgeX, y: y - 38, width: idBadgeW, height: 18, color: brandColor });
+    page.drawText(idBadgeText, { x: idBadgeX + 8, y: y - 33, size: 10, font: fontBold, color: white });
+    
+    // Generated date
+    page.drawText(`Generated: ${generatedDate}`, { x: rightEdge - font.widthOfTextAtSize(`Generated: ${generatedDate}`, 8), y: y - 52, size: 8, font, color: secondaryText });
 
-    // 5. Meta & QR
-    const generatedDate = new Date().toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' });
-    const qrData = `APT:${appointment.id}-PID:${patient.pid}-TOK:${appointment.queueToken}`;
-    const qrCodeDataUrl = await QRCode.toDataURL(qrData, { margin: 1, width: 100 });
+    // Header bottom border
+    y = headerStartY - logoSize - 15;
+    page.drawLine({ start: { x: margin, y }, end: { x: width - margin, y }, thickness: 3, color: brandColor });
+    y -= 20;
 
-    const templateData = {
-      clinic,
-      patient,
-      doctor,
-      appointment,
-      meta: {
-        generatedDate,
-        qrCodeDataUrl
-      }
-    };
+    // =============================================
+    // 2. SCHEDULE BAR (4 columns)
+    // =============================================
+    const scheduleBarH = 45;
+    const scheduleColW = (width - 2 * margin - 30) / 4;
+    const scheduleItems = [
+      ["Queue Token", queueToken],
+      ["Appointment Date", apptDateFormatted],
+      ["Reporting Time", apptTime],
+      ["Department", apptDepartment]
+    ];
 
-    // --- HTML GENERATION ---
-    const htmlContent = generateAppointmentHtml(templateData);
+    scheduleItems.forEach(([label, value], i) => {
+      const boxX = margin + i * (scheduleColW + 10);
+      // Border box
+      page.drawRectangle({ x: boxX, y: y - scheduleBarH, width: scheduleColW, height: scheduleBarH, borderColor, borderWidth: 1, color: white });
+      // Label
+      page.drawText(label.toUpperCase(), { x: boxX + 8, y: y - 14, size: 7, font: fontBold, color: secondaryText });
+      // Value
+      page.drawText(String(value), { x: boxX + 8, y: y - 30, size: 12, font: fontBold, color: brandColor });
+    });
 
-    // --- PDF GENERATION (Optimized) ---
-    const pdfBuffer = await generatePdf(htmlContent);
+    y -= scheduleBarH + 20;
 
-    // Send Response
+    // =============================================
+    // 3. PATIENT PROFILE SECTION
+    // =============================================
+    // Section title with left border
+    const sectionTitleH = 22;
+    page.drawRectangle({ x: margin, y: y - sectionTitleH, width: width - 2 * margin, height: sectionTitleH, color: bgSoft });
+    page.drawRectangle({ x: margin, y: y - sectionTitleH, width: 4, height: sectionTitleH, color: brandColor });
+    page.drawText("Patient Profile", { x: margin + 12, y: y - 15, size: 10, font: fontBold, color: brandColor });
+    y -= sectionTitleH + 12;
+
+    // Patient data grid (3 columns x 3 rows)
+    const fieldColW = (width - 2 * margin) / 3;
+    const fieldRowH = 28;
+    
+    const patientFields = [
+      [["First Name", firstName], ["Last Name", lastName || "—"], ["Patient UHID", patientPid]],
+      [["Date of Birth", dobFormatted], ["Gender", patientGender], ["Blood Group", patientBloodGroup]],
+      [["Contact No", patientContact], ["Email Address", patientEmail], ["Age", ageYears]]
+    ];
+
+    patientFields.forEach((row, rowIdx) => {
+      row.forEach(([label, value], colIdx) => {
+        const fx = margin + colIdx * fieldColW + 10;
+        const fy = y - rowIdx * fieldRowH;
+        page.drawText(label.toUpperCase(), { x: fx, y: fy, size: 7, font: fontBold, color: secondaryText });
+        page.drawText(String(value), { x: fx, y: fy - 12, size: 10, font, color: primaryText });
+      });
+    });
+
+    y -= patientFields.length * fieldRowH + 15;
+
+    // =============================================
+    // 4. ADDRESS & COMMUNICATION SECTION
+    // =============================================
+    page.drawRectangle({ x: margin, y: y - sectionTitleH, width: width - 2 * margin, height: sectionTitleH, color: bgSoft });
+    page.drawRectangle({ x: margin, y: y - sectionTitleH, width: 4, height: sectionTitleH, color: brandColor });
+    page.drawText("Address & Communication", { x: margin + 12, y: y - 15, size: 10, font: fontBold, color: brandColor });
+    y -= sectionTitleH + 12;
+
+    // Address row 1 (address spans 2 cols)
+    page.drawText("RESIDENTIAL ADDRESS", { x: margin + 10, y: y, size: 7, font: fontBold, color: secondaryText });
+    page.drawText(patientAddress, { x: margin + 10, y: y - 12, size: 10, font, color: primaryText });
+    page.drawText("CITY", { x: margin + fieldColW * 2 + 10, y: y, size: 7, font: fontBold, color: secondaryText });
+    page.drawText(patientCity, { x: margin + fieldColW * 2 + 10, y: y - 12, size: 10, font, color: primaryText });
+    y -= fieldRowH;
+
+    // Address row 2
+    page.drawText("POSTAL CODE", { x: margin + 10, y: y, size: 7, font: fontBold, color: secondaryText });
+    page.drawText(patientPostalCode, { x: margin + 10, y: y - 12, size: 10, font, color: primaryText });
+    page.drawText("COUNTRY", { x: margin + fieldColW + 10, y: y, size: 7, font: fontBold, color: secondaryText });
+    page.drawText(patientCountry, { x: margin + fieldColW + 10, y: y - 12, size: 10, font, color: primaryText });
+    y -= fieldRowH + 15;
+
+    // =============================================
+    // 5. CONSULTATION INFORMATION CARD
+    // =============================================
+    page.drawRectangle({ x: margin, y: y - sectionTitleH, width: width - 2 * margin, height: sectionTitleH, color: bgSoft });
+    page.drawRectangle({ x: margin, y: y - sectionTitleH, width: 4, height: sectionTitleH, color: brandColor });
+    page.drawText("Consultation Information", { x: margin + 12, y: y - 15, size: 10, font: fontBold, color: brandColor });
+    y -= sectionTitleH + 8;
+
+    // Consultation card (border box with 2x2 grid)
+    const cardH = 85;
+    const cardPad = 15;
+    page.drawRectangle({ x: margin, y: y - cardH, width: width - 2 * margin, height: cardH, borderColor, borderWidth: 1, color: white });
+
+    const halfW = (width - 2 * margin) / 2;
+    
+    // Row 1: Doctor + Location
+    const consult1Y = y - 20;
+    page.drawText("CONSULTING SPECIALIST", { x: margin + cardPad, y: consult1Y, size: 7, font: fontBold, color: secondaryText });
+    page.drawText(doctorFullName, { x: margin + cardPad, y: consult1Y - 14, size: 13, font: fontBold, color: accentBlue });
+    page.drawText(doctorQualification, { x: margin + cardPad, y: consult1Y - 26, size: 9, font, color: secondaryText });
+
+    page.drawText("LOCATION / FLOOR", { x: margin + halfW + cardPad, y: consult1Y, size: 7, font: fontBold, color: secondaryText });
+    page.drawText(doctorLocation, { x: margin + halfW + cardPad, y: consult1Y - 14, size: 11, font, color: primaryText });
+    page.drawText(doctorClinicWing, { x: margin + halfW + cardPad, y: consult1Y - 26, size: 9, font, color: secondaryText });
+
+    // Row 2: Visit Category + Appointment Type
+    const consult2Y = consult1Y - 48;
+    page.drawText("VISIT CATEGORY", { x: margin + cardPad, y: consult2Y, size: 7, font: fontBold, color: secondaryText });
+    page.drawText(visitCategory, { x: margin + cardPad, y: consult2Y - 12, size: 10, font, color: primaryText });
+
+    page.drawText("APPOINTMENT TYPE", { x: margin + halfW + cardPad, y: consult2Y, size: 7, font: fontBold, color: secondaryText });
+    page.drawText(apptType, { x: margin + halfW + cardPad, y: consult2Y - 12, size: 10, font, color: primaryText });
+
+    y -= cardH + 10;
+
+    // =============================================
+    // 6. FOOTER WITH QR CODE
+    // =============================================
+    const footerY = 70;
+    page.drawLine({ start: { x: margin, y: footerY + 30 }, end: { x: width - margin, y: footerY + 30 }, thickness: 1, color: borderColor });
+
+    // QR Code (left) - uses FRONTEND_URL for verification
+    const qrSize = 65;
+    try {
+      // Use FRONTEND_URL from environment (works for localhost, Render, AWS)
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const verifyUrl = `${frontendUrl}/verify/appointment/${appt._id}`;
+      const qrDataUrl = await QRCode.toDataURL(verifyUrl, { width: 150, margin: 1 });
+      const qrImg = await pdfDoc.embedPng(qrDataUrl);
+      // QR with border
+      page.drawRectangle({ x: margin, y: footerY - qrSize + 20, width: qrSize + 10, height: qrSize + 10, borderColor, borderWidth: 1, color: white });
+      page.drawImage(qrImg, { x: margin + 5, y: footerY - qrSize + 25, width: qrSize, height: qrSize });
+    } catch (e) {
+      logger.debug("QR code generation failed", { error: e.message });
+    }
+
+    // System tag (right) - fixed spacing
+    const sysTag1 = "This is a system-generated document.";
+    page.drawText(sysTag1, { x: rightEdge - font.widthOfTextAtSize(sysTag1, 8), y: footerY + 10, size: 8, font, color: secondaryText });
+    
+    // "Powered by OneCare Hospital Management System" - draw as parts for bold "OneCare"
+    const poweredByText = "Powered by ";
+    const oneCareText = "OneCare";
+    const hmsText = " Hospital Management System";
+    const totalWidth = font.widthOfTextAtSize(poweredByText, 8) + fontBold.widthOfTextAtSize(oneCareText, 8) + font.widthOfTextAtSize(hmsText, 8);
+    const startX = rightEdge - totalWidth;
+    page.drawText(poweredByText, { x: startX, y: footerY - 2, size: 8, font, color: secondaryText });
+    page.drawText(oneCareText, { x: startX + font.widthOfTextAtSize(poweredByText, 8), y: footerY - 2, size: 8, font: fontBold, color: accentBlue });
+    page.drawText(hmsText, { x: startX + font.widthOfTextAtSize(poweredByText, 8) + fontBold.widthOfTextAtSize(oneCareText, 8), y: footerY - 2, size: 8, font, color: secondaryText });
+
+    // === SEND PDF ===
+    const pdfBytes = await pdfDoc.save();
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `inline; filename=Appointment_${appointment.id}.pdf`);
-    res.send(pdfBuffer);
+    res.setHeader("Content-Disposition", `inline; filename=Appointment_${appointmentId}.pdf`);
+    res.send(Buffer.from(pdfBytes));
 
   } catch (err) {
     logger.error("Appointment PDF Generation failed", { error: err.message, stack: err.stack });

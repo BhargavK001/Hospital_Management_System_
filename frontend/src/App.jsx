@@ -129,6 +129,9 @@ const ReceptionistChangePasswordPage = lazy(() => import("./receptionist/Recepti
 const ReceptionistProfile = lazy(() => import("./receptionist/ReceptionistProfile"));
 const ReceptionistDashboard = lazy(() => import("./receptionist/ReceptionistDashboard"));
 
+/* Public Verification Pages */
+const VerifyAppointment = lazy(() => import("./components/VerifyAppointment"));
+
 
 
 
@@ -476,6 +479,9 @@ function App() {
           } />
 
 
+
+          {/* ==================== PUBLIC VERIFICATION ==================== */}
+          <Route path="/verify/appointment/:id" element={<VerifyAppointment />} />
 
           {/* ==================== AUTH ==================== */}
           <Route path="/" element={<Login />} />
