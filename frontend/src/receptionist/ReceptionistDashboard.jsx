@@ -19,7 +19,7 @@ import {
 } from "react-icons/fa";
 import API_BASE from "../../src/config";
 
-export default function DoctorDashboard() {
+export default function ReceptionistDashboard() {
   const navigate = useNavigate();
   const calendarRef = useRef(null);
 

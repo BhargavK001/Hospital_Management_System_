@@ -38,12 +38,31 @@ const ReceptionistNavbar = ({ toggleSidebar }) => {
     try {
       const token = localStorage.getItem("token") || localStorage.getItem("receptionistToken");
       if (!token) return;
-      const res = await fetch(`${API_BASE}/api/user/${userId}`, {
+
+      let endpoint = `${API_BASE}/api/user/${userId}`;
+      let isReceptionist = false;
+
+      // Check if logged in as receptionist
+      const userRole = authUser?.role?.toLowerCase();
+      if (receptionist?._id || userRole === "receptionist") {
+        endpoint = `${API_BASE}/api/receptionists/${userId}`;
+        isReceptionist = true;
+      }
+
+      const res = await fetch(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       if (res.ok) {
-        const data = await res.json();
+        let data = await res.json();
+
+        // Handle inconsistent API response structure
+        // Receptionist API returns { data: { ... } }
+        // User API returns { ... } directly
+        if (isReceptionist && data.data) {
+          data = data.data;
+        }
+
         setProfileData({
           name: data.firstName && data.lastName 
             ? `${data.firstName} ${data.lastName}` 
