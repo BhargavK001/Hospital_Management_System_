@@ -16,7 +16,7 @@ export default function EncounterTemplateDetails({ sidebarCollapsed, toggleSideb
         }}
       >
         <Navbar toggleSidebar={toggleSidebar} />
-        <SharedEncounterTemplateDetails role="admin" />
+        <SharedEncounterTemplateDetails role="receptionist" />
       </div>
     </div>
   );

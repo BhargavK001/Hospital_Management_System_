@@ -185,7 +185,7 @@ const ReceptionistNavbar = ({ toggleSidebar }) => {
                     <div 
                       key={apt._id} 
                       className="modern-dropdown-item" 
-                      onClick={() => navigate("/reception/appointments")}
+                      onClick={() => navigate("/reception-dashboard/appointments")}
                       style={{ borderBottom: "1px solid #f1f5f9", alignItems: "flex-start" }}
                     >
                       <div style={{ 

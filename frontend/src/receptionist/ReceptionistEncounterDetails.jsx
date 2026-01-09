@@ -1,7 +1,7 @@
 import React from "react";
 import Sidebar from "../receptionist/components/Sidebar";
 import Navbar from "../receptionist/components/Navbar";
-import SharedEncounterList from "../components/Encounter/SharedEncounterList";
+import SharedEncounterList from "../components/Encounter/SharedEncounterDetails";
 
 export default function ReceptionistEncounterList({ sidebarCollapsed, toggleSidebar }) {
   // Get clinic info from localStorage for auto-locking clinic selection
@@ -25,7 +25,7 @@ export default function ReceptionistEncounterList({ sidebarCollapsed, toggleSide
         }}
       >
         <Navbar toggleSidebar={toggleSidebar} />
-        <SharedEncounterList role="admin" clinicName={clinicName} />
+        <SharedEncounterList role="receptionist" clinicName={clinicName} />
       </div>
     </div>
   );

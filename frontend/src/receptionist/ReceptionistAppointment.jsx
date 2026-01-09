@@ -2,7 +2,7 @@ import React from "react";
 import Sidebar from "../receptionist/components/Sidebar";
 import Navbar from "../receptionist/components/Navbar";
 import AppointmentsContent from "../components/dashboard-shared/AppointmentsContent";
-import "../admin-dashboard/styles/admin-shared.css"; // Import shared styles for components
+import "../shared/styles/shared-components.css"; // Import shared styles for components
 
 const ReceptionistAppoitment = ({ sidebarCollapsed, toggleSidebar }) => {
   return (
@@ -14,7 +14,7 @@ const ReceptionistAppoitment = ({ sidebarCollapsed, toggleSidebar }) => {
       >
         <Navbar toggleSidebar={toggleSidebar} />
         {/* Shared Content Component */}
-        <AppointmentsContent basePath="/clinic-dashboard" />
+        <AppointmentsContent basePath="/receptionist-dashboard" />
       </div>
     </div>
   );

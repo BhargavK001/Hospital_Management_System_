@@ -165,41 +165,10 @@ export default function Sidebar({ collapsed = false }) {
 
         {/* 4. Patients Dropdown */}
         <li className="modern-nav-item">
-          <div
-            className={`modern-nav-link modern-nav-toggle ${isPatientsOpen ? "open" : ""}`}
-            onClick={() => setIsPatientsOpen(!isPatientsOpen)}
-          >
-            <span className="modern-nav-icon">
-              <FaUserInjured />
-            </span>
-            {!collapsed && (
-              <>
-                <span>Patients</span>
-                <span className="toggle-icon">
-                  <FaChevronDown />
-                </span>
-              </>
-            )}
-          </div>
-
-          {!collapsed && (
-            <Collapse in={isPatientsOpen}>
-              <ul className="modern-submenu">
-                <li className="modern-nav-item">
-                  <NavLink to="/reception-dashboard/patients" className={linkClass} end>
-                    <span className="modern-nav-icon"><FaListAlt /></span>
-                    <span>Patient List</span>
-                  </NavLink>
-                </li>
-                <li className="modern-nav-item">
-                  <NavLink to="/reception-dashboard/patients/new" className={linkClass}>
-                    <span className="modern-nav-icon"><FaUserInjured /></span>
-                    <span>Register Patient</span>
-                  </NavLink>
-                </li>
-              </ul>
-            </Collapse>
-          )}
+          <NavLink to="/receptionist-dashboard/patients" className={linkClass}>
+            <span className="clinic-nav-icon"><FaCalendarAlt /></span>
+            {!collapsed && <span>Patients</span>}
+          </NavLink>
         </li>
 
         {/* 5. Doctors */}
@@ -228,7 +197,7 @@ export default function Sidebar({ collapsed = false }) {
 
         {/* 8. Settings */}
         <li className="modern-nav-item">
-          <NavLink to="/reception-dashboard/settings" className={linkClass}>
+          <NavLink to="/receptionist-dashboard/settings" className={linkClass}>
             <span className="modern-nav-icon"><IoMdSettings /></span>
             {!collapsed && <span>Settings</span>}
           </NavLink>
