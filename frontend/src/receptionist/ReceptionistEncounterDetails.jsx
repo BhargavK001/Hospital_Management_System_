@@ -25,7 +25,7 @@ export default function ReceptionistEncounterList({ sidebarCollapsed, toggleSide
         }}
       >
         <Navbar toggleSidebar={toggleSidebar} />
-        <SharedEncounterList role="receptionist" clinicName={clinicName} />
+        <SharedEncounterList role="admin" clinicName={clinicName} />
       </div>
     </div>
   );
