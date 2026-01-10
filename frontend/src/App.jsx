@@ -516,8 +516,8 @@ function App() {
           <Route path="/reception-dashboard/encounters/:id" element={<ReceptionistEncounterDetails/>} />
           <Route path="/reception-dashboard/encounters/templates" element={<ReceptionistEncounterTempletList/>} />
           <Route path="/reception-dashboard/encounter-template-details/:id" element={<ReceptionistEncounterTempletDetails/>} />
-          <Route path="/reception/change-password" element={<ReceptionistChangePassword />} />
-          <Route path="/reception/change-password" element={<ReceptionistChangePasswordPage />} />
+          <Route path="/receptionist/change-password" element={<ReceptionistChangePassword />} />
+          <Route path="/receptionist/change-password-page" element={<ReceptionistChangePasswordPage />} />
           <Route path="/reception/profile" element={
             <ReceptionistProfile sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
           } />
