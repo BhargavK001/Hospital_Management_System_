@@ -143,6 +143,7 @@ const ReceptionistDoctor = lazy(() => import("./receptionist/ReceptionistDoctor"
 const ReceptionistAddDoctor = lazy(() => import("./receptionist/ReceptionistAddDoctor"));
 const ReceptionistDoctorSession = lazy(() => import("./receptionist/ReceptionistDoctorSession"));
 const ReceptionistServices = lazy(() => import("./receptionist/ReceptionistServices"));
+const ReceptionistAddBill = lazy(() => import("./receptionist/ReceptionistAddBill"));
 const ReceptionistEditBill = lazy(() => import("./receptionist/ReceptionistEditBill"));
 //Settings Section
 const ReceptionistSettingsLayout = lazy(() => import("./receptionist/Settings/ReceptionistSettingsLayout")); // Assuming copied
@@ -505,6 +506,7 @@ function App() {
           <Route path="/receptionist/doctor-sessions" element={<ReceptionistDoctorSession/>} />
           <Route path="/reception-dashboard/services" element={<ReceptionistServices/>} />
           <Route path="/reception-dashboard/billing" element={<ReceptionistBillingRecords/>} />
+          <Route path="/receptionist/add-bill" element={<ReceptionistAddBill/>} />
           <Route path="/receptionist/edit-bill/:id" element={<ReceptionistEditBill/>} />
           <Route path="/reception-dashboard/encounters" element={<ReceptionistEncounterList/>} /> 
           <Route path="/reception-dashboard/encounters/:id" element={<ReceptionistEncounterDetails/>} />
