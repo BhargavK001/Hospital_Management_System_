@@ -335,23 +335,37 @@ export default function ReceptionistBillingRecords({ sidebarCollapsed = false, t
     setPage(1);
   };
 
-  const lookupCustomId = (bill) => {
-    // Check encounterCustomId first (set by backend)
+  // UPDATED: Lookup function now takes allEncounters list to find the exact Match
+  const lookupCustomId = (bill, allEncounters = []) => {
+    // 1. Extract the raw MongoDB ID from the bill
+    let rawId = null;
+    if (bill.encounterId) {
+      rawId = typeof bill.encounterId === 'object' ? bill.encounterId._id : bill.encounterId;
+    }
+
+    // 2. Try to find the matching encounter object in the list we fetched
+    if (rawId && allEncounters.length > 0) {
+      const foundEncounter = allEncounters.find(enc => enc._id === rawId);
+      if (foundEncounter) {
+        // Return exactly what SharedEncounterList shows
+        return foundEncounter.encounterId || "Pending"; 
+      }
+    }
+
+    // 3. Fallbacks (Existing logic) if not found in list
     if (bill.encounterCustomId) {
       return bill.encounterCustomId;
     }
-    // Check encounterId
-    if (bill.encounterId) {
-      const encId = bill.encounterId;
-      if (typeof encId === 'string') {
-        if (encId.startsWith("ENC-")) return encId;
-        if (encId.length === 24) return `ENC-${encId.substring(0, 6)}`;
-        return encId;
-      }
-      if (typeof encId === 'object' && encId._id) {
-        return encId.encounterId || `ENC-${encId._id.toString().substring(0, 6)}`;
-      }
+
+    if (typeof bill.encounterId === 'object' && bill.encounterId.encounterId) {
+      return bill.encounterId.encounterId;
     }
+    
+    if (typeof bill.encounterId === 'string') {
+       if (bill.encounterId.startsWith("ENC-")) return bill.encounterId;
+       return "Pending"; 
+    }
+
     return "-";
   };
 
@@ -359,7 +373,8 @@ export default function ReceptionistBillingRecords({ sidebarCollapsed = false, t
   const filtered = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
     return bills.filter((bill) => {
-      const customEncId = lookupCustomId(bill);
+      // UPDATED: Pass encountersList to the lookup function
+      const customEncId = lookupCustomId(bill, encountersList);
       const combined = `${bill._id} ${customEncId} ${bill.doctorName} ${bill.clinicName} ${bill.patientName} ${bill.status}`.toLowerCase();
 
       if (q && !combined.includes(q)) return false;
@@ -375,7 +390,7 @@ export default function ReceptionistBillingRecords({ sidebarCollapsed = false, t
 
       return true;
     }).sort((a, b) => new Date(b.date) - new Date(a.date));
-  }, [bills, searchTerm, filter]);
+  }, [bills, searchTerm, filter, encountersList]); // Added encountersList dependency
 
   // --- PAGINATION ---
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
@@ -526,7 +541,8 @@ export default function ReceptionistBillingRecords({ sidebarCollapsed = false, t
                       </td>
 
                       <td>
-                        <span className="enc-badge">{lookupCustomId(bill)}</span>
+                        {/* UPDATED: Pass encountersList to display correct ID */}
+                        <span className="enc-badge">{lookupCustomId(bill, encountersList)}</span>
                       </td>
 
                       <td>{bill.doctorName || "-"}</td>

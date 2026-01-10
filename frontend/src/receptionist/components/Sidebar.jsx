@@ -186,8 +186,8 @@ export default function ReceptionistSidebar({ collapsed = false }) {
                         margin: "4px 20px",
                         padding: "10px 16px",
                         fontSize: "14px", 
-                        background: isActive ? "#eff6ff" : "transparent", // Submenu uses light blue instead of solid
-                        color: isActive ? "#0d6efd" : "#64748b" 
+                        background: isActive ? "#0d6efd" : "transparent", // Submenu uses light blue instead of solid
+                        color: isActive ? "#ffff" : "#64748b" 
                     })}
                     end
                   >
@@ -204,8 +204,8 @@ export default function ReceptionistSidebar({ collapsed = false }) {
                         margin: "4px 20px",
                         padding: "10px 16px",
                         fontSize: "14px", 
-                        background: isActive ? "#eff6ff" : "transparent",
-                        color: isActive ? "#0d6efd" : "#64748b"
+                        background: isActive ? "#0d6efd" : "transparent",
+                        color: isActive ? "#ffff" : "#64748b"
                     })}
                   >
                     <span style={{ marginRight: "10px" }}><FaRegCalendarAlt /></span>
