@@ -485,7 +485,7 @@ function Taxes({ sidebarCollapsed = false, toggleSidebar }) {
                           </td>
                           <td>{index + 1}</td>
                           <td>{t.name}</td>
-                          <td>${(t.taxRate ?? 0).toFixed(2)}/-</td>
+                          <td>₹{(t.taxRate ?? 0).toFixed(2)}/-</td>
                           <td>{t.clinicName}</td>
                           <td>{t.doctor}</td>
                           <td>{t.serviceName}</td>

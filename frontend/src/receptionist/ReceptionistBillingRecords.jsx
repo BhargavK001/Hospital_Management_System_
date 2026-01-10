@@ -555,10 +555,10 @@ export default function ReceptionistBillingRecords({ sidebarCollapsed = false, t
                         }
                       </td>
 
-                      <td style={{ textAlign: 'right' }}>${bill.totalAmount || 0}</td>
-                      <td style={{ textAlign: 'right' }}>${bill.discount || 0}</td>
+                      <td style={{ textAlign: 'right' }}>₹{bill.totalAmount || 0}</td>
+                      <td style={{ textAlign: 'right' }}>₹{bill.discount || 0}</td>
                       <td style={{ textAlign: 'right', fontWeight: 'bold' }}>
-                        ${bill.amountDue || 0}
+                        ₹{bill.amountDue || 0}
                       </td>
 
                       <td>{bill.date ? new Date(bill.date).toLocaleDateString() : "-"}</td>
