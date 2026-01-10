@@ -501,14 +501,50 @@ VITE_API_BASE_URL=http://localhost:3001
 
 ---
 
-## 📚 Additional Documentation
+## 📚 Documentation
 
-- [Backend Developer Guide](./Backend_Developer_Guide.md)
-- [Frontend Developer Guide](./Frontend_Developer_Guide.md)
-- [Razorpay Integration](./README_RAZORPAY.md)
-- [AWS Deployment Guide](./OneCare_AWS_Deployment_Guide.md)
-- [Route Migration Guide](./route_migration_guide.md)
-- [Production Upgrade Guide](./Production_Upgrade_Guide.md)
+### 📖 Quick Start Guides
+
+| Document                                    | Description             |
+| ------------------------------------------- | ----------------------- |
+| [Development Setup](./DEVELOPMENT_SETUP.md) | Local environment setup |
+| [Deployment Guide](./DEPLOYMENT_GUIDE.md)   | AWS EC2 + S3 deployment |
+| [Contributing](./CONTRIBUTING.md)           | Contribution guidelines |
+
+### 🏗️ Architecture & Technical
+
+| Document                                | Description               |
+| --------------------------------------- | ------------------------- |
+| [Architecture](./ARCHITECTURE.md)       | System design & data flow |
+| [Database Schema](./DATABASE_SCHEMA.md) | MongoDB models            |
+| [API Endpoints](./API_ENDPOINTS.md)     | Complete API reference    |
+
+### 📂 Deep Documentation (`docs/` folder)
+
+| Document                                             | Description                     |
+| ---------------------------------------------------- | ------------------------------- |
+| [Documentation Index](./docs/INDEX.md)               | 📌 Start here for all docs      |
+| [File Structure](./docs/FILE_STRUCTURE.md)           | Complete file-by-file breakdown |
+| [Authentication Flow](./docs/AUTHENTICATION_FLOW.md) | Login, JWT, OAuth               |
+| [Billing System](./docs/BILLING_SYSTEM.md)           | Billing & Razorpay              |
+| [PDF Generation](./docs/PDF_GENERATION.md)           | PDF creation logic              |
+| [Appointment Flow](./docs/APPOINTMENT_FLOW.md)       | Booking system                  |
+| [Role Permissions](./docs/ROLE_PERMISSIONS.md)       | RBAC documentation              |
+| [Integrations](./docs/INTEGRATIONS.md)               | Google Meet, Zoom, WhatsApp     |
+| [Frontend Components](./docs/FRONTEND_COMPONENTS.md) | React components                |
+| [Backend Routes Deep](./docs/BACKEND_ROUTES_DEEP.md) | Route logic details             |
+| [Environment Config](./docs/ENVIRONMENT_CONFIG.md)   | All env variables               |
+| [Troubleshooting](./docs/TROUBLESHOOTING.md)         | Common issues & fixes           |
+
+### 📋 Developer Guides
+
+| Document                                                  | Description               |
+| --------------------------------------------------------- | ------------------------- |
+| [Backend Developer Guide](./Backend_Developer_Guide.md)   | Backend architecture      |
+| [Frontend Developer Guide](./Frontend_Developer_Guide.md) | Frontend structure        |
+| [Razorpay Integration](./README_RAZORPAY.md)              | Payment gateway           |
+| [AWS Deployment Guide](./OneCare_AWS_Deployment_Guide.md) | AWS specific guide        |
+| [Route Migration Guide](./route_migration_guide.md)       | Route refactoring history |
 
 ---
 
