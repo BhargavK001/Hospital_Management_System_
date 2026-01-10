@@ -191,7 +191,7 @@ const AdminDashboard = ({ sidebarCollapsed = false, toggleSidebar }) => {
               <div
                 className="card shadow-sm border-0 p-3 text-center clickable"
                 style={{ cursor: "pointer" }}
-                onClick={() => navigate("/BillingRecords")}
+                onClick={() => navigate("/payment-reports")}
               >
                 <div className="d-flex justify-content-center align-items-center gap-3">
                   <div className="bg-info bg-opacity-10 text-info rounded-circle p-3">
@@ -200,7 +200,7 @@ const AdminDashboard = ({ sidebarCollapsed = false, toggleSidebar }) => {
                   <div className="text-start">
                     <h6 className="text-muted mb-1">Total Revenue</h6>
                     <h3 className="fw-bold mb-0">
-                      ₹{stats.totalRevenue || 0}
+                      ₹{(stats.totalRevenue || 0).toLocaleString('en-IN')}
                     </h3>
                   </div>
                 </div>

@@ -50,6 +50,9 @@ const EditBill = () => {
     time: "",
     status: "unpaid",
     notes: "",
+    paymentMethod: "",  // Payment mode for Razorpay integration
+    razorpayPaymentId: "",  // Razorpay payment ID (if paid online)
+    onlinePaymentDate: null,  // Payment timestamp (if paid online)
   });
 
   // --- Data States ---
@@ -158,6 +161,9 @@ const EditBill = () => {
           time: bill.time || "",
           status: bill.status || "unpaid",
           notes: bill.notes || "",
+          paymentMethod: bill.paymentMethod || "",
+          razorpayPaymentId: bill.razorpayPaymentId || "",
+          onlinePaymentDate: bill.onlinePaymentDate || null,
         });
 
       } catch (err) {
@@ -506,12 +512,52 @@ const EditBill = () => {
                         <span className="fw-bold">Amount Due:</span>
                         <span className="fw-bold text-danger">₹{Number(form.amountDue).toFixed(2)}</span>
                      </div>
-                     <div className="d-flex justify-content-between align-items-center">
+                     
+                     {/* Payment Mode */}
+                     <div className="d-flex justify-content-between align-items-center mt-2">
+                        <span>Payment Mode:</span>
+                        <select name="paymentMethod" className="form-select form-select-sm" style={{width: "130px"}} value={form.paymentMethod} onChange={handleGenericChange}>
+                           <option value="">-- Select --</option>
+                           <option value="Cash">Cash</option>
+                           <option value="Online">Online (Razorpay)</option>
+                        </select>
+                     </div>
+                     {form.paymentMethod === "Online" && (
+                       <small className="text-info d-block mt-1">Patient can pay online via Razorpay</small>
+                     )}
+                     
+                     <div className="d-flex justify-content-between align-items-center mt-2">
                         <span>Status:</span>
                          <span className={`badge bg-${form.status === 'paid' ? 'success' : form.status === 'partial' ? 'warning' : 'danger'}`}>
                             {form.status.toUpperCase()}
                          </span>
                      </div>
+                     
+                     {/* Online Payment Info Box */}
+                     {form.paymentMethod === "Online" && form.razorpayPaymentId && (
+                       <div className="mt-3 p-2 border rounded bg-success bg-opacity-10 border-success">
+                         <div className="small fw-bold text-success mb-1">💳 Online Payment Verified</div>
+                         <div className="small">
+                           <span className="text-muted">Payment ID:</span>{" "}
+                           <span className="fw-bold font-monospace">{form.razorpayPaymentId}</span>
+                         </div>
+                         {form.onlinePaymentDate && (
+                           <div className="small">
+                             <span className="text-muted">Paid on:</span>{" "}
+                             <span className="fw-bold">
+                               {new Date(form.onlinePaymentDate).toLocaleString('en-IN', {
+                                 day: '2-digit',
+                                 month: 'short',
+                                 year: 'numeric',
+                                 hour: '2-digit',
+                                 minute: '2-digit',
+                                 hour12: true
+                               })}
+                             </span>
+                           </div>
+                         )}
+                       </div>
+                     )}
                   </div>
 
                   <div className="row mt-3">

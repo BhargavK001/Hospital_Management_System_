@@ -1,5 +1,6 @@
 // src/clinic-dashboard/components/Sidebar.jsx
 import React, { useState } from "react";
+import API_BASE from "../../config";
 import { Collapse } from "react-bootstrap";
 import defaultLogo from "../images/Logo.png";
 import { IoMdSettings } from "react-icons/io";
@@ -14,7 +15,8 @@ import {
   FaMoneyBill,
   FaFileInvoice,
   FaChevronDown,
-  FaUserCheck
+  FaUserCheck,
+  FaCreditCard
 } from "react-icons/fa";
 import { NavLink } from "react-router-dom";
 import "../styles/ClinicModern.css";
@@ -32,7 +34,7 @@ export default function Sidebar({ collapsed = false }) {
   const clinicLogo = authUser.clinicLogo;
 
   // Construct the clinic logo URL from uploads folder if available
-  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
   const logoSrc = clinicLogo ? `${API_BASE}/uploads/${clinicLogo}` : defaultLogo;
   const currentYear = new Date().getFullYear();
 
@@ -160,6 +162,13 @@ export default function Sidebar({ collapsed = false }) {
           <NavLink to="/clinic-dashboard/BillingRecords" className={linkClass}>
             <span className="clinic-nav-icon"><FaFileInvoice /></span>
             {!collapsed && <span>Billing Records</span>}
+          </NavLink>
+        </li>
+
+        <li className="clinic-nav-item">
+          <NavLink to="/clinic-dashboard/payment-reports" className={linkClass}>
+            <span className="clinic-nav-icon"><FaCreditCard /></span>
+            {!collapsed && <span>Payment Reports</span>}
           </NavLink>
         </li>
 

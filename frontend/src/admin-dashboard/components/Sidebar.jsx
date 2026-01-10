@@ -14,7 +14,8 @@ import {
   FaCalendarCheck,
   FaMoneyBill,
   FaFileInvoice,
-  FaChevronDown
+  FaChevronDown,
+  FaCreditCard
 } from "react-icons/fa";
 import { NavLink } from "react-router-dom";
 import "../../shared/styles/ModernUI.css";
@@ -43,8 +44,12 @@ export default function Sidebar({ collapsed = false }) {
     >
       {/* Logo / title */}
       <div className="modern-sidebar-logo">
-        <img src={logo} alt="Logo" style={{ borderRadius: 10 }} />
-        {!collapsed && <h4>One Care</h4>}
+        <img 
+          src={logo} 
+          alt="Logo" 
+          style={{ width: "40px", height: "40px", borderRadius: "8px", objectFit: "cover" }} 
+        />
+        {!collapsed && <h4 className="text-truncate" style={{maxWidth: "180px"}}>One Care</h4>}
       </div>
 
       {/* Menu items */}
@@ -154,6 +159,13 @@ export default function Sidebar({ collapsed = false }) {
         </li>
 
         <li className="modern-nav-item">
+          <NavLink to="/payment-reports" className={linkClass}>
+            <span className="modern-nav-icon"><FaCreditCard /></span>
+            {!collapsed && <span>Payment Reports</span>}
+          </NavLink>
+        </li>
+
+        <li className="modern-nav-item">
           <NavLink to="/settings" className={linkClass}>
             <span className="modern-nav-icon"><IoMdSettings /></span>
             {!collapsed && <span>Settings</span>}
@@ -163,7 +175,7 @@ export default function Sidebar({ collapsed = false }) {
 
       {/* Footer */}
       <div className="modern-sidebar-footer">
-        {!collapsed ? "© 2024 One Care" : "©"}
+        {!collapsed ? "© 2025 One Care" : "©"}
       </div>
     </div>
   );

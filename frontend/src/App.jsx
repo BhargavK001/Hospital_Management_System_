@@ -42,6 +42,7 @@ const EncounterTemplateDetails = lazy(() => import("./admin-dashboard/admin/Enco
 const MedicalReportPage = lazy(() => import("./admin-dashboard/admin/MedicalReportPage"));
 const AddReceptionist = lazy(() => import("./admin-dashboard/admin/AddReceptionist"));
 const ReceptionistList = lazy(() => import("./admin-dashboard/admin/ReceptionistList"));
+const PaymentReports = lazy(() => import("./admin-dashboard/admin/PaymentReports"));
 
 /* Admin Settings */
 const SettingsLayout = lazy(() => import("./admin-dashboard/admin/settings/SettingsLayout"));
@@ -86,6 +87,7 @@ const ClinicHolidaySettings = lazy(() => import("./clinic-dashboard/clinic/setti
 const ClinicBillingSettings = lazy(() => import("./clinic-dashboard/clinic/settings/pages/BillingSettings"));
 const ClinicListingSettings = lazy(() => import("./clinic-dashboard/clinic/settings/pages/ListingSettings"));
 const PendingApprovals = lazy(() => import("./clinic-dashboard/components/PendingApprovals"));
+const ClinicPaymentReports = lazy(() => import("./clinic-dashboard/clinic/PaymentReports"));
 const PatientDashboard = lazy(() => import("./patient-dashboard/Patient/PatientDashboard"));
 const PatientAppointments = lazy(() => import("./patient-dashboard/Patient/PatientAppointments"));
 const PatientBookAppointment = lazy(() => import("./patient-dashboard/Patient/PatientBookAppointment"));
@@ -151,7 +153,7 @@ const ReceptionistListingSettings = lazy(() => import("./receptionist/Settings/P
 
 /* Public Verification Pages */
 const VerifyAppointment = lazy(() => import("./components/VerifyAppointment"));
-
+const VerifyBill = lazy(() => import("./components/VerifyBill"));
 // ============================================
 // APP COMPONENT
 // ============================================
@@ -318,6 +320,9 @@ function App() {
           <Route path="/add-receptionist" element={
             <AddReceptionist sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
           } />
+          <Route path="/payment-reports" element={
+            <PaymentReports sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
+          } />
 
           {/* Admin Settings Section */}
           <Route path="/settings" element={<SettingsLayout sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />}>
@@ -407,6 +412,9 @@ function App() {
           } />
           <Route path="/clinic-dashboard/pending-approvals" element={
             <PendingApprovals sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
+          } />
+          <Route path="/clinic-dashboard/payment-reports" element={
+            <ClinicPaymentReports sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
           } />
           <Route path="/clinic-dashboard/settings" element={<ClinicSettingsLayout sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />}>
             <Route index element={<ClinicHolidaySettings />} />
@@ -518,6 +526,7 @@ function App() {
 
           {/* ==================== PUBLIC VERIFICATION ==================== */}
           <Route path="/verify/appointment/:id" element={<VerifyAppointment />} />
+          <Route path="/verify/bill/:id" element={<VerifyBill />} />
 
           {/* ==================== AUTH ==================== */}
           <Route path="/" element={<Login />} />

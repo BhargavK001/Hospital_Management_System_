@@ -3,6 +3,7 @@ const router = express.Router();
 const PatientModel = require("../models/Patient");
 const DoctorModel = require("../models/Doctor");
 const AppointmentModel = require("../models/Appointment");
+const BillingModel = require("../models/Billing");
 
 const ServiceModel = require("../models/Service");
 const { verifyToken } = require("../middleware/auth");
@@ -46,6 +47,9 @@ router.get("/", verifyToken, async (req, res) => {
         totalAppointments: 0,
         todayAppointments: 0,
         totalServices: 0,
+        totalRevenue: 0,
+        cashRevenue: 0,
+        onlineRevenue: 0,
       });
     }
 
@@ -56,6 +60,7 @@ router.get("/", verifyToken, async (req, res) => {
       totalAppointments,
       todayAppointments,
       totalServices,
+      revenueStats,
     ] = await Promise.all([
       PatientModel.countDocuments(query),
       DoctorModel.countDocuments(query),
@@ -68,7 +73,35 @@ router.get("/", verifyToken, async (req, res) => {
         }
       }),
       ServiceModel.countDocuments(query),
+      // Aggregate revenue from billing
+      BillingModel.aggregate([
+        { 
+          $match: { 
+            ...query,
+            status: { $in: ["paid", "partial"] } 
+          } 
+        },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: { $sum: "$paidAmount" },
+            cashRevenue: {
+              $sum: {
+                $cond: [{ $eq: ["$paymentMethod", "Cash"] }, "$paidAmount", 0]
+              }
+            },
+            onlineRevenue: {
+              $sum: {
+                $cond: [{ $eq: ["$paymentMethod", "Online"] }, "$paidAmount", 0]
+              }
+            }
+          }
+        }
+      ]),
     ]);
+
+    // Extract revenue values from aggregation result
+    const revenue = revenueStats[0] || { totalRevenue: 0, cashRevenue: 0, onlineRevenue: 0 };
 
     // 3) Send response only once
     res.json({
@@ -77,6 +110,9 @@ router.get("/", verifyToken, async (req, res) => {
       totalAppointments,
       todayAppointments,
       totalServices,
+      totalRevenue: revenue.totalRevenue || 0,
+      cashRevenue: revenue.cashRevenue || 0,
+      onlineRevenue: revenue.onlineRevenue || 0,
     });
   } catch (err) {
     console.error("dashboard-stats error:", err);

@@ -9,6 +9,7 @@ import {
 } from "react-icons/fa";
 import { IoMdSettings } from "react-icons/io";
 import axios from "axios";
+import API_BASE from "../../config";
 
 // Import Shared Modern Styles
 import "../../shared/styles/ModernUI.css";
@@ -27,7 +28,7 @@ export default function PatientSidebar({ collapsed = false }) {
   });
 
   // Get API Base URL
-  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 
   useEffect(() => {
     const fetchClinicDetails = async () => {

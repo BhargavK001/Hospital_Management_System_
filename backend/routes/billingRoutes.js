@@ -251,6 +251,46 @@ router.delete("/:id", verifyToken, async (req, res) => {
   }
 });
 
+// --- VERIFY BILL (PUBLIC) ---
+router.get("/:id/verify", async (req, res) => {
+  try {
+    const bill = await BillingModel.findById(req.params.id)
+      .populate("patientId", "firstName lastName pid")
+      .populate("doctorId", "firstName lastName specialization")
+      .populate("clinicId", "name address logo") // assuming 'logo' exists or similar
+      .populate("encounterId", "encounterId")
+      .lean();
+
+    if (!bill) {
+      return res.status(404).json({ message: "Bill not found" });
+    }
+
+    // Normalize for public view
+    const publicData = {
+      _id: bill._id,
+      billNumber: bill.billNumber,
+      date: bill.date,
+      time: bill.time,
+      status: bill.status,
+      totalAmount: bill.totalAmount,
+      patientName: bill.patientName || (bill.patientId ? `${bill.patientId.firstName} ${bill.patientId.lastName}` : "N/A"),
+      patientPid: bill.patientId?.pid || "N/A",
+      doctorName: bill.doctorName || (bill.doctorId ? `Dr. ${bill.doctorId.firstName} ${bill.doctorId.lastName}` : "N/A"),
+      clinicName: bill.clinicName || (bill.clinicId ? bill.clinicId.name : "OneCare Clinic"),
+      services: bill.services.map(s => ({ 
+        name: typeof s === 'string' ? s : s.name,
+        amount: typeof s === 'string' ? 0 : s.amount
+      })),
+      verificationUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify/bill/${bill._id}`
+    };
+
+    res.json(publicData);
+  } catch (err) {
+    logger.error("Error verifying bill", { id: req.params.id, error: err.message });
+    res.status(500).json({ message: "Server error verifying bill" });
+  }
+});
+
 // --- PDF GENERATION (Professional Medical Receipt Template) ---
 router.get("/:id/pdf", verifyToken, async (req, res) => {
   try {
@@ -427,7 +467,34 @@ router.get("/:id/pdf", verifyToken, async (req, res) => {
       page.drawText(value, { x: cx, y: r2Y - 12, size: 10, font: fontBold, color: primary });
     });
 
-    y = gridTop - gridH - 18;
+    // Row 3 - Online Payment Details (only if paid online via Razorpay)
+    let gridBottomY = gridTop - gridH - 18;
+    if (bill.paymentMethod === "Online" && bill.razorpayPaymentId) {
+      const r3Y = r2Y - 28;
+      const razorpayId = bill.razorpayPaymentId || "N/A";
+      let paymentDateTime = "N/A";
+      if (bill.onlinePaymentDate) {
+        const pDate = new Date(bill.onlinePaymentDate);
+        paymentDateTime = pDate.toLocaleString('en-IN', { 
+          day: '2-digit', 
+          month: 'short', 
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true 
+        });
+      }
+      
+      [[0, "RAZORPAY PAYMENT ID", razorpayId], [1, "PAYMENT DATE & TIME", paymentDateTime]].forEach(([i, label, value]) => {
+        const cx = margin + i * colW + gridPad;
+        page.drawText(label, { x: cx, y: r3Y, size: 8, font: fontBold, color: secondary });
+        page.drawText(value, { x: cx, y: r3Y - 12, size: 10, font: fontBold, color: accent }); // Using accent color to highlight
+      });
+      
+      gridBottomY = gridTop - gridH - 38; // Adjust spacing to account for Row 3
+    }
+
+    y = gridBottomY;
 
     // =========================================
     // SERVICES TABLE
@@ -526,7 +593,9 @@ router.get("/:id/pdf", verifyToken, async (req, res) => {
     const qrY = sumY - stampH - 15 - qrSize;
     
     try {
-      const verifyUrl = bill.verificationUrl || `${process.env.FRONTEND_URL || 'https://onecare.bhargavkarande.dev'}/verify/bill/${bill._id}`;
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const verifyUrl = `${frontendUrl}/verify/bill/${bill._id}`;
+      
       const qrDataUrl = await QRCode.toDataURL(verifyUrl, { width: 150, margin: 1 });
       const qrImg = await pdfDoc.embedPng(qrDataUrl);
       page.drawImage(qrImg, { x: qrX, y: qrY, width: qrSize, height: qrSize });

@@ -16,6 +16,7 @@ import {
 } from "react-icons/fa";
 import { NavLink } from "react-router-dom";
 import axios from "axios";
+import API_BASE from "../../config";
 
 // Import Shared Modern Styles
 import "../../shared/styles/ModernUI.css";
@@ -69,6 +70,7 @@ export default function ReceptionistSidebar({ collapsed = false }) {
   // --- STYLING END ---
 
   const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+ 
 
   useEffect(() => {
     const fetchReceptionistDetails = async () => {
