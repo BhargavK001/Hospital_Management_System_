@@ -699,7 +699,7 @@ export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleS
               <button 
                 type="button"
                 className="btn btn-secondary"
-                onClick={() => navigate("/receptionist/billing-records")}
+                onClick={() => navigate("/reception-dashboard/billing")}
                 disabled={submitting}
               >
                 <FaTimes /> Cancel
