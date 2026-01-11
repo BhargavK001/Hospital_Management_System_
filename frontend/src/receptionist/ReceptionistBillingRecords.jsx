@@ -4,9 +4,12 @@ import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
 import { FaSearch, FaPlus, FaTrash, FaEdit, FaFilePdf } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import API_BASE from "../config";
 
+// Skeleton Loading Components
+import TableSkeleton from "../shared/TableSkeleton";
+import "../shared/styles/skeleton.css";
 /* ---------- SCOPED CSS ---------- */
 const billingStyles = `
   .billing-scope { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f5f7fb; }
@@ -404,9 +407,6 @@ export default function ReceptionistBillingRecords({ sidebarCollapsed = false, t
       <div className="flex-grow-1 main-content" style={{ marginLeft: sidebarCollapsed ? 64 : 250 }}>
         <Navbar toggleSidebar={toggleSidebar} />
 
-        {/* Toast Container for Notifications */}
-        <Toaster position="top-right" />
-
         <div className="page-title-bar">
           <h5 className="page-title">Billing Records</h5>
           <button 
@@ -518,11 +518,8 @@ export default function ReceptionistBillingRecords({ sidebarCollapsed = false, t
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="12" className="text-center py-5">
-                      <div className="spinner-border spinner-border-sm text-primary" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                      </div>
-                      <span className="ms-2">Loading billing records...</span>
+                    <td colSpan="12" className="p-0">
+                      <TableSkeleton rows={8} columns={12} showHeader={false} />
                     </td>
                   </tr>
                 ) : pageItems.length === 0 ? (
@@ -555,10 +552,10 @@ export default function ReceptionistBillingRecords({ sidebarCollapsed = false, t
                         }
                       </td>
 
-                      <td style={{ textAlign: 'right' }}>${bill.totalAmount || 0}</td>
-                      <td style={{ textAlign: 'right' }}>${bill.discount || 0}</td>
+                      <td style={{ textAlign: 'right' }}>₹{bill.totalAmount || 0}</td>
+                      <td style={{ textAlign: 'right' }}>₹{bill.discount || 0}</td>
                       <td style={{ textAlign: 'right', fontWeight: 'bold' }}>
-                        ${bill.amountDue || 0}
+                        ₹{bill.amountDue || 0}
                       </td>
 
                       <td>{bill.date ? new Date(bill.date).toLocaleDateString() : "-"}</td>

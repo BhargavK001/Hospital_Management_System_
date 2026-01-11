@@ -5,7 +5,7 @@ import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
 import { FaArrowLeft, FaSave } from "react-icons/fa";
 import axios from "axios";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 import API_BASE from "../config";
 
@@ -145,7 +145,6 @@ const ReceptionistAddPatient = ({ sidebarCollapsed, toggleSidebar }) => {
 
         {/* PAGE CONTENT */}
         <div className="container-fluid mt-3">
-          <Toaster position="top-right" />
 
           <div className="container bg-white p-4 rounded shadow-sm">
             {/* Header */}

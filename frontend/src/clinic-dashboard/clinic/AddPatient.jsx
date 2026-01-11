@@ -4,7 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import AdminLayout from "../layouts/AdminLayout";
 import { FaArrowLeft, FaSave } from "react-icons/fa";
 import axios from "axios";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 import API_BASE from "../../config";
 
@@ -120,7 +120,6 @@ const AddPatient = () => {
 
   return (
     <AdminLayout>
-      <Toaster position="top-right" />
 
       <div className="container bg-white p-4 rounded shadow-sm">
         {/* Header */}

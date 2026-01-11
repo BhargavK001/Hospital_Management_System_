@@ -16,6 +16,11 @@ import { setFavicon } from "../../utils/setFavicon.js";
 
 import API_BASE from "../../config";
 
+// Skeleton Loading Components
+import CardSkeleton from "../../shared/CardSkeleton";
+import TableSkeleton from "../../shared/TableSkeleton";
+import "../../shared/styles/skeleton.css";
+
 const AdminDashboard = ({ sidebarCollapsed = false, toggleSidebar }) => {
   const navigate = useNavigate();
 
@@ -26,6 +31,7 @@ const AdminDashboard = ({ sidebarCollapsed = false, toggleSidebar }) => {
     totalAppointments: 0,
     totalRevenue: 0,
   });
+  const [loadingStats, setLoadingStats] = useState(true);
 
   // left list: today's / upcoming appointments
   const [appointments, setAppointments] = useState([]);
@@ -43,11 +49,14 @@ const AdminDashboard = ({ sidebarCollapsed = false, toggleSidebar }) => {
   };
 
   const fetchDashboardStats = async () => {
+    setLoadingStats(true);
     try {
       const res = await axios.get(`${API_BASE}/dashboard-stats`, getAuthConfig());
       setStats(res.data || {});
     } catch (err) {
       console.error("Error fetching dashboard stats:", err);
+    } finally {
+      setLoadingStats(false);
     }
   };
 
@@ -122,91 +131,93 @@ const AdminDashboard = ({ sidebarCollapsed = false, toggleSidebar }) => {
           <h3 className="fw-bold text-primary mb-4">Dashboard Overview</h3>
 
           {/* Top four cards */}
-          <div className="row g-4">
-            {/* Total Patients */}
-            <div className="col-md-3">
-              <div
-                className="card shadow-sm border-0 p-3 text-center clickable"
-                style={{ cursor: "pointer" }}
-                onClick={() => navigate("/patients")}
-              >
-                <div className="d-flex justify-content-center align-items-center gap-3">
-                  <div className="bg-danger bg-opacity-10 text-danger rounded-circle p-3">
-                    <FaUserInjured size={30} />
-                  </div>
-                  <div className="text-start">
-                    <h6 className="text-muted mb-1">Total Patients</h6>
-                    <h3 className="fw-bold mb-0">
-                      {stats.totalPatients || 0}
-                    </h3>
+          {loadingStats ? (
+            <div className="row g-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="col-md-3">
+                  <CardSkeleton />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="row g-4 skeleton-fade-in">
+              {/* Total Patients */}
+              <div className="col-md-3">
+                <div
+                  className="card shadow-sm border-0 p-3 text-center clickable"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => navigate("/patients")}
+                >
+                  <div className="d-flex justify-content-center align-items-center gap-3">
+                    <div className="bg-danger bg-opacity-10 text-danger rounded-circle p-3">
+                      <FaUserInjured size={30} />
+                    </div>
+                    <div className="text-start">
+                      <h6 className="text-muted mb-1">Total Patients</h6>
+                      <h3 className="fw-bold mb-0">{stats.totalPatients || 0}</h3>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Total Doctors */}
-            <div className="col-md-3">
-              <div
-                className="card shadow-sm border-0 p-3 text-center clickable"
-                style={{ cursor: "pointer" }}
-                onClick={() => navigate("/Doctors")}
-              >
-                <div className="d-flex justify-content-center align-items-center gap-3">
-                  <div className="bg-warning bg-opacity-10 text-warning rounded-circle p-3">
-                    <FaUserDoctor size={30} />
-                  </div>
-                  <div className="text-start">
-                    <h6 className="text-muted mb-1">Total Doctors</h6>
-                    <h3 className="fw-bold mb-0">
-                      {stats.totalDoctors || 0}
-                    </h3>
+              {/* Total Doctors */}
+              <div className="col-md-3">
+                <div
+                  className="card shadow-sm border-0 p-3 text-center clickable"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => navigate("/Doctors")}
+                >
+                  <div className="d-flex justify-content-center align-items-center gap-3">
+                    <div className="bg-warning bg-opacity-10 text-warning rounded-circle p-3">
+                      <FaUserDoctor size={30} />
+                    </div>
+                    <div className="text-start">
+                      <h6 className="text-muted mb-1">Total Doctors</h6>
+                      <h3 className="fw-bold mb-0">{stats.totalDoctors || 0}</h3>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Total Appointments */}
-            <div className="col-md-3">
-              <div
-                className="card shadow-sm border-0 p-3 text-center clickable"
-                style={{ cursor: "pointer" }}
-                onClick={() => navigate("/Appointments")}
-              >
-                <div className="d-flex justify-content-center align-items-center gap-3">
-                  <div className="bg-success bg-opacity-10 text-success rounded-circle p-3">
-                    <FaCalendarCheck size={30} />
-                  </div>
-                  <div className="text-start">
-                    <h6 className="text-muted mb-1">Total Appointments</h6>
-                    <h3 className="fw-bold mb-0">
-                      {stats.totalAppointments || 0}
-                    </h3>
+              {/* Total Appointments */}
+              <div className="col-md-3">
+                <div
+                  className="card shadow-sm border-0 p-3 text-center clickable"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => navigate("/Appointments")}
+                >
+                  <div className="d-flex justify-content-center align-items-center gap-3">
+                    <div className="bg-success bg-opacity-10 text-success rounded-circle p-3">
+                      <FaCalendarCheck size={30} />
+                    </div>
+                    <div className="text-start">
+                      <h6 className="text-muted mb-1">Total Appointments</h6>
+                      <h3 className="fw-bold mb-0">{stats.totalAppointments || 0}</h3>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Total Revenue */}
-            <div className="col-md-3">
-              <div
-                className="card shadow-sm border-0 p-3 text-center clickable"
-                style={{ cursor: "pointer" }}
-                onClick={() => navigate("/payment-reports")}
-              >
-                <div className="d-flex justify-content-center align-items-center gap-3">
-                  <div className="bg-info bg-opacity-10 text-info rounded-circle p-3">
-                    <FaMoneyBill1Wave size={30} />
-                  </div>
-                  <div className="text-start">
-                    <h6 className="text-muted mb-1">Total Revenue</h6>
-                    <h3 className="fw-bold mb-0">
-                      ₹{(stats.totalRevenue || 0).toLocaleString('en-IN')}
-                    </h3>
+              {/* Total Revenue */}
+              <div className="col-md-3">
+                <div
+                  className="card shadow-sm border-0 p-3 text-center clickable"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => navigate("/payment-reports")}
+                >
+                  <div className="d-flex justify-content-center align-items-center gap-3">
+                    <div className="bg-info bg-opacity-10 text-info rounded-circle p-3">
+                      <FaMoneyBill1Wave size={30} />
+                    </div>
+                    <div className="text-start">
+                      <h6 className="text-muted mb-1">Total Revenue</h6>
+                      <h3 className="fw-bold mb-0">₹{(stats.totalRevenue || 0).toLocaleString('en-IN')}</h3>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Bottom section: appointments + weekly summary */}
           <div className="row mt-5">
@@ -252,7 +263,7 @@ const AdminDashboard = ({ sidebarCollapsed = false, toggleSidebar }) => {
                 </div>
 
                 {loadingAppointments ? (
-                  <p className="text-center mb-0">Loading...</p>
+                  <TableSkeleton rows={5} columns={2} />
                 ) : appointments.length === 0 ? (
                   <p className="text-center text-muted mb-0">
                     No Appointments Found.

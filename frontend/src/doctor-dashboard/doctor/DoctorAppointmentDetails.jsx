@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import DoctorLayout from "../layouts/DoctorLayout";
 import API_BASE from "../../config";
+import { showToast } from "../../utils/useToast";
 
 export default function DoctorAppointmentDetails() {
   const { id } = useParams();
@@ -165,7 +166,7 @@ export default function DoctorAppointmentDetails() {
                         </a>
                         <button 
                           className="btn btn-outline-secondary btn-sm"
-                          onClick={() => { navigator.clipboard.writeText(a.meetingLink); alert('Link copied!'); }}
+                          onClick={() => { navigator.clipboard.writeText(a.meetingLink); showToast.success('Link copied!'); }}
                         >
                           📋 Copy Link
                         </button>

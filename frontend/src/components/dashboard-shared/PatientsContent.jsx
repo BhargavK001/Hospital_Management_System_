@@ -9,9 +9,14 @@ import { RiDeleteBinFill } from "react-icons/ri";
 import { MdEdit } from "react-icons/md";
 import { toast } from "react-hot-toast";
 
+// Skeleton Loading Components
+import TableSkeleton from "../../shared/TableSkeleton";
+import "../../shared/styles/skeleton.css";
+
 const PatientsContent = ({ basePath = "/admin" }) => {
     const navigate = useNavigate();
     const [patients, setPatients] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
 
     // Import modal state
@@ -58,11 +63,15 @@ const PatientsContent = ({ basePath = "/admin" }) => {
 
     // Fetch patients
     const fetchPatients = async () => {
+        setLoading(true);
         try {
             const res = await axios.get(`${API_BASE}/patients`);
             setPatients(res.data || []);
         } catch (error) {
             console.error("Error fetching patients:", error);
+            toast.error("Failed to load patients");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -173,7 +182,13 @@ const PatientsContent = ({ basePath = "/admin" }) => {
                         </thead>
 
                         <tbody>
-                            {filteredPatients.length === 0 ? (
+                            {loading ? (
+                                <tr>
+                                    <td colSpan="8" className="p-0">
+                                        <TableSkeleton rows={8} columns={8} showHeader={false} />
+                                    </td>
+                                </tr>
+                            ) : filteredPatients.length === 0 ? (
                                 <tr>
                                     <td colSpan="8" className="text-center py-4 text-muted">
                                         No patients found.

@@ -14,7 +14,7 @@ import {
   FaSyncAlt,
   FaTrash,
 } from "react-icons/fa";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 import API_BASE from "../../config";
 
@@ -253,8 +253,6 @@ export default function ClinicList({ sidebarCollapsed, toggleSidebar }) {
         }}
       >
         <Navbar toggleSidebar={toggleSidebar} />
-
-        <Toaster position="top-right" />
 
         <div className="container-fluid mt-3">
           <div className="services-topbar mb-3 services-card">

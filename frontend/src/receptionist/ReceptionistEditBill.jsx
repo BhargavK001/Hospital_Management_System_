@@ -4,7 +4,7 @@ import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
 import { FaSave, FaTimes, FaPlus, FaTrash } from "react-icons/fa";
 import { useNavigate, useParams } from "react-router-dom";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import API_BASE from "../config";
 
 /* ---------- SCOPED CSS ---------- */
@@ -269,7 +269,10 @@ const editBillStyles = `
   }
 `;
 
-export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleSidebar }) {
+export default function ReceptionistEditBill({
+  sidebarCollapsed = false,
+  toggleSidebar,
+}) {
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -283,13 +286,14 @@ export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleS
     authUser = {};
     receptionist = {};
   }
-  
-  const clinicName = receptionist?.clinic || authUser?.clinic || authUser?.clinicName || "";
+
+  const clinicName =
+    receptionist?.clinic || authUser?.clinic || authUser?.clinicName || "";
 
   // Form State
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     encounterId: "",
     encounterCustomId: "",
@@ -299,7 +303,7 @@ export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleS
     services: [{ name: "", cost: 0 }],
     discount: 0,
     status: "unpaid",
-    date: new Date().toISOString().split('T')[0]
+    date: new Date().toISOString().split("T")[0],
   });
 
   const [encounters, setEncounters] = useState([]);
@@ -311,11 +315,13 @@ export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleS
     const fetchData = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem("token") || localStorage.getItem("receptionistToken");
-        
+        const token =
+          localStorage.getItem("token") ||
+          localStorage.getItem("receptionistToken");
+
         // Fetch bill data
         const billRes = await axios.get(`${API_BASE}/bills/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         const billData = billRes.data.bill || billRes.data;
@@ -324,11 +330,11 @@ export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleS
         const params = clinicName ? { clinic: clinicName } : {};
         const encRes = await axios.get(`${API_BASE}/encounters`, {
           params,
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
 
-        const encData = Array.isArray(encRes.data) 
-          ? encRes.data 
+        const encData = Array.isArray(encRes.data)
+          ? encRes.data
           : encRes.data.encounters || encRes.data.data || [];
 
         setEncounters(encData);
@@ -336,9 +342,9 @@ export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleS
         // Format services
         let services = [{ name: "", cost: 0 }];
         if (Array.isArray(billData.services) && billData.services.length > 0) {
-          services = billData.services.map(s => ({
-            name: typeof s === 'string' ? s : (s.name || ""),
-            cost: typeof s === 'object' ? (s.cost || 0) : 0
+          services = billData.services.map((s) => ({
+            name: typeof s === "string" ? s : s.name || "",
+            cost: typeof s === "object" ? s.cost || 0 : 0,
           }));
         }
 
@@ -351,9 +357,10 @@ export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleS
           services: services,
           discount: billData.discount || 0,
           status: billData.status || "unpaid",
-          date: billData.date ? new Date(billData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+          date: billData.date
+            ? new Date(billData.date).toISOString().split("T")[0]
+            : new Date().toISOString().split("T")[0],
         });
-
       } catch (err) {
         console.error("Error fetching bill data:", err);
         toast.error("Failed to load bill data");
@@ -368,7 +375,10 @@ export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleS
 
   // --- CALCULATE TOTALS ---
   useEffect(() => {
-    const total = formData.services.reduce((sum, s) => sum + (parseFloat(s.cost) || 0), 0);
+    const total = formData.services.reduce(
+      (sum, s) => sum + (parseFloat(s.cost) || 0),
+      0
+    );
     const due = total - (parseFloat(formData.discount) || 0);
     setTotalAmount(total);
     setAmountDue(Math.max(0, due));
@@ -377,21 +387,22 @@ export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleS
   // --- HANDLE ENCOUNTER SELECTION ---
   const handleEncounterChange = (e) => {
     const selectedId = e.target.value;
-    const encounter = encounters.find(enc => enc._id === selectedId);
-    
+    const encounter = encounters.find((enc) => enc._id === selectedId);
+
     if (encounter) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         encounterId: selectedId,
-        encounterCustomId: encounter.encounterId || `ENC-${selectedId.substring(0, 6)}`,
+        encounterCustomId:
+          encounter.encounterId || `ENC-${selectedId.substring(0, 6)}`,
         doctorName: encounter.doctorName || "",
         patientName: encounter.patientName || "",
-        clinicName: encounter.clinicName || clinicName
+        clinicName: encounter.clinicName || clinicName,
       }));
     } else {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        encounterId: selectedId
+        encounterId: selectedId,
       }));
     }
   };
@@ -401,41 +412,41 @@ export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleS
     const newServices = [...formData.services];
     newServices[index] = {
       ...newServices[index],
-      [field]: field === 'cost' ? parseFloat(value) || 0 : value
+      [field]: field === "cost" ? parseFloat(value) || 0 : value,
     };
-    setFormData(prev => ({ ...prev, services: newServices }));
+    setFormData((prev) => ({ ...prev, services: newServices }));
   };
 
   const addService = () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      services: [...prev.services, { name: "", cost: 0 }]
+      services: [...prev.services, { name: "", cost: 0 }],
     }));
   };
 
   const removeService = (index) => {
     if (formData.services.length > 1) {
       const newServices = formData.services.filter((_, i) => i !== index);
-      setFormData(prev => ({ ...prev, services: newServices }));
+      setFormData((prev) => ({ ...prev, services: newServices }));
     }
   };
 
   // --- HANDLE FORM SUBMISSION ---
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validation
     if (!formData.encounterId) {
       toast.error("Please select an encounter");
       return;
     }
-    
+
     if (!formData.patientName) {
       toast.error("Patient name is required");
       return;
     }
 
-    const validServices = formData.services.filter(s => s.name.trim() !== "");
+    const validServices = formData.services.filter((s) => s.name.trim() !== "");
     if (validServices.length === 0) {
       toast.error("Please add at least one service");
       return;
@@ -443,17 +454,19 @@ export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleS
 
     setSubmitting(true);
     try {
-      const token = localStorage.getItem("token") || localStorage.getItem("receptionistToken");
-      
+      const token =
+        localStorage.getItem("token") ||
+        localStorage.getItem("receptionistToken");
+
       const payload = {
         ...formData,
         services: validServices,
         totalAmount,
-        amountDue
+        amountDue,
       };
 
       await axios.put(`${API_BASE}/bills/${id}`, payload, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       toast.success("Bill updated successfully!");
@@ -473,7 +486,10 @@ export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleS
       <div className="d-flex edit-bill-scope">
         <style>{editBillStyles}</style>
         <Sidebar collapsed={sidebarCollapsed} />
-        <div className="flex-grow-1 main-content" style={{ marginLeft: sidebarCollapsed ? 64 : 250 }}>
+        <div
+          className="flex-grow-1 main-content"
+          style={{ marginLeft: sidebarCollapsed ? 64 : 250 }}
+        >
           <Navbar toggleSidebar={toggleSidebar} />
           <div className="loading-container">
             <div className="spinner"></div>
@@ -489,9 +505,11 @@ export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleS
       <style>{editBillStyles}</style>
       <Sidebar collapsed={sidebarCollapsed} />
 
-      <div className="flex-grow-1 main-content" style={{ marginLeft: sidebarCollapsed ? 64 : 250 }}>
+      <div
+        className="flex-grow-1 main-content"
+        style={{ marginLeft: sidebarCollapsed ? 64 : 250 }}
+      >
         <Navbar toggleSidebar={toggleSidebar} />
-        <Toaster position="top-right" />
 
         <div className="page-title-bar">
           <h5 className="page-title">Edit Bill</h5>
@@ -499,25 +517,25 @@ export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleS
 
         <div className="form-card">
           <form onSubmit={handleSubmit}>
-            
             {/* Basic Information */}
             <div className="form-section">
               <h6 className="section-title">Bill Information</h6>
-              
+
               <div className="row">
                 <div className="col">
                   <div className="form-group">
                     <label className="form-label">Encounter *</label>
-                    <select 
+                    <select
                       className="form-select"
                       value={formData.encounterId}
                       onChange={handleEncounterChange}
                       required
                     >
                       <option value="">Select Encounter</option>
-                      {encounters.map(enc => (
+                      {encounters.map((enc) => (
                         <option key={enc._id} value={enc._id}>
-                          {enc.encounterId || `ENC-${enc._id.substring(0, 6)}`} - {enc.patientName}
+                          {enc.encounterId || `ENC-${enc._id.substring(0, 6)}`}{" "}
+                          - {enc.patientName}
                         </option>
                       ))}
                     </select>
@@ -527,11 +545,16 @@ export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleS
                 <div className="col">
                   <div className="form-group">
                     <label className="form-label">Date *</label>
-                    <input 
+                    <input
                       type="date"
                       className="form-control"
                       value={formData.date}
-                      onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          date: e.target.value,
+                        }))
+                      }
                       required
                     />
                   </div>
@@ -542,11 +565,16 @@ export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleS
                 <div className="col">
                   <div className="form-group">
                     <label className="form-label">Patient Name *</label>
-                    <input 
+                    <input
                       type="text"
                       className="form-control"
                       value={formData.patientName}
-                      onChange={(e) => setFormData(prev => ({ ...prev, patientName: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          patientName: e.target.value,
+                        }))
+                      }
                       required
                     />
                   </div>
@@ -555,11 +583,16 @@ export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleS
                 <div className="col">
                   <div className="form-group">
                     <label className="form-label">Doctor Name</label>
-                    <input 
+                    <input
                       type="text"
                       className="form-control"
                       value={formData.doctorName}
-                      onChange={(e) => setFormData(prev => ({ ...prev, doctorName: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          doctorName: e.target.value,
+                        }))
+                      }
                     />
                   </div>
                 </div>
@@ -569,7 +602,7 @@ export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleS
                 <div className="col">
                   <div className="form-group">
                     <label className="form-label">Clinic Name</label>
-                    <input 
+                    <input
                       type="text"
                       className="form-control"
                       value={formData.clinicName}
@@ -581,10 +614,15 @@ export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleS
                 <div className="col">
                   <div className="form-group">
                     <label className="form-label">Status *</label>
-                    <select 
+                    <select
                       className="form-select"
                       value={formData.status}
-                      onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          status: e.target.value,
+                        }))
+                      }
                       required
                     >
                       <option value="unpaid">Unpaid</option>
@@ -599,40 +637,44 @@ export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleS
             {/* Services Section */}
             <div className="form-section">
               <h6 className="section-title">Services</h6>
-              
+
               <table className="services-table">
                 <thead>
                   <tr>
-                    <th style={{ width: '60%' }}>Service Name</th>
-                    <th style={{ width: '30%' }}>Cost ($)</th>
-                    <th style={{ width: '10%' }}>Action</th>
+                    <th style={{ width: "60%" }}>Service Name</th>
+                    <th style={{ width: "30%" }}>Cost (₹)</th>
+                    <th style={{ width: "10%" }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {formData.services.map((service, index) => (
                     <tr key={index}>
                       <td>
-                        <input 
+                        <input
                           type="text"
                           value={service.name}
-                          onChange={(e) => handleServiceChange(index, 'name', e.target.value)}
+                          onChange={(e) =>
+                            handleServiceChange(index, "name", e.target.value)
+                          }
                           placeholder="Enter service name"
                           required
                         />
                       </td>
                       <td>
-                        <input 
+                        <input
                           type="number"
                           value={service.cost}
-                          onChange={(e) => handleServiceChange(index, 'cost', e.target.value)}
+                          onChange={(e) =>
+                            handleServiceChange(index, "cost", e.target.value)
+                          }
                           placeholder="0.00"
                           step="0.01"
                           min="0"
                           required
                         />
                       </td>
-                      <td style={{ textAlign: 'center' }}>
-                        <button 
+                      <td style={{ textAlign: "center" }}>
+                        <button
                           type="button"
                           className="btn-remove-service"
                           onClick={() => removeService(index)}
@@ -646,7 +688,7 @@ export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleS
                 </tbody>
               </table>
 
-              <button 
+              <button
                 type="button"
                 className="btn-add-service"
                 onClick={addService}
@@ -658,16 +700,21 @@ export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleS
             {/* Bill Summary */}
             <div className="form-section">
               <h6 className="section-title">Bill Summary</h6>
-              
+
               <div className="row">
                 <div className="col">
                   <div className="form-group">
-                    <label className="form-label">Discount ($)</label>
-                    <input 
+                    <label className="form-label">Discount (₹)</label>
+                    <input
                       type="number"
                       className="form-control"
                       value={formData.discount}
-                      onChange={(e) => setFormData(prev => ({ ...prev, discount: parseFloat(e.target.value) || 0 }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          discount: parseFloat(e.target.value) || 0,
+                        }))
+                      }
                       placeholder="0.00"
                       step="0.01"
                       min="0"
@@ -681,22 +728,22 @@ export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleS
               <div className="bill-summary">
                 <div className="summary-row">
                   <span>Subtotal:</span>
-                  <span>${totalAmount.toFixed(2)}</span>
+                  <span>₹{totalAmount.toFixed(2)}</span>
                 </div>
                 <div className="summary-row">
                   <span>Discount:</span>
-                  <span>-${(formData.discount || 0).toFixed(2)}</span>
+                  <span>-₹{(formData.discount || 0).toFixed(2)}</span>
                 </div>
                 <div className="summary-row total">
                   <span>Amount Due:</span>
-                  <span>${amountDue.toFixed(2)}</span>
+                  <span>₹{amountDue.toFixed(2)}</span>
                 </div>
               </div>
             </div>
 
             {/* Action Buttons */}
             <div className="action-buttons">
-              <button 
+              <button
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => navigate("/reception-dashboard/billing")}
@@ -704,7 +751,7 @@ export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleS
               >
                 <FaTimes /> Cancel
               </button>
-              <button 
+              <button
                 type="submit"
                 className="btn btn-primary"
                 disabled={submitting}
@@ -712,7 +759,6 @@ export default function ReceptionistEditBill({ sidebarCollapsed = false, toggleS
                 <FaSave /> {submitting ? "Updating..." : "Update Bill"}
               </button>
             </div>
-
           </form>
         </div>
 

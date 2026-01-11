@@ -12,7 +12,7 @@ import {
   FaReceipt,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import API_BASE from "../../config";
 
 const BASE = API_BASE;
@@ -196,7 +196,6 @@ export default function DoctorBillingRecords() {
 
   return (
     <DoctorLayout>
-      <Toaster position="top-right" />
 
       {/* MOBILE CSS: Transform Table to Cards */}
       <style>{`

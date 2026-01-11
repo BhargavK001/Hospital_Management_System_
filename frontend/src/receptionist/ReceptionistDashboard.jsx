@@ -19,6 +19,10 @@ import {
 } from "react-icons/fa";
 import API_BASE from "../../src/config";
 
+// Skeleton Loading Components
+import CardSkeleton from "../shared/CardSkeleton";
+import "../shared/styles/skeleton.css";
+
 export default function ReceptionistDashboard() {
   const navigate = useNavigate();
   const calendarRef = useRef(null);
@@ -148,91 +152,95 @@ export default function ReceptionistDashboard() {
         </div>
 
         {/* STATS WIDGETS */}
-        <div className="row g-4 mb-4">
-          {/* Total Patients */}
-          <div className="col-xl-3 col-md-6 col-12">
-            <div
-              className="card shadow-sm border-0 p-3 text-center clickable"
-              style={{ cursor: "pointer" }}
-              onClick={() => navigate("/receptionist-dashboard/patients")}
-            >
-              <div className="d-flex justify-content-center align-items-center gap-3">
-                <div className="bg-danger bg-opacity-10 text-danger rounded-circle p-3">
-                  <FaUserInjured size={30} />
-                </div>
-                <div className="text-start">
-                  <h6 className="text-muted mb-1">Total Patients</h6>
-                  <h3 className="fw-bold mb-0">
-                    {loadingStats ? "-" : stats.totalPatients}
-                  </h3>
+        {loadingStats ? (
+          /* Skeleton Loading State */
+          <div className="row g-4 mb-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="col-xl-3 col-md-6 col-12">
+                <CardSkeleton />
+              </div>
+            ))}
+          </div>
+        ) : (
+          /* Loaded State */
+          <div className="row g-4 mb-4 skeleton-fade-in">
+            {/* Total Patients */}
+            <div className="col-xl-3 col-md-6 col-12">
+              <div
+                className="card shadow-sm border-0 p-3 text-center clickable"
+                style={{ cursor: "pointer" }}
+                onClick={() => navigate("/receptionist-dashboard/patients")}
+              >
+                <div className="d-flex justify-content-center align-items-center gap-3">
+                  <div className="bg-danger bg-opacity-10 text-danger rounded-circle p-3">
+                    <FaUserInjured size={30} />
+                  </div>
+                  <div className="text-start">
+                    <h6 className="text-muted mb-1">Total Patients</h6>
+                    <h3 className="fw-bold mb-0">{stats.totalPatients}</h3>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Total Doctors */}
-          <div className="col-md-3">
-            <div
-              className="card shadow-sm border-0 p-3 text-center clickable"
-              style={{ cursor: "pointer" }}
-              onClick={() => navigate("/reception-dashboard/doctors")}
-            >
-              <div className="d-flex justify-content-center align-items-center gap-3">
-                <div className="bg-warning bg-opacity-10 text-warning rounded-circle p-3">
-                  <FaUserMd size={30} />
-                </div>
-                <div className="text-start">
-                  <h6 className="text-muted mb-1">Total Doctors</h6>
-                  <h3 className="fw-bold mb-0">
-                    {loadingStats ? "-" : stats.totalDoctors}
-                  </h3>
+            {/* Total Doctors */}
+            <div className="col-xl-3 col-md-6 col-12">
+              <div
+                className="card shadow-sm border-0 p-3 text-center clickable"
+                style={{ cursor: "pointer" }}
+                onClick={() => navigate("/reception-dashboard/doctors")}
+              >
+                <div className="d-flex justify-content-center align-items-center gap-3">
+                  <div className="bg-warning bg-opacity-10 text-warning rounded-circle p-3">
+                    <FaUserMd size={30} />
+                  </div>
+                  <div className="text-start">
+                    <h6 className="text-muted mb-1">Total Doctors</h6>
+                    <h3 className="fw-bold mb-0">{stats.totalDoctors}</h3>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Total Appointments */}
-          <div className="col-md-3">
-            <div
-              className="card shadow-sm border-0 p-3 text-center clickable"
-              style={{ cursor: "pointer" }}
-              onClick={() => navigate("/reception-dashboard/appointments")}
-            >
-              <div className="d-flex justify-content-center align-items-center gap-3">
-                <div className="bg-success bg-opacity-10 text-success rounded-circle p-3">
-                  <FaCalendarCheck size={30} />
-                </div>
-                <div className="text-start">
-                  <h6 className="text-muted mb-1">Total Appointments</h6>
-                  <h3 className="fw-bold mb-0">
-                    {loadingStats ? "-" : stats.totalAppointments}
-                  </h3>
+            {/* Total Appointments */}
+            <div className="col-xl-3 col-md-6 col-12">
+              <div
+                className="card shadow-sm border-0 p-3 text-center clickable"
+                style={{ cursor: "pointer" }}
+                onClick={() => navigate("/reception-dashboard/appointments")}
+              >
+                <div className="d-flex justify-content-center align-items-center gap-3">
+                  <div className="bg-success bg-opacity-10 text-success rounded-circle p-3">
+                    <FaCalendarCheck size={30} />
+                  </div>
+                  <div className="text-start">
+                    <h6 className="text-muted mb-1">Total Appointments</h6>
+                    <h3 className="fw-bold mb-0">{stats.totalAppointments}</h3>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Total Revenue */}
-          <div className="col-md-3">
-            <div
-              className="card shadow-sm border-0 p-3 text-center clickable"
-              style={{ cursor: "pointer" }}
-              onClick={() => navigate("/reception-dashboard/payment-reports")}
-            >
-              <div className="d-flex justify-content-center align-items-center gap-3">
-                <div className="bg-info bg-opacity-10 text-info rounded-circle p-3">
-                  <FaMoneyBillWave size={30} />
-                </div>
-                <div className="text-start">
-                  <h6 className="text-muted mb-1">Total Revenue</h6>
-                  <h3 className="fw-bold mb-0">
-                    ₹{loadingStats ? "-" : stats.totalRevenue}
-                  </h3>
+            {/* Total Revenue */}
+            <div className="col-xl-3 col-md-6 col-12">
+              <div
+                className="card shadow-sm border-0 p-3 text-center clickable"
+                style={{ cursor: "pointer" }}
+                onClick={() => navigate("/reception-dashboard/payment-reports")}
+              >
+                <div className="d-flex justify-content-center align-items-center gap-3">
+                  <div className="bg-info bg-opacity-10 text-info rounded-circle p-3">
+                    <FaMoneyBillWave size={30} />
+                  </div>
+                  <div className="text-start">
+                    <h6 className="text-muted mb-1">Total Revenue</h6>
+                    <h3 className="fw-bold mb-0">₹{stats.totalRevenue}</h3>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* CALENDAR SECTION */}
         <div className="row">

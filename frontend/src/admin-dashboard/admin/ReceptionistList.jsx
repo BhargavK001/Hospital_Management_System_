@@ -8,7 +8,8 @@ import {
   FaSyncAlt,
   FaTrash,
 } from "react-icons/fa";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
+import { openConfirmModal } from "../../toasterjsfiles/confirmAPI";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 
@@ -123,7 +124,14 @@ export default function ReceptionistList({
 
   // Delete
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this receptionist?")) return;
+    const confirmed = await openConfirmModal({
+      title: "Delete Receptionist",
+      message: "Are you sure you want to delete this receptionist?",
+      variant: "danger",
+      okText: "Delete",
+      cancelText: "Cancel"
+    });
+    if (!confirmed) return;
 
     const p = deleteReceptionist(id).then(() => {
       setData((list) => list.filter((i) => i._id !== id));
@@ -196,7 +204,6 @@ export default function ReceptionistList({
 
   return (
     <>
-      <Toaster position="top-right" />
 
       {/* MAIN WRAPPER */}
       <div style={{ display: "flex", minHeight: "100vh" }}>

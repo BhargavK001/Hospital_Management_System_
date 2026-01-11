@@ -15,7 +15,7 @@ import {
   FaCalendarAlt,
   FaQuestionCircle
 } from "react-icons/fa";
-import { toast, Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 // xlsx, jsPDF, and autoTable are loaded dynamically in export handlers
 import Flatpickr from "react-flatpickr";
 import "flatpickr/dist/themes/light.css";
@@ -276,7 +276,6 @@ export default function ReceptionistHolidaySettings() {
   return (
     <div className="holiday-scope">
       <style>{holidayStyles}</style>
-      <Toaster position="top-right" />
 
       <div className="container-fluid p-0">
         <div className="table-card">

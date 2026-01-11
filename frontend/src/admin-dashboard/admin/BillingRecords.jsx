@@ -4,7 +4,7 @@ import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import { FaSearch, FaPlus, FaTrash, FaEdit, FaFilePdf } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import toast, { Toaster } from "react-hot-toast"; // Ensure you have this installed
+import toast from "react-hot-toast"; // Ensure you have this installed
 
 import API_BASE from "../../config";
 
@@ -348,7 +348,6 @@ export default function BillingRecords({ sidebarCollapsed = false, toggleSidebar
         <Navbar toggleSidebar={toggleSidebar} />
 
         {/* Toast Container for Notifications */}
-        <Toaster position="top-right" />
 
         <div className="page-title-bar">
           <h5 className="page-title">Billing Records</h5>
