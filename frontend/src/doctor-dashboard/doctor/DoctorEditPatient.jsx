@@ -4,7 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import DoctorLayout from "../layouts/DoctorLayout"; // <--- Changed Layout
 import { FaArrowLeft, FaSave } from "react-icons/fa";
 import axios from "axios";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 import API_BASE from "../../config";
 
@@ -113,7 +113,7 @@ const DoctorEditPatient = () => {
 
   return (
     <DoctorLayout>
-      <Toaster position="top-right" />
+      
       <div className="container bg-white p-4 rounded shadow-sm">
         {/* Header */}
         <div className="d-flex justify-content-between align-items-center mb-4">

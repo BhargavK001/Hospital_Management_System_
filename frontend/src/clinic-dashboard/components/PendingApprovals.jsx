@@ -1,7 +1,8 @@
 // src/clinic-dashboard/components/PendingApprovals.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
+import { openConfirmModal } from "../../toasterjsfiles/confirmAPI";
 import { FaUserMd, FaUserNurse, FaCheck, FaTimes, FaSpinner, FaClock, FaEnvelope, FaPhone } from "react-icons/fa";
 import { HiSparkles } from "react-icons/hi";
 import API_BASE from "../../config";
@@ -314,7 +315,14 @@ export default function PendingApprovals({ sidebarCollapsed, toggleSidebar }) {
     };
 
     const handleReject = async (request) => {
-        if (!window.confirm(`Are you sure you want to reject ${request.name}'s registration request?`)) {
+        const confirmed = await openConfirmModal({
+            title: "Reject Registration",
+            message: `Are you sure you want to reject ${request.name}'s registration request?`,
+            variant: "danger",
+            okText: "Reject",
+            cancelText: "Cancel"
+        });
+        if (!confirmed) {
             return;
         }
 
@@ -420,7 +428,6 @@ export default function PendingApprovals({ sidebarCollapsed, toggleSidebar }) {
 
                 {/* CONTENT */}
                 <div className="container-fluid py-4 px-4">
-                    <Toaster position="top-right" />
 
                     {/* Modern Header Section */}
                     <div style={styles.headerSection}>

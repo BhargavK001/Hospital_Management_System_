@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import AdminLayout from "../layouts/AdminLayout";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 import {
   addReceptionist,
@@ -144,7 +144,6 @@ export default function AddReceptionist({ sidebarCollapsed, toggleSidebar }) {
 
   return (
     <AdminLayout sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar}>
-      <Toaster position="top-right" />
 
       <div className="container-fluid py-4">
         <div className="d-flex justify-content-between align-items-center mb-3">
@@ -277,7 +276,6 @@ export default function AddReceptionist({ sidebarCollapsed, toggleSidebar }) {
                   <option value="inactive">Inactive</option>
                 </select>
               </div>
-
 
             </div>
 

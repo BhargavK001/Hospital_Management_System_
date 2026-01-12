@@ -12,7 +12,8 @@ import {
   FaUserMd,
   FaList,
   FaRegCalendarAlt,
-  FaFileInvoice
+  FaFileInvoice,
+  FaCreditCard
 } from "react-icons/fa";
 import { NavLink } from "react-router-dom";
 import axios from "axios";
@@ -37,8 +38,7 @@ export default function ReceptionistSidebar({ collapsed = false }) {
     logo: defaultLogo
   });
 
-  // API Base URL
-  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  // API Base URL - Using imported API_BASE from config.js (line 20)
 
   // --- STYLING START ---
   
@@ -185,8 +185,8 @@ export default function ReceptionistSidebar({ collapsed = false }) {
                         margin: "4px 20px",
                         padding: "10px 16px",
                         fontSize: "14px", 
-                        background: isActive ? "#eff6ff" : "transparent", // Submenu uses light blue instead of solid
-                        color: isActive ? "#0d6efd" : "#64748b" 
+                        background: isActive ? "#0d6efd" : "transparent", // Submenu uses light blue instead of solid
+                        color: isActive ? "#ffff" : "#64748b" 
                     })}
                     end
                   >
@@ -203,8 +203,8 @@ export default function ReceptionistSidebar({ collapsed = false }) {
                         margin: "4px 20px",
                         padding: "10px 16px",
                         fontSize: "14px", 
-                        background: isActive ? "#eff6ff" : "transparent",
-                        color: isActive ? "#0d6efd" : "#64748b"
+                        background: isActive ? "#0d6efd" : "transparent",
+                        color: isActive ? "#ffff" : "#64748b"
                     })}
                   >
                     <span style={{ marginRight: "10px" }}><FaRegCalendarAlt /></span>
@@ -260,7 +260,18 @@ export default function ReceptionistSidebar({ collapsed = false }) {
           </NavLink>
         </li>
 
-        {/* 8. Settings */}
+        {/* 8. Payment Reports */}
+        <li>
+          <NavLink 
+            to="/reception-dashboard/payment-reports" 
+            style={({ isActive }) => (isActive ? activeStyle : navItemStyle)}
+          >
+            <span style={{ fontSize: "18px", display: "flex" }}><FaCreditCard /></span>
+            {!collapsed && <span>Payment Reports</span>}
+          </NavLink>
+        </li>
+
+        {/* 9. Settings */}
         <li style={{ marginTop: "auto" }}> {/* Push Settings to bottom if preferred, or keep natural flow */}
           <NavLink 
             to="/receptionist-dashboard/settings" 

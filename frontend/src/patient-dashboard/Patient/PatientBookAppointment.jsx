@@ -4,6 +4,7 @@ import PatientLayout from "../layouts/PatientLayout";
 import { useNavigate, useLocation } from "react-router-dom";
 import API_BASE from "../../config.js";
 import { trackAppointmentBooked } from "../../utils/gtm";
+import { showToast } from "../../utils/useToast";
 import { FaHospital, FaLaptop, FaVideo } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 
@@ -375,12 +376,12 @@ export default function PatientBookAppointment() {
 
     // Prevent booking on holiday
     if (isHoliday) {
-      alert(holidayMessage);
+      showToast.warning(holidayMessage);
       return;
     }
 
     if (!form.clinic || !form.doctor || !form.date || !selectedSlot || selectedServices.length === 0) {
-      alert("Please complete all required fields (*).");
+      showToast.error("Please complete all required fields (*).");
       return;
     }
 
@@ -428,12 +429,12 @@ export default function PatientBookAppointment() {
         amount: totalAmount + totalTaxAmount,
       });
       
-      alert("Appointment booked successfully!");
+      showToast.success("Appointment booked successfully!");
       navigate("/patient/appointments");
     } catch (err) {
       // Show backend error if available (like holiday restriction)
       const errMsg = err.response?.data?.message || "Failed to book appointment.";
-      alert(errMsg);
+      showToast.error(errMsg);
     } finally {
       setSubmitting(false);
     }

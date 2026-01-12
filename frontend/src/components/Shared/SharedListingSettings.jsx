@@ -15,7 +15,7 @@ import {
   FaChevronRight,
   FaTrash
 } from "react-icons/fa";
-import { toast, Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 // --- xlsx, jsPDF, and autoTable are now loaded dynamically ---
 import API_BASE from "../../config";
@@ -367,7 +367,7 @@ const SharedListingSettings = () => {
 
   return (
     <div className="position-relative">
-      <Toaster position="top-right" />
+      
       <style>
         {`
           .fade-in { animation: fadeIn 0.3s ease-in-out; }

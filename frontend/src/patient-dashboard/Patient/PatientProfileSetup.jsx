@@ -5,6 +5,7 @@ import PhoneInput from "react-phone-input-2";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import API_BASE from "../../config";
+import { showToast } from "../../utils/useToast";
 
 export default function PatientProfileSetup() {
   const navigate = useNavigate();
@@ -186,7 +187,7 @@ export default function PatientProfileSetup() {
         })
       );
 
-      alert("✅ Profile saved successfully!");
+      showToast.success("Profile saved successfully!");
       navigate("/patient-dashboard");
     } catch (err) {
       console.error("Error saving patient profile:", err);

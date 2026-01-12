@@ -1,0 +1,346 @@
+/* ============================================
+   SKELETON LOADING ANIMATIONS
+   Premium shimmer effect for loading states
+   ============================================ */
+
+/* Smooth wave shimmer animation */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Pulse animation for subtle breathing effect */
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Base skeleton styles - Premium light shimmer */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #eef2f6 0%,
+    #e4e9ee 25%,
+    #f5f7fa 50%,
+    #e4e9ee 75%,
+    #eef2f6 100%
+  ) !important;
+  background-size: 400% 100% !important;
+  animation: skeleton-shimmer 2s ease-in-out infinite;
+  border-radius: 6px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Add subtle shadow for depth */
+.skeleton::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  animation: skeleton-shimmer 2s ease-in-out infinite;
+  background-size: 400% 100%;
+}
+
+/* Skeleton text line */
+.skeleton-text {
+  height: 14px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+}
+
+.skeleton-text.sm {
+  height: 10px;
+}
+
+.skeleton-text.lg {
+  height: 18px;
+}
+
+.skeleton-text.xl {
+  height: 24px;
+}
+
+/* Skeleton heading */
+.skeleton-heading {
+  height: 28px;
+  margin-bottom: 14px;
+  border-radius: 8px;
+}
+
+/* Skeleton circle (avatars, icons) */
+.skeleton-circle {
+  border-radius: 50% !important;
+}
+
+.skeleton-circle.sm {
+  width: 32px;
+  height: 32px;
+}
+
+.skeleton-circle.md {
+  width: 48px;
+  height: 48px;
+}
+
+.skeleton-circle.lg {
+  width: 64px;
+  height: 64px;
+}
+
+/* Skeleton card container with soft shadow */
+.skeleton-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+/* Stats card skeleton - Premium look */
+.skeleton-stats-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.skeleton-stats-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+.skeleton-stats-card .skeleton-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #e8f4fd 0%, #d4e9f7 100%) !important;
+}
+
+.skeleton-stats-card .skeleton-content {
+  flex: 1;
+}
+
+.skeleton-stats-card .skeleton-label {
+  height: 12px;
+  width: 70%;
+  margin-bottom: 10px;
+  border-radius: 6px;
+}
+
+.skeleton-stats-card .skeleton-value {
+  height: 32px;
+  width: 45%;
+  border-radius: 8px;
+}
+
+/* Table skeleton with refined styling */
+.skeleton-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.skeleton-table th,
+.skeleton-table td {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.skeleton-table th {
+  background: #fafbfc;
+}
+
+.skeleton-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.skeleton-table .skeleton-cell {
+  height: 14px;
+  border-radius: 6px;
+}
+
+/* Table row animation delay for wave effect */
+.skeleton-table tbody tr:nth-child(1) .skeleton {
+  animation-delay: 0ms;
+}
+.skeleton-table tbody tr:nth-child(2) .skeleton {
+  animation-delay: 75ms;
+}
+.skeleton-table tbody tr:nth-child(3) .skeleton {
+  animation-delay: 150ms;
+}
+.skeleton-table tbody tr:nth-child(4) .skeleton {
+  animation-delay: 225ms;
+}
+.skeleton-table tbody tr:nth-child(5) .skeleton {
+  animation-delay: 300ms;
+}
+.skeleton-table tbody tr:nth-child(6) .skeleton {
+  animation-delay: 375ms;
+}
+.skeleton-table tbody tr:nth-child(7) .skeleton {
+  animation-delay: 450ms;
+}
+.skeleton-table tbody tr:nth-child(8) .skeleton {
+  animation-delay: 525ms;
+}
+.skeleton-table tbody tr:nth-child(9) .skeleton {
+  animation-delay: 600ms;
+}
+.skeleton-table tbody tr:nth-child(10) .skeleton {
+  animation-delay: 675ms;
+}
+
+/* Form skeleton with better spacing */
+.skeleton-form-group {
+  margin-bottom: 24px;
+}
+
+.skeleton-form-label {
+  height: 12px;
+  width: 25%;
+  margin-bottom: 10px;
+  border-radius: 6px;
+}
+
+.skeleton-form-input {
+  height: 46px;
+  width: 100%;
+  border-radius: 10px;
+}
+
+.skeleton-form-textarea {
+  height: 120px;
+  width: 100%;
+  border-radius: 10px;
+}
+
+.skeleton-form-button {
+  height: 48px;
+  width: 140px;
+  border-radius: 10px;
+}
+
+/* Profile skeleton - Centered and refined */
+.skeleton-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 32px;
+}
+
+.skeleton-profile-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+}
+
+.skeleton-profile-name {
+  height: 24px;
+  width: 180px;
+  border-radius: 8px;
+}
+
+.skeleton-profile-role {
+  height: 14px;
+  width: 100px;
+  border-radius: 6px;
+}
+
+/* Calendar skeleton */
+.skeleton-calendar {
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+.skeleton-calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.skeleton-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+}
+
+.skeleton-calendar-cell {
+  height: 70px;
+  border-radius: 10px;
+}
+
+/* Smooth fade in transition for loaded content */
+.skeleton-fade-in {
+  animation: skeletonFadeIn 0.4s ease-out forwards;
+}
+
+@keyframes skeletonFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Loading wrapper for smooth transitions */
+.loading-wrapper {
+  min-height: 200px;
+  position: relative;
+}
+
+/* List skeleton item styles */
+.skeleton-list-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.skeleton-list-item:last-child {
+  border-bottom: none;
+}
+
+/* Compact card skeleton for dashboards */
+.skeleton-compact-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  border: 1px solid #f0f2f5;
+}

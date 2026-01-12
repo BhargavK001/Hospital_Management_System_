@@ -10,7 +10,7 @@ import {
 } from "react-icons/fi";
 import { FaSort } from "react-icons/fa";
 import axios from "axios";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 import API_BASE from "../../config";
 
@@ -1011,12 +1011,6 @@ export default function SharedServices({ isDoctor = false, doctorInfo = null, is
     >
       {/* Inject Scoped Styles */}
       <style>{servicesStyles}</style>
-
-      <Toaster
-        position="top-right"
-        reverseOrder={false}
-        containerStyle={{ zIndex: 2147483647 }}
-      />
 
       <div className="container-fluid py-2">
         <div className="d-flex flex-wrap justify-content-between align-items-center mb- 2bg-white p-2  gap-2">

@@ -4,7 +4,7 @@ import AdminLayout from "../layouts/AdminLayout";
 import { FaArrowLeft, FaEdit } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import "../../shared/styles/shared-forms.css";
 
 import API_BASE from "../../config";
@@ -222,7 +222,7 @@ export default function AddClinic({ sidebarCollapsed, toggleSidebar }) {
 
   return (
     <AdminLayout sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar}>
-      <Toaster position="top-right" />
+      
       <div className="container-fluid p-4"> {/* Replaced custom CSS class with bootstrap container for safety */}
 
         {/* Header */}

@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { FaArrowLeft, FaSave, FaPlus, FaTrash } from "react-icons/fa";
 import { toast } from "react-hot-toast";
+import { openConfirmModal } from "../../toasterjsfiles/confirmAPI";
 import AdminLayout from "../layouts/AdminLayout";
 
 import API_BASE from "../../config";
@@ -164,8 +165,15 @@ const AddDoctor = () => {
     setShowQualificationForm(false);
   };
 
-  const handleDeleteQualification = (index) => {
-    if (window.confirm("Are you sure you want to delete this qualification?")) {
+  const handleDeleteQualification = async (index) => {
+    const confirmed = await openConfirmModal({
+      title: "Delete Qualification",
+      message: "Are you sure you want to delete this qualification?",
+      variant: "danger",
+      okText: "Delete",
+      cancelText: "Cancel"
+    });
+    if (confirmed) {
       setQualifications((prev) => prev.filter((_, i) => i !== index));
       toast.success("Qualification deleted");
     }

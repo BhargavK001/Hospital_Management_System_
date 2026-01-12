@@ -13,6 +13,8 @@ import {
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import API_BASE from "../../config";
+import { showToast } from "../../utils/useToast";
+import { openConfirmModal } from "../../toasterjsfiles/confirmAPI";
 
 export default function PatientAppointments() {
   const navigate = useNavigate();
@@ -133,7 +135,13 @@ export default function PatientAppointments() {
 
   // Cancel / delete appointment
   const handleCancel = async (id) => {
-    const confirmed = await window.confirm("Cancel this appointment?");
+    const confirmed = await openConfirmModal({
+      title: "Cancel Appointment",
+      message: "Are you sure you want to cancel this appointment?",
+      variant: "danger",
+      okText: "Yes, Cancel",
+      cancelText: "No, Keep"
+    });
     if (!confirmed) return;
     try {
       await axios.put(
@@ -151,10 +159,10 @@ export default function PatientAppointments() {
             : p
         )
       );
-      alert("Appointment cancelled");
+      showToast.success("Appointment cancelled successfully");
     } catch (err) {
       console.error("Cancel error:", err);
-      alert("Failed to cancel. Check console.");
+      showToast.error("Failed to cancel appointment. Please try again.");
     }
   };
 

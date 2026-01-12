@@ -3,7 +3,7 @@ import DoctorLayout from "../layouts/DoctorLayout";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import { FaTrash, FaPlus, FaArrowLeft } from "react-icons/fa";
 import API_BASE from "../../config";
 
@@ -186,7 +186,6 @@ const EditBill = () => {
     }));
   }, [form.services, form.selectedTaxes, form.discount, form.paidAmount, availableTaxes, loading]);
 
-
   // --- 4. Handlers ---
   const handleGenericChange = (e) => {
     const { name, value } = e.target;
@@ -271,7 +270,7 @@ const EditBill = () => {
 
   return (
     <DoctorLayout>
-      <Toaster position="top-right" />
+      
       <div className="container-fluid py-4">
         
         <div className="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-3">

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import DoctorLayout from "../layouts/DoctorLayout"; 
 import { FaArrowLeft, FaTrash } from "react-icons/fa";
 import API_BASE from "../../config";
@@ -128,7 +128,6 @@ export default function DoctorAddBill() {
     }));
 
   }, [form.selectedServices, form.selectedTaxes, form.discount, form.paidAmount, availableTaxes]);
-
 
   // --- 4. Handlers ---
   const handlePatientChange = async (e) => {
@@ -292,10 +291,9 @@ export default function DoctorAddBill() {
     return () => { if (meta) meta.setAttribute('content', originalContent); };
   }, []);
 
-
   return (
     <DoctorLayout>
-      <Toaster position="top-right" />
+      
       <style>{`
         @media screen and (max-width: 768px) {
           .form-select, .form-control, input, select, textarea {

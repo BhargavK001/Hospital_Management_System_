@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 import api from '../utils/api';
+import { showToast } from '../../utils/useToast';
 
 export default function ServiceFormModal({ show, onHide, onSaved, service }) {
   const [form, setForm] = useState({
@@ -46,7 +47,7 @@ export default function ServiceFormModal({ show, onHide, onSaved, service }) {
   };
 
   const save = async () => {
-    if (!form.name.trim()) { alert('Service name is required'); return; }
+    if (!form.name.trim()) { showToast.error('Service name is required'); return; }
     setSaving(true);
     try {
       let res;
@@ -58,7 +59,7 @@ export default function ServiceFormModal({ show, onHide, onSaved, service }) {
       onSaved(res.data);
     } catch (err) {
       console.error('save err', err);
-      alert('Save failed (see console).');
+      showToast.error('Save failed. Please try again.');
     } finally {
       setSaving(false);
     }

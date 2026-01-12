@@ -8,6 +8,11 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import PatientLayout from "../layouts/PatientLayout";
 import API_BASE from "../../config";
+import { showToast } from "../../utils/useToast";
+
+// Skeleton Loading Components
+import { ListSkeleton } from "../../shared/TableSkeleton";
+import "../../shared/styles/skeleton.css";
 
 export default function PatientDashboard() {
   const navigate = useNavigate();
@@ -224,7 +229,7 @@ export default function PatientDashboard() {
             <div className="card shadow-sm h-100">
               <div className="card-header bg-white border-0"><h6 className="mb-0 fw-bold">Upcoming appointments</h6></div>
               <div className="card-body p-2" style={{ maxHeight: 400, overflowY: "auto" }}>
-                {loadingUpcoming ? <p className="text-muted small">Loading...</p> :
+                {loadingUpcoming ? <ListSkeleton rows={4} showIcon={false} /> :
                   upcoming.length === 0 ? <p className="text-muted small">No upcoming appointments.</p> :
                     upcoming.map((a) => (
                       <div key={a._id} className="p-2 mb-2 border rounded-3 bg-light" style={{ cursor: "pointer" }} onClick={() => setSelectedAppointment(a)}>
@@ -334,7 +339,7 @@ export default function PatientDashboard() {
                         navigate(`/patient/appointments/${targetId}`);
                       } else {
                         console.error("No valid ID found on appointment object:", selectedAppointment);
-                        alert("Error: Cannot find appointment ID.");
+                        showToast.error("Error: Cannot find appointment ID.");
                       }
                     }}
                   >

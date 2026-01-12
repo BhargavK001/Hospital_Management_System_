@@ -581,7 +581,7 @@ const Doctors = ({ sidebarCollapsed, toggleSidebar }) => {
                         <div className="col-md-6">
                           <label className="form-label">Charges *</label>
                           <div className="input-group">
-                            <span className="input-group-text">$</span>
+                            <span className="input-group-text">₹</span>
                             <input
                               type="number"
                               name="charges"

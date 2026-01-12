@@ -19,6 +19,10 @@ import {
 } from "react-icons/fa";
 import API_BASE from "../../config";
 
+// Skeleton Loading Components
+import CardSkeleton from "../../shared/CardSkeleton";
+import "../../shared/styles/skeleton.css";
+
 export default function DoctorDashboard() {
   const navigate = useNavigate();
   const calendarRef = useRef(null);
@@ -147,64 +151,74 @@ export default function DoctorDashboard() {
         </div>
 
         {/* STATS WIDGETS */}
-        <div className="row g-4 mb-4">
-          <div className="col-xl-3 col-md-6 col-12">
-            <div
-              className="stat-card clickable"
-              onClick={() => navigate("/doctor/patients")}
-            >
-              <div className="stat-icon patients">
-                <FaUserInjured />
+        {loadingStats ? (
+          <div className="row g-4 mb-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="col-xl-3 col-md-6 col-12">
+                <CardSkeleton />
               </div>
-              <div className="stat-content">
-                <h6>Total Patients</h6>
-                <h3>{loadingStats ? "-" : stats.totalPatients}</h3>
+            ))}
+          </div>
+        ) : (
+          <div className="row g-4 mb-4 skeleton-fade-in">
+            <div className="col-xl-3 col-md-6 col-12">
+              <div
+                className="stat-card clickable"
+                onClick={() => navigate("/doctor/patients")}
+              >
+                <div className="stat-icon patients">
+                  <FaUserInjured />
+                </div>
+                <div className="stat-content">
+                  <h6>Total Patients</h6>
+                  <h3>{stats.totalPatients}</h3>
+                </div>
+              </div>
+            </div>
+            <div className="col-xl-3 col-md-6 col-12">
+              <div
+                className="stat-card clickable"
+                onClick={() => navigate("/doctor/appointments")}
+              >
+                <div className="stat-icon appointments">
+                  <FaCalendarAlt />
+                </div>
+                <div className="stat-content">
+                  <h6>Total Appointments</h6>
+                  <h3>{stats.totalAppointments}</h3>
+                </div>
+              </div>
+            </div>
+            <div className="col-xl-3 col-md-6 col-12">
+              <div
+                className="stat-card clickable"
+                onClick={() => navigate("/doctor/appointments")}
+              >
+                <div className="stat-icon today">
+                  <FaCalendarCheck />
+                </div>
+                <div className="stat-content">
+                  <h6>Today's Appointments</h6>
+                  <h3>{stats.todayAppointments}</h3>
+                </div>
+              </div>
+            </div>
+            <div className="col-xl-3 col-md-6 col-12">
+              <div
+                className="stat-card clickable"
+                onClick={() => navigate("/doctor/services")}
+              >
+                <div className="stat-icon services">
+                  <FaListAlt />
+                </div>
+                <div className="stat-content">
+                  <h6>Total Services</h6>
+                  <h3>{stats.totalServices}</h3>
+                </div>
               </div>
             </div>
           </div>
-          <div className="col-xl-3 col-md-6 col-12">
-            <div
-              className="stat-card clickable"
-              onClick={() => navigate("/doctor/appointments")}
-            >
-              <div className="stat-icon appointments">
-                <FaCalendarAlt />
-              </div>
-              <div className="stat-content">
-                <h6>Total Appointments</h6>
-                <h3>{loadingStats ? "-" : stats.totalAppointments}</h3>
-              </div>
-            </div>
-          </div>
-          <div className="col-xl-3 col-md-6 col-12">
-            <div
-              className="stat-card clickable"
-              onClick={() => navigate("/doctor/appointments")}
-            >
-              <div className="stat-icon today">
-                <FaCalendarCheck />
-              </div>
-              <div className="stat-content">
-                <h6>Today's Appointments</h6>
-                <h3>{loadingStats ? "-" : stats.todayAppointments}</h3>
-              </div>
-            </div>
-          </div>
-          <div className="col-xl-3 col-md-6 col-12">
-            <div
-              className="stat-card clickable"
-              onClick={() => navigate("/doctor/services")}
-            >
-              <div className="stat-icon services">
-                <FaListAlt />
-              </div>
-              <div className="stat-content">
-                <h6>Total Services</h6>
-                <h3>{loadingStats ? "-" : stats.totalServices}</h3>
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* CALENDAR SECTION */}
         <div className="row">

@@ -14,7 +14,7 @@ import {
   FaExternalLinkAlt
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 import API_BASE from "../../config";
 
@@ -385,7 +385,6 @@ export default function PaymentReports({ sidebarCollapsed = false, toggleSidebar
   return (
     <>
       <style>{paymentStyles}</style>
-      <Toaster position="top-right" />
 
       <div className="payment-scope d-flex">
         <Sidebar collapsed={sidebarCollapsed} />

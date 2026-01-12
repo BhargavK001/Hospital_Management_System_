@@ -240,7 +240,7 @@ const ReceptionistNavbar = ({ toggleSidebar }) => {
               
               <button 
                 className="modern-dropdown-item" 
-                onClick={() => { navigate("/reception/change-password"); setOpen(false); }}
+                onClick={() => { navigate("/receptionist/change-password-page"); setOpen(false); }}
               >
                 <FaLock /> Change Password
               </button>

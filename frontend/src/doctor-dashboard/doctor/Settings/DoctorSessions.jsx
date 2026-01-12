@@ -5,7 +5,7 @@ import {
   FaFileCsv, FaFilePdf, FaTimes, FaFileImport, 
   FaQuestionCircle, FaChevronLeft, FaChevronRight 
 } from "react-icons/fa";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 // xlsx, jsPDF, and autoTable now loaded dynamically in export handlers
 import API_BASE from "../../../config";
 
@@ -272,7 +272,6 @@ export default function DoctorSessions() {
            .filter-row { display: none !important; }
         }
       `}</style>
-      <Toaster position="top-right" />
 
 {/* --- Doctor Sessions Header (Blue Style) --- */}
       <div className="services-topbar services-card d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
@@ -323,7 +322,7 @@ export default function DoctorSessions() {
                         </div>
                         <div className="col-12 col-md-6">
                             <label className="form-label small fw-bold">Clinic *</label>
-                            <input className="form-control" value={form.clinic} onChange={e => setForm({...form, clinic: e.target.value})} required />
+                            <input className="form-control" value={form.clinic} onChange={e => setForm({...form, clinic: e.target.value})} required disabled/>
                         </div>
                         
                         <div className="col-12">
@@ -468,7 +467,6 @@ export default function DoctorSessions() {
                 </div>
             </div>
         )}
-      
 
       {/* Delete Modal */}
       {showDeleteModal && (
