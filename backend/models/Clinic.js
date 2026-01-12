@@ -1,9 +1,17 @@
 // models/Clinic.js
 const mongoose = require("mongoose");
 
+const operatingHoursSchema = new mongoose.Schema({
+  day: { type: String },
+  isOpen: { type: Boolean, default: true },
+  openTime: { type: String },
+  closeTime: { type: String }
+}, { _id: false });
+
 const clinicSchema = new mongoose.Schema(
   {
     hospitalId: { type: String, unique: true, required: true },
+    subdomain: { type: String, unique: true, sparse: true }, // For clinic website URL
     name: { type: String, required: true },
     email: { type: String, required: true },
     contact: { type: String, required: true },
@@ -46,8 +54,33 @@ const clinicSchema = new mongoose.Schema(
       gender: { type: String },
       photo: { type: String }, // admin photo filename
     },
+
+    // Additional fields from onboarding
+    about: { type: String }, // Clinic description
+    operatingHours: [operatingHoursSchema],
+    socialMedia: {
+      facebook: { type: String },
+      instagram: { type: String },
+      twitter: { type: String },
+      linkedin: { type: String },
+      youtube: { type: String }
+    },
+    languagesSpoken: [{ type: String }],
+    acceptedPayments: [{ type: String }],
+    appointmentSettings: {
+      defaultSlotDuration: { type: Number, default: 30 },
+      bufferTime: { type: Number, default: 5 },
+      advanceBookingDays: { type: Number, default: 30 },
+      allowOnlineBooking: { type: Boolean, default: true }
+    },
+    // Onboarding reference
+    onboardingId: { type: mongoose.Schema.Types.ObjectId, ref: "ClinicOnboarding" }
   },
   { timestamps: true }
 );
 
+// Index for subdomain lookups
+// Index for subdomain lookups (Removed duplicate)
+
 module.exports = mongoose.model("Clinic", clinicSchema);
+

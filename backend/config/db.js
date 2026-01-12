@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const logger = require("../utils/logger");
 
 const connectDB = async () => {
   try {
@@ -10,9 +11,9 @@ const connectDB = async () => {
       socketTimeoutMS: 45000, // Prevent hanging connections
       family: 4, // Use IPv4, Render works better with this
     });
-    console.log("✅ Connected to MongoDB (hospital_auth)");
+    logger.info("✅ Connected to MongoDB (hospital_auth)");
   } catch (err) {
-    console.error("❌ MongoDB connection error:", err);
+    logger.error("❌ MongoDB connection error:", { error: err.message });
     process.exit(1);
   }
 };

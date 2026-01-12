@@ -21,6 +21,8 @@ const PrivacyPage = lazy(() => import("./components/LandingPage/PrivacyPage"));
 const TermsPage = lazy(() => import("./components/LandingPage/TermsPage"));
 const ContactPage = lazy(() => import("./components/LandingPage/ContactPage"));
 const PricingPage = lazy(() => import("./components/LandingPage/PricingPage"));
+const ClinicRegistrationPage = lazy(() => import("./components/LandingPage/ClinicRegistrationPage"));
+const ClinicOnboarding = lazy(() => import("./components/ClinicOnboarding"));
 
 /* Admin Dashboard Components */
 const AdminDashboard = lazy(() => import("./admin-dashboard/admin/AdminDashboard"));
@@ -50,6 +52,7 @@ const MedicalReportPage = lazy(() => import("./admin-dashboard/admin/MedicalRepo
 const AddReceptionist = lazy(() => import("./admin-dashboard/admin/AddReceptionist"));
 const ReceptionistList = lazy(() => import("./admin-dashboard/admin/ReceptionistList"));
 const PaymentReports = lazy(() => import("./admin-dashboard/admin/PaymentReports"));
+const ClinicRegistrations = lazy(() => import("./admin-dashboard/admin/ClinicRegistrations"));
 
 /* Admin Settings */
 const SettingsLayout = lazy(() => import("./admin-dashboard/admin/settings/SettingsLayout"));
@@ -302,6 +305,9 @@ function App() {
           <Route path="/add-clinic" element={
             <AddClinic sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
           } />
+          <Route path="/clinic-registrations" element={
+            <ClinicRegistrations sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
+          } />
           <Route path="/encounter-list" element={
             <EncounterList sidebarCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
           } />
@@ -548,6 +554,8 @@ function App() {
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/register-clinic" element={<ClinicRegistrationPage />} />
+          <Route path="/onboarding/:registrationId" element={<ClinicOnboarding />} />
 
           {/* ==================== AUTH ==================== */}
           <Route path="/login" element={<Login />} />

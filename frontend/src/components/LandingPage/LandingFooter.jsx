@@ -19,10 +19,7 @@ const LandingFooter = () => {
         element.scrollIntoView({ behavior: 'smooth' });
       }
     } else {
-      // Navigate to homepage with hash for manual scrolling
-      // Note: React Router's Link with hash might be simpler, but manual handling works too.
-      // We'll stick to simple Links for cross-page navigation below for simplicity
-      // tailored for the mixed usage.
+      
     }
   };
 
@@ -55,15 +52,6 @@ const LandingFooter = () => {
           <div className="footer-links-grid">
             <div className="footer-column">
               <h4>Product</h4>
-              {/* Use HashLink logic: if on home, scroll. If not, link to home#section. 
-                  Since React Router's hash support can be tricky with smooth scroll, 
-                  we will use simple anchor links for sections if not on home, 
-                  or standard Links with hash. 
-                  
-                  Actually, simplest robust way: always use Link with hash, but handle scroll on Home page separately if needed.
-                  However, standard Link to="/#id" works well in many cases if scroll behavior is set.
-                  For strictly matching the functionality of LandingPage.jsx which used scrollToSection:
-              */}
               {isHomePage ? (
                 <>
                   <button onClick={() => scrollToSection('features')}>Features</button>
