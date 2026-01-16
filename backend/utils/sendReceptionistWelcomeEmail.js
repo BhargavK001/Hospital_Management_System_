@@ -1,4 +1,5 @@
 const nodemailer = require("nodemailer");
+const logger = require("./logger");
 
 async function sendReceptionistWelcomeEmail(to, name, email, password) {
   try {
@@ -7,9 +8,13 @@ async function sendReceptionistWelcomeEmail(to, name, email, password) {
       port: Number(process.env.EMAIL_PORT) || 587,
       secure: false,
       auth: {
-        user: process.env.EMAIL_USER, // Brevo SMTP login (xxxx@smtp-brevo.com)
-        pass: process.env.EMAIL_PASS, // Brevo SMTP key
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
       },
+      // Add timeouts to prevent indefinite hangs on cloud platforms
+      connectionTimeout: 10000, // 10 seconds to establish connection
+      greetingTimeout: 10000,   // 10 seconds for SMTP greeting
+      socketTimeout: 30000,     // 30 seconds for socket operations
     });
 
     const htmlTemplate = `
@@ -35,9 +40,15 @@ async function sendReceptionistWelcomeEmail(to, name, email, password) {
       html: htmlTemplate,
     });
 
+    logger.info("Receptionist welcome email sent successfully", { to, email });
     return true;
   } catch (err) {
-    console.error("Email sending error:", err);
+    logger.error("Receptionist email sending error", { 
+      to, 
+      error: err.message,
+      code: err.code,
+      command: err.command
+    });
     return false;
   }
 }

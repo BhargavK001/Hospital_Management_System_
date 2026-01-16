@@ -188,7 +188,7 @@ app.use(errorHandler);
 
 // --- Start Server ---
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   logger.info("Backend server running on port " + PORT);
   logger.info(`Security: Helmet ✓ | Compression ✓ | CORS ✓ | Sanitization ✓ | WebSockets ✓`);
 });
