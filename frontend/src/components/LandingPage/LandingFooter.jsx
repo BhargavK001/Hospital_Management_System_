@@ -1,9 +1,9 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { 
+import {
   FiMail, FiPhone, FiGlobe, FiHeart
 } from 'react-icons/fi';
-import { 
+import {
   FaLinkedin, FaTwitter, FaGithub
 } from 'react-icons/fa';
 import { FRONTEND_URL, WEBSITE_DOMAIN } from '../../config';
@@ -20,7 +20,7 @@ const LandingFooter = () => {
         element.scrollIntoView({ behavior: 'smooth' });
       }
     } else {
-      
+
     }
   };
 
@@ -34,7 +34,7 @@ const LandingFooter = () => {
               <span>OneCare</span>
             </Link>
             <p>
-              Modern hospital management system designed for clinics and healthcare 
+              Modern hospital management system designed for clinics and healthcare
               providers in India. Streamline your practice with our all-in-one solution.
             </p>
             <div className="footer-social">
@@ -49,7 +49,7 @@ const LandingFooter = () => {
               </a>
             </div>
           </div>
-          
+
           <div className="footer-links-grid">
             <div className="footer-column">
               <h4>Product</h4>
@@ -84,7 +84,7 @@ const LandingFooter = () => {
             <div className="footer-column">
               <h4>Contact</h4>
               <a href="mailto:bhargavk056@gmail.com">
-                <FiMail /> bhargavk056@gmail.com
+                <FiMail /> Khomrajthorat07@gmail.com
               </a>
               <a href="tel:+919420530466">
                 <FiPhone /> +91 94205 30466
@@ -95,7 +95,7 @@ const LandingFooter = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="footer-bottom">
           <p>&copy; {new Date().getFullYear()} OneCare. All rights reserved.</p>
           <p>Made with <FiHeart className="heart-icon" /> in India</p>
