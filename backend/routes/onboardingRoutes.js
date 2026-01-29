@@ -10,6 +10,8 @@ const ClinicOnboarding = require("../models/ClinicOnboarding");
 const ClinicRegistration = require("../models/ClinicRegistration");
 const Clinic = require("../models/Clinic");
 const User = require("../models/User");
+const Doctor = require("../models/Doctor");
+const Service = require("../models/Service");
 const logger = require("../utils/logger");
 const { sendEmail } = require("../utils/emailService");
 const generateRandomPassword = require("../utils/generatePassword");
@@ -100,49 +102,49 @@ const generateHospitalId = async (clinicName) => {
 router.get("/check-subdomain", async (req, res) => {
   try {
     const { subdomain } = req.query;
-    
+
     if (!subdomain) {
       return res.status(400).json({ success: false, message: "Subdomain is required" });
     }
-    
+
     const normalized = subdomain.toLowerCase().trim();
-    
+
     // Validation
     if (normalized.length < 3 || normalized.length > 20) {
-      return res.json({ 
-        success: true, 
-        available: false, 
-        message: "Subdomain must be 3-20 characters" 
+      return res.json({
+        success: true,
+        available: false,
+        message: "Subdomain must be 3-20 characters"
       });
     }
-    
+
     const validPattern = /^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]{3}$/;
     if (!validPattern.test(normalized)) {
-      return res.json({ 
-        success: true, 
-        available: false, 
-        message: "Only lowercase letters, numbers, and hyphens allowed" 
+      return res.json({
+        success: true,
+        available: false,
+        message: "Only lowercase letters, numbers, and hyphens allowed"
       });
     }
-    
+
     // Check reserved
     if (RESERVED_SUBDOMAINS.includes(normalized)) {
-      return res.json({ 
-        success: true, 
-        available: false, 
-        message: "This subdomain is reserved" 
+      return res.json({
+        success: true,
+        available: false,
+        message: "This subdomain is reserved"
       });
     }
-    
+
     // Check blocked words
     if (BLOCKED_WORDS.some(word => normalized.includes(word))) {
-      return res.json({ 
-        success: true, 
-        available: false, 
-        message: "This subdomain contains inappropriate content" 
+      return res.json({
+        success: true,
+        available: false,
+        message: "This subdomain contains inappropriate content"
       });
     }
-    
+
     // Check if already taken (exclude current registration if provided)
     const { registrationId } = req.query;
     const query = { subdomain: normalized };
@@ -152,27 +154,27 @@ router.get("/check-subdomain", async (req, res) => {
 
     const existing = await ClinicOnboarding.findOne(query);
     if (existing) {
-      return res.json({ 
-        success: true, 
-        available: false, 
-        message: "This subdomain is already taken" 
+      return res.json({
+        success: true,
+        available: false,
+        message: "This subdomain is already taken"
       });
     }
-    
+
     // Also check existing clinics
     const existingClinic = await Clinic.findOne({ subdomain: normalized });
     if (existingClinic) {
-      return res.json({ 
-        success: true, 
-        available: false, 
-        message: "This subdomain is already taken" 
+      return res.json({
+        success: true,
+        available: false,
+        message: "This subdomain is already taken"
       });
     }
-    
-    res.json({ 
-      success: true, 
-      available: true, 
-      message: "Subdomain is available!" 
+
+    res.json({
+      success: true,
+      available: true,
+      message: "Subdomain is available!"
     });
   } catch (error) {
     logger.error("Subdomain check error", { error: error.message });
@@ -188,20 +190,20 @@ router.get("/check-subdomain", async (req, res) => {
 router.get("/:registrationId", async (req, res) => {
   try {
     const { registrationId } = req.params;
-    
+
     // Verify registration exists and is approved
     const registration = await ClinicRegistration.findById(registrationId);
     if (!registration) {
       return res.status(404).json({ success: false, message: "Registration not found" });
     }
-    
+
     if (registration.status !== "Approved") {
       return res.status(403).json({ success: false, message: "Registration is not approved" });
     }
-    
+
     // Get or create onboarding record
     let onboarding = await ClinicOnboarding.findOne({ registrationId });
-    
+
     if (!onboarding) {
       // Create new onboarding with pre-filled data from registration
       const defaultHours = [
@@ -213,7 +215,7 @@ router.get("/:registrationId", async (req, res) => {
         { day: "Saturday", isOpen: true, openTime: "09:00", closeTime: "14:00" },
         { day: "Sunday", isOpen: false, openTime: "09:00", closeTime: "18:00" }
       ];
-      
+
       onboarding = new ClinicOnboarding({
         registrationId,
         clinicDetails: {
@@ -228,12 +230,12 @@ router.get("/:registrationId", async (req, res) => {
         currentStep: 1,
         status: "draft"
       });
-      
+
       await onboarding.save();
     }
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       onboarding,
       registration: {
         applicationId: registration.applicationId,
@@ -255,17 +257,17 @@ router.get("/:registrationId", async (req, res) => {
 router.post("/save-draft", async (req, res) => {
   try {
     const { registrationId, step, data } = req.body;
-    
+
     if (!registrationId) {
       return res.status(400).json({ success: false, message: "Registration ID is required" });
     }
-    
+
     let onboarding = await ClinicOnboarding.findOne({ registrationId });
-    
+
     if (!onboarding) {
       return res.status(404).json({ success: false, message: "Onboarding not found" });
     }
-    
+
     // Update based on step
     switch (step) {
       case 1:
@@ -281,14 +283,14 @@ router.post("/save-draft", async (req, res) => {
         onboarding.staff = data.staff;
         break;
     }
-    
+
     // Update current step
     if (step && step > onboarding.currentStep) {
       onboarding.currentStep = Math.min(step, 5);
     }
-    
+
     await onboarding.save();
-    
+
     res.json({ success: true, message: "Draft saved", onboarding });
   } catch (error) {
     logger.error("Save draft error", { error: error.message });
@@ -306,13 +308,13 @@ router.post("/upload-image", upload.single("image"), async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ success: false, message: "No image uploaded" });
     }
-    
+
     const imageUrl = `/uploads/onboarding/${req.file.filename}`;
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       imageUrl,
-      message: "Image uploaded successfully" 
+      message: "Image uploaded successfully"
     });
   } catch (error) {
     logger.error("Image upload error", { error: error.message });
@@ -328,37 +330,37 @@ router.post("/upload-image", upload.single("image"), async (req, res) => {
 router.post("/publish", async (req, res) => {
   try {
     const { registrationId } = req.body;
-    
+
     const onboarding = await ClinicOnboarding.findOne({ registrationId });
-    
+
     if (!onboarding) {
       return res.status(404).json({ success: false, message: "Onboarding not found" });
     }
-    
+
     if (onboarding.status === "published") {
       return res.status(400).json({ success: false, message: "Already published" });
     }
-    
+
     // Validation
     const errors = [];
     if (!onboarding.subdomain) errors.push("Subdomain is required");
     if (!onboarding.clinicDetails?.name) errors.push("Clinic name is required");
     if (!onboarding.services?.length) errors.push("At least one service is required");
     if (!onboarding.staff?.length) errors.push("At least one staff member is required");
-    
+
     if (errors.length > 0) {
       return res.status(400).json({ success: false, message: errors.join(", ") });
     }
-    
+
     // Get registration for details
     const registration = await ClinicRegistration.findById(registrationId);
     if (!registration) {
       return res.status(404).json({ success: false, message: "Registration not found" });
     }
-    
+
     // 1️⃣ Generate unique Hospital ID
     const hospitalId = await generateHospitalId(onboarding.clinicDetails.name);
-    
+
     // 2️⃣ Create Clinic record
     const clinicDetails = onboarding.clinicDetails;
     const clinic = new Clinic({
@@ -392,14 +394,54 @@ router.post("/publish", async (req, res) => {
       services: onboarding.services,
       doctors: onboarding.staff,
     });
-    
+
     await clinic.save();
-    
+
+    // 2.5 Create Doctor and Service documents linked to this clinic
+    if (onboarding.staff && onboarding.staff.length > 0) {
+      for (const staffMember of onboarding.staff) {
+        // Split name into start and end parts
+        const nameParts = staffMember.name ? staffMember.name.trim().split(' ') : ['Doctor'];
+        const firstName = nameParts[0];
+        const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+
+        const newDoctor = new Doctor({
+          firstName,
+          lastName,
+          clinicId: clinic._id,
+          clinic: clinic.name, // Legacy field support
+          specialization: staffMember.specialty,
+          qualification: staffMember.qualifications,
+          experienceYears: staffMember.experience,
+          avatar: staffMember.photo,
+          status: "Active",
+          approvalStatus: "approved"
+        });
+        await newDoctor.save();
+      }
+    }
+
+    if (onboarding.services && onboarding.services.length > 0) {
+      for (const serviceItem of onboarding.services) {
+        const newService = new Service({
+          name: serviceItem.name,
+          description: serviceItem.description,
+          charges: serviceItem.price || 0,
+          duration: serviceItem.duration || 30,
+          clinicId: clinic._id,
+          clinicName: clinic.name,
+          active: true,
+          category: "General"
+        });
+        await newService.save();
+      }
+    }
+
     // 3️⃣ Create User account with generated password
     const targetEmail = registration.email;
     const password = generateRandomPassword();
     const hashedPassword = await bcrypt.hash(password, 10);
-    
+
     let user = await User.findOne({ email: targetEmail });
     if (!user) {
       user = new User({
@@ -418,7 +460,7 @@ router.post("/publish", async (req, res) => {
       user.clinicId = clinic._id;
       await user.save();
     }
-    
+
     // 4️⃣ Send credentials email
     const html = credentialsTemplate({
       name: registration.ownerName?.split(' ')[0] || "Admin",
@@ -426,37 +468,37 @@ router.post("/publish", async (req, res) => {
       password: password,
       hospitalId: hospitalId
     });
-    
+
     await sendEmail({
       to: targetEmail,
       subject: "🎉 Your OneCare Clinic is Live! - Login Credentials",
       html,
     });
-    
+
     // 5️⃣ Update onboarding status
     onboarding.status = "published";
     onboarding.publishedAt = new Date();
     onboarding.currentStep = 5;
     onboarding.createdClinicId = clinic._id;
-    
+
     await onboarding.save();
-    
+
     // 6️⃣ Update registration status
     registration.onboardingCompleted = true;
     await registration.save();
-    
-    logger.info("Clinic created and published", { 
+
+    logger.info("Clinic created and published", {
       subdomain: onboarding.subdomain,
       hospitalId,
       clinicId: clinic._id.toString()
     });
-    
+
     // Generate website URL using FRONTEND_URL from environment
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const websiteUrl = `${frontendUrl}/c/${onboarding.subdomain}`;
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       message: "Your clinic is now live!",
       websiteUrl,
       hospitalId,
