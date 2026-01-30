@@ -19,7 +19,7 @@ export default function ClinicFinder() {
 
   useEffect(() => {
     if (searchTerm.trim()) {
-      const filtered = clinics.filter(clinic => 
+      const filtered = clinics.filter(clinic =>
         clinic.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         clinic.subdomain.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (clinic.city && clinic.city.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -110,8 +110,8 @@ export default function ClinicFinder() {
               </div>
             ) : (
               filteredClinics.map((clinic) => (
-                <div 
-                  key={clinic._id || clinic.subdomain} 
+                <div
+                  key={clinic._id || clinic.subdomain}
                   className="clinic-card"
                   onClick={() => goToClinic(clinic.subdomain)}
                 >

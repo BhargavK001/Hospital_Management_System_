@@ -22,7 +22,7 @@ const PrivacyPage = () => {
             <img src="/logo.png" alt="OneCare" />
             <span>OneCare</span>
           </Link>
-          
+
           <div className={`nav-links ${isMenuOpen ? 'active' : ''}`}>
             <Link to="/" className="nav-link">Home</Link>
             <Link to="/#features" className="nav-link">Features</Link>
@@ -63,12 +63,12 @@ const PrivacyPage = () => {
             <article className="legal-article">
               <h2>1. Introduction</h2>
               <p>
-                OneCare ("we," "our," or "us") is committed to protecting your privacy. This Privacy 
-                Policy explains how we collect, use, disclose, and safeguard your information when 
+                OneCare ("we," "our," or "us") is committed to protecting your privacy. This Privacy
+                Policy explains how we collect, use, disclose, and safeguard your information when
                 you use our Hospital Management System platform at {WEBSITE_DOMAIN}.
               </p>
               <p>
-                By using OneCare, you agree to the collection and use of information in accordance 
+                By using OneCare, you agree to the collection and use of information in accordance
                 with this policy. If you do not agree with our policies, please do not use our services.
               </p>
 
@@ -135,8 +135,8 @@ const PrivacyPage = () => {
 
               <h2>6. Data Retention</h2>
               <p>
-                We retain your personal information for as long as your account is active or as needed 
-                to provide services. Medical records are retained as per applicable healthcare regulations 
+                We retain your personal information for as long as your account is active or as needed
+                to provide services. Medical records are retained as per applicable healthcare regulations
                 in India. You may request deletion of your data by contacting us.
               </p>
 
@@ -152,33 +152,33 @@ const PrivacyPage = () => {
 
               <h2>8. Cookies</h2>
               <p>
-                We use cookies and similar technologies to maintain sessions, remember preferences, 
+                We use cookies and similar technologies to maintain sessions, remember preferences,
                 and analyze usage. You can control cookies through your browser settings.
               </p>
 
               <h2>9. Third-Party Links</h2>
               <p>
-                Our platform may contain links to third-party websites. We are not responsible for 
+                Our platform may contain links to third-party websites. We are not responsible for
                 the privacy practices of these external sites.
               </p>
 
               <h2>10. Children's Privacy</h2>
               <p>
-                OneCare is not intended for children under 13. We do not knowingly collect information 
+                OneCare is not intended for children under 13. We do not knowingly collect information
                 from children. Patient accounts for minors should be managed by parents or guardians.
               </p>
 
               <h2>11. Changes to This Policy</h2>
               <p>
-                We may update this Privacy Policy periodically. We will notify you of significant 
-                changes via email or platform notification. Your continued use after changes 
+                We may update this Privacy Policy periodically. We will notify you of significant
+                changes via email or platform notification. Your continued use after changes
                 constitutes acceptance.
               </p>
 
               <h2>12. Contact Us</h2>
               <p>For questions about this Privacy Policy, contact us at:</p>
               <ul>
-                <li><strong>Email:</strong> bhargavk056@gmail.com</li>
+                <li><strong>Email:</strong> Khomrajthorat07@gmail.com</li>
                 <li><strong>Phone:</strong> +91 94205 30466</li>
                 <li><strong>Website:</strong> {WEBSITE_DOMAIN}</li>
               </ul>
@@ -212,7 +212,7 @@ const PrivacyPage = () => {
               </div>
               <div className="footer-column">
                 <h4>Contact</h4>
-                <a href="mailto:bhargavk056@gmail.com"><FiMail /> bhargavk056@gmail.com</a>
+                <a href="mailto:Khomrajthorat07@gmail.com"><FiMail /> Khomrajthorat07@gmail.com</a>
                 <a href="tel:+919420530466"><FiPhone /> +91 94205 30466</a>
               </div>
             </div>

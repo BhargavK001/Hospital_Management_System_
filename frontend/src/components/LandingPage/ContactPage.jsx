@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { 
-  FiMail, FiPhone, FiUser, FiMessageSquare, FiSend, 
+import {
+  FiMail, FiPhone, FiUser, FiMessageSquare, FiSend,
   FiMenu, FiX, FiMapPin, FiGlobe, FiCheck, FiClock
 } from 'react-icons/fi';
 import { FaWhatsapp, FaLinkedin, FaTwitter, FaGithub, FaHospital } from 'react-icons/fa';
@@ -17,7 +17,7 @@ const ContactPage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -45,17 +45,17 @@ const ContactPage = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required';
     }
-    
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email';
     }
-    
+
     if (!formData.message.trim()) {
       newErrors.message = 'Message is required';
     } else if (formData.message.trim().length < 10) {
@@ -77,7 +77,7 @@ const ContactPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       toast.error('Please fix the errors in the form');
       return;
@@ -87,7 +87,7 @@ const ContactPage = () => {
 
     try {
       const response = await axios.post(`${API_URL}/api/contact`, formData);
-      
+
       if (response.data.success) {
         setIsSubmitted(true);
         toast.success('Your inquiry has been submitted!');
@@ -117,7 +117,7 @@ const ContactPage = () => {
             <img src="/logo.png" alt="OneCare" />
             <span>OneCare</span>
           </Link>
-          
+
           <div className={`nav-links ${isMenuOpen ? 'active' : ''}`}>
             <Link to="/" className="nav-link">Home</Link>
             <Link to="/#features" className="nav-link">Features</Link>
@@ -167,7 +167,7 @@ const ContactPage = () => {
                   </div>
                   <div>
                     <h4>Email</h4>
-                    <a href="mailto:bhargavk056@gmail.com">bhargavk056@gmail.com</a>
+                    <a href="mailto:Khomrajthorat07@gmail.com">Khomrajthorat07@gmail.com</a>
                   </div>
                 </div>
 
@@ -222,8 +222,8 @@ const ContactPage = () => {
                   <h3>Thank You!</h3>
                   <p>Your inquiry has been submitted successfully. We've sent a confirmation to your email.</p>
                   <p>Our team will review your request and get back to you within 24-48 hours.</p>
-                  <button 
-                    className="btn-primary btn-lg" 
+                  <button
+                    className="btn-primary btn-lg"
                     onClick={() => setIsSubmitted(false)}
                   >
                     Send Another Message
@@ -327,8 +327,8 @@ const ContactPage = () => {
                     {errors.message && <span className="error-text">{errors.message}</span>}
                   </div>
 
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     className="btn-primary btn-lg submit-btn"
                     disabled={isSubmitting}
                   >

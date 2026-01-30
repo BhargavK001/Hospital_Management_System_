@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
+import {
   FiCheck, FiX, FiArrowRight, FiMenu, FiChevronDown, FiChevronUp,
   FiMail, FiPhone, FiHelpCircle, FiStar
 } from 'react-icons/fi';
@@ -112,7 +112,7 @@ const PricingPage = () => {
             <img src="/logo.png" alt="OneCare" />
             <span>OneCare</span>
           </Link>
-          
+
           <div className={`nav-links ${isMenuOpen ? 'active' : ''}`}>
             <Link to="/" className="nav-link">Home</Link>
             <Link to="/#features" className="nav-link">Features</Link>
@@ -144,11 +144,11 @@ const PricingPage = () => {
           <span className="section-badge">Pricing</span>
           <h1>Simple, Transparent <span className="gradient-text">Pricing</span></h1>
           <p>Choose the perfect plan for your clinic. No hidden fees, no surprises.</p>
-          
+
           {/* Billing Toggle */}
           <div className="billing-toggle">
             <span className={billingCycle === 'monthly' ? 'active' : ''}>Monthly</span>
-            <button 
+            <button
               className="toggle-switch"
               onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')}
             >
@@ -190,8 +190,8 @@ const PricingPage = () => {
                     </li>
                   ))}
                 </ul>
-                <Link 
-                  to="/signup" 
+                <Link
+                  to="/signup"
                   className={`btn-lg ${plan.popular ? 'btn-primary' : 'btn-outline'}`}
                 >
                   Get Started <FiArrowRight />
@@ -210,11 +210,11 @@ const PricingPage = () => {
             <h2>Frequently Asked Questions</h2>
             <p>Got questions? We've got answers.</p>
           </div>
-          
+
           <div className="faq-grid">
             {faqs.map((faq, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className={`faq-item ${openFaq === index ? 'open' : ''}`}
                 onClick={() => toggleFaq(index)}
               >

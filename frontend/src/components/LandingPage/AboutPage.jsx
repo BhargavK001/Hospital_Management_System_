@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  FiArrowRight, FiCheck, FiUsers, FiTarget, FiAward, 
+import {
+  FiArrowRight, FiCheck, FiUsers, FiTarget, FiAward,
   FiHeart, FiGlobe, FiMail, FiPhone, FiMenu, FiX
 } from 'react-icons/fi';
 import { FaLinkedin, FaTwitter, FaGithub, FaHospital } from 'react-icons/fa';
@@ -61,7 +61,7 @@ const AboutPage = () => {
             <img src="/logo.png" alt="OneCare" />
             <span>OneCare</span>
           </Link>
-          
+
           <div className={`nav-links ${isMenuOpen ? 'active' : ''}`}>
             <Link to="/" className="nav-link">Home</Link>
             <Link to="/#features" className="nav-link">Features</Link>
@@ -102,18 +102,18 @@ const AboutPage = () => {
             <div className="story-text">
               <h2>Our Story</h2>
               <p>
-                OneCare was born from a simple observation: healthcare providers spend too much 
+                OneCare was born from a simple observation: healthcare providers spend too much
                 time on administrative tasks and not enough on patient care. We set out to change that.
               </p>
               <p>
-                Built by developers who understand the unique challenges of healthcare IT, OneCare 
-                is a comprehensive Hospital Management System designed specifically for private 
-                clinics and hospitals in India. Our platform combines powerful features with an 
+                Built by developers who understand the unique challenges of healthcare IT, OneCare
+                is a comprehensive Hospital Management System designed specifically for private
+                clinics and hospitals in India. Our platform combines powerful features with an
                 intuitive interface, making it accessible to practices of all sizes.
               </p>
               <p>
-                From appointment scheduling to billing, from electronic health records to WhatsApp 
-                notifications, OneCare handles the complexity so healthcare professionals can 
+                From appointment scheduling to billing, from electronic health records to WhatsApp
+                notifications, OneCare handles the complexity so healthcare professionals can
                 focus on what they do best – caring for patients.
               </p>
             </div>
@@ -173,7 +173,7 @@ const AboutPage = () => {
             <Link to="/signup" className="btn-primary btn-lg">
               Get Started Free <FiArrowRight />
             </Link>
-            <a href="mailto:bhargavk056@gmail.com" className="btn-outline btn-lg">
+            <a href="mailto:Khomrajthorat07@gmail.com" className="btn-outline btn-lg">
               Contact Us
             </a>
           </div>

@@ -79,11 +79,11 @@ const LandingFooter = () => {
               <h4>Get Started</h4>
               <Link to="/login">Login</Link>
               <Link to="/signup">Register Clinic</Link>
-              <a href="mailto:bhargavk056@gmail.com">Request Demo</a>
+              <a href="mailto:Khomrajthorat07@gmail.com">Request Demo</a>
             </div>
             <div className="footer-column">
               <h4>Contact</h4>
-              <a href="mailto:bhargavk056@gmail.com">
+              <a href="mailto:Khomrajthorat07@gmail.com">
                 <FiMail /> Khomrajthorat07@gmail.com
               </a>
               <a href="tel:+919420530466">

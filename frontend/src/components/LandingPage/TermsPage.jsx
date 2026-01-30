@@ -22,7 +22,7 @@ const TermsPage = () => {
             <img src="/logo.png" alt="OneCare" />
             <span>OneCare</span>
           </Link>
-          
+
           <div className={`nav-links ${isMenuOpen ? 'active' : ''}`}>
             <Link to="/" className="nav-link">Home</Link>
             <Link to="/#features" className="nav-link">Features</Link>
@@ -63,8 +63,8 @@ const TermsPage = () => {
             <article className="legal-article">
               <h2>1. Acceptance of Terms</h2>
               <p>
-                By accessing or using OneCare Hospital Management System ("Service") at 
-                {WEBSITE_DOMAIN}, you agree to be bound by these Terms of Service 
+                By accessing or using OneCare Hospital Management System ("Service") at
+                {WEBSITE_DOMAIN}, you agree to be bound by these Terms of Service
                 ("Terms"). If you disagree with any part of these terms, you may not access the Service.
               </p>
 
@@ -82,15 +82,15 @@ const TermsPage = () => {
               <h2>3. User Accounts</h2>
               <h3>3.1 Account Creation</h3>
               <p>
-                To use certain features, you must create an account. You agree to provide accurate, 
-                current, and complete information during registration and to update such information 
+                To use certain features, you must create an account. You agree to provide accurate,
+                current, and complete information during registration and to update such information
                 to keep it accurate.
               </p>
-              
+
               <h3>3.2 Account Security</h3>
               <p>
-                You are responsible for maintaining the confidentiality of your account credentials 
-                and for all activities under your account. You must immediately notify us of any 
+                You are responsible for maintaining the confidentiality of your account credentials
+                and for all activities under your account. You must immediately notify us of any
                 unauthorized use.
               </p>
 
@@ -118,99 +118,99 @@ const TermsPage = () => {
 
               <h2>5. Healthcare Disclaimer</h2>
               <p>
-                <strong>OneCare is a management tool, not a medical device.</strong> The Service 
-                does not provide medical advice, diagnosis, or treatment. All medical decisions 
-                should be made by qualified healthcare professionals. We are not responsible for 
+                <strong>OneCare is a management tool, not a medical device.</strong> The Service
+                does not provide medical advice, diagnosis, or treatment. All medical decisions
+                should be made by qualified healthcare professionals. We are not responsible for
                 any medical outcomes resulting from the use of our platform.
               </p>
 
               <h2>6. Data Ownership</h2>
               <h3>6.1 Your Data</h3>
               <p>
-                You retain ownership of all data you input into OneCare. This includes patient 
+                You retain ownership of all data you input into OneCare. This includes patient
                 records, appointments, and billing information managed by your clinic.
               </p>
-              
+
               <h3>6.2 Our Rights</h3>
               <p>
-                We may use anonymized, aggregated data for analytics and service improvement. 
+                We may use anonymized, aggregated data for analytics and service improvement.
                 No personally identifiable information is shared without consent.
               </p>
 
               <h2>7. Payment Terms</h2>
               <h3>7.1 Billing</h3>
               <p>
-                Patient payments are processed through Razorpay. Clinic billing and payment processing 
+                Patient payments are processed through Razorpay. Clinic billing and payment processing
                 are subject to Razorpay's terms of service.
               </p>
-              
+
               <h3>7.2 Refunds</h3>
               <p>
-                Refund policies for medical services are determined by individual clinics. OneCare 
+                Refund policies for medical services are determined by individual clinics. OneCare
                 does not process refunds for services rendered by healthcare providers.
               </p>
 
               <h2>8. Service Availability</h2>
               <p>
-                We strive for 99.9% uptime but do not guarantee uninterrupted service. We may 
-                perform maintenance that temporarily affects availability. We will provide advance 
+                We strive for 99.9% uptime but do not guarantee uninterrupted service. We may
+                perform maintenance that temporarily affects availability. We will provide advance
                 notice when possible.
               </p>
 
               <h2>9. Intellectual Property</h2>
               <p>
-                The OneCare platform, including its design, features, and code, is owned by us 
-                and protected by intellectual property laws. You may not copy, modify, distribute, 
+                The OneCare platform, including its design, features, and code, is owned by us
+                and protected by intellectual property laws. You may not copy, modify, distribute,
                 or reverse engineer any part of the Service.
               </p>
 
               <h2>10. Limitation of Liability</h2>
               <p>
-                To the maximum extent permitted by law, OneCare and its developers shall not be 
-                liable for any indirect, incidental, special, consequential, or punitive damages, 
+                To the maximum extent permitted by law, OneCare and its developers shall not be
+                liable for any indirect, incidental, special, consequential, or punitive damages,
                 including loss of profits, data, or other intangible losses.
               </p>
               <p>
-                Our total liability shall not exceed the amount paid by you (if any) for using 
+                Our total liability shall not exceed the amount paid by you (if any) for using
                 the Service in the twelve months preceding the claim.
               </p>
 
               <h2>11. Indemnification</h2>
               <p>
-                You agree to indemnify and hold harmless OneCare, its developers, and affiliates 
-                from any claims, damages, or expenses arising from your use of the Service or 
+                You agree to indemnify and hold harmless OneCare, its developers, and affiliates
+                from any claims, damages, or expenses arising from your use of the Service or
                 violation of these Terms.
               </p>
 
               <h2>12. Termination</h2>
               <p>
-                We may terminate or suspend your account immediately, without prior notice, for 
-                conduct that we believe violates these Terms or is harmful to other users, us, 
+                We may terminate or suspend your account immediately, without prior notice, for
+                conduct that we believe violates these Terms or is harmful to other users, us,
                 or third parties.
               </p>
               <p>
-                Upon termination, you may request export of your data within 30 days. After this 
+                Upon termination, you may request export of your data within 30 days. After this
                 period, we may delete your data.
               </p>
 
               <h2>13. Changes to Terms</h2>
               <p>
-                We reserve the right to modify these Terms at any time. We will notify users of 
-                significant changes via email or platform notification. Continued use after changes 
+                We reserve the right to modify these Terms at any time. We will notify users of
+                significant changes via email or platform notification. Continued use after changes
                 constitutes acceptance.
               </p>
 
               <h2>14. Governing Law</h2>
               <p>
-                These Terms shall be governed by and construed in accordance with the laws of 
-                India. Any disputes shall be subject to the exclusive jurisdiction of courts 
+                These Terms shall be governed by and construed in accordance with the laws of
+                India. Any disputes shall be subject to the exclusive jurisdiction of courts
                 in Maharashtra, India.
               </p>
 
               <h2>15. Contact Information</h2>
               <p>For questions about these Terms, please contact:</p>
               <ul>
-                <li><strong>Email:</strong> bhargavk056@gmail.com</li>
+                <li><strong>Email:</strong> Khomrajthorat07@gmail.com</li>
                 <li><strong>Phone:</strong> +91 94205 30466</li>
                 <li><strong>Website:</strong> {WEBSITE_DOMAIN}</li>
               </ul>
@@ -244,8 +244,8 @@ const TermsPage = () => {
               </div>
               <div className="footer-column">
                 <h4>Contact</h4>
-                <a href="mailto:bhargavk056@gmail.com"><FiMail /> bhargavk056@gmail.com</a>
-                <a href="tel:+919420530466"><FiPhone /> +91 94205 30466</a>
+                <a href="mailto:Khomrajthorat07@gmail.com"><FiMail /> Khomrajthorat07@gmail.com</a>
+                <a href="tel:+919420530466"><FiPhone /> +91 9420530466</a>
               </div>
             </div>
           </div>

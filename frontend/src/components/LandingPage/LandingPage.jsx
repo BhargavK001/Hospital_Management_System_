@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
-  FiMenu, FiX, FiCheck, FiArrowRight, FiUsers, FiCalendar, 
+import {
+  FiMenu, FiX, FiCheck, FiArrowRight, FiUsers, FiCalendar,
   FiFileText, FiDollarSign, FiShield, FiTrendingUp,
   FiMail, FiPhone, FiGlobe, FiHeart, FiActivity, FiVideo,
   FiClock, FiStar, FiZap, FiLayers, FiDatabase
 } from 'react-icons/fi';
-import { 
-  FaWhatsapp, FaUserMd, FaUserInjured, FaHospital, 
+import {
+  FaWhatsapp, FaUserMd, FaUserInjured, FaHospital,
   FaClipboardList, FaPrescriptionBottle,
   FaLinkedin, FaTwitter, FaGithub, FaGoogle
 } from 'react-icons/fa';
@@ -22,12 +22,12 @@ const LandingPage = () => {
   useEffect(() => {
     document.title = 'OneCare - Hospital Management System | HMS Software for Clinics';
     window.scrollTo(0, 0); // Scroll to top on page load
-    
+
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
     window.addEventListener('scroll', handleScroll);
-    
+
     // Animate stats numbers on load
     const animateNumbers = () => {
       const statValues = { patients: 1000, clinics: 50, uptime: 99.9 };
@@ -44,9 +44,9 @@ const LandingPage = () => {
         }, 30);
       });
     };
-    
+
     setTimeout(animateNumbers, 500);
-    
+
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -273,7 +273,7 @@ const LandingPage = () => {
           <div className="shape shape-2"></div>
           <div className="shape shape-3"></div>
         </div>
-        
+
         <div className="container">
           <div className="hero-grid">
             <div className="hero-content">
@@ -287,8 +287,8 @@ const LandingPage = () => {
                 <span className="word word-4">System</span>
               </h1>
               <p className="hero-description">
-                Empower your clinic with OneCare – the modern, cloud-based HMS designed for 
-                private practices and hospitals in India. Streamline appointments, digitize records, 
+                Empower your clinic with OneCare – the modern, cloud-based HMS designed for
+                private practices and hospitals in India. Streamline appointments, digitize records,
                 automate billing, and connect with patients via WhatsApp.
               </p>
               <div className="hero-cta">
@@ -314,7 +314,7 @@ const LandingPage = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="hero-visual">
               <div className="hero-card hero-card-main">
                 <div className="dashboard-preview">
@@ -363,7 +363,7 @@ const LandingPage = () => {
             <h2>Everything Your Clinic Needs</h2>
             <p>Comprehensive tools designed specifically for modern healthcare practices</p>
           </div>
-          
+
           <div className="features-grid">
             {features.map((feature, index) => (
               <div key={index} className="feature-card">
@@ -384,7 +384,7 @@ const LandingPage = () => {
             <h2>Go Live in 4 Simple Steps</h2>
             <p>From signup to managing patients – get your clinic online in minutes</p>
           </div>
-          
+
           <div className="steps-grid">
             {steps.map((step, index) => (
               <div key={index} className="step-card">
@@ -407,7 +407,7 @@ const LandingPage = () => {
             <h2>Tailored Dashboards for Every Role</h2>
             <p>Each user gets a personalized experience based on their responsibilities</p>
           </div>
-          
+
           <div className="modules-grid">
             {modules.map((module, index) => (
               <div key={index} className={`module-card module-${module.color}`}>
@@ -441,8 +441,8 @@ const LandingPage = () => {
               </span>
               <h2>Connect with Patients Where They Are</h2>
               <p>
-                Leverage the power of WhatsApp to send automated appointment reminders, 
-                prescription notifications, and billing alerts. Keep your patients informed 
+                Leverage the power of WhatsApp to send automated appointment reminders,
+                prescription notifications, and billing alerts. Keep your patients informed
                 and reduce no-shows by up to 40%.
               </p>
               <ul className="whatsapp-features">
@@ -486,7 +486,7 @@ const LandingPage = () => {
             <h2>Seamlessly Connected</h2>
             <p>Integrate with best-in-class tools to streamline your clinic operations</p>
           </div>
-          
+
           <div className="integrations-content">
             <div className="integrations-grid">
               <div className="integration-card">
@@ -532,7 +532,7 @@ const LandingPage = () => {
                 <p>Bills, prescriptions & reports</p>
               </div>
             </div>
-            
+
             <div className="integrations-cta">
               <p>All integrations work out of the box. No complex setup required.</p>
               <Link to="/contact" className="btn-outline btn-md">
@@ -586,13 +586,13 @@ const LandingPage = () => {
               <Link to="/register-clinic" className="btn-primary btn-lg">
                 Register Your Clinic <FiArrowRight />
               </Link>
-              <a href="mailto:bhargavk056@gmail.com" className="btn-outline btn-lg">
+              <a href="mailto:Khomrajthorat07@gmail.com" className="btn-outline btn-lg">
                 Request Demo
               </a>
             </div>
             <div className="cta-contact">
-              <a href="mailto:bhargavk056@gmail.com">
-                <FiMail /> bhargavk056@gmail.com
+              <a href="mailto:Khomrajthorat07@gmail.com">
+                <FiMail /> Khomrajthorat07@gmail.com
               </a>
               <a href="tel:+919420530466">
                 <FiPhone /> +91 94205 30466
